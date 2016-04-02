@@ -1,8 +1,13 @@
 package de.uni_bonn.detectappscreen;
 
 import android.accessibilityservice.AccessibilityService;
-import android.os.Environment;
+import android.accessibilityservice.AccessibilityServiceInfo;
+import android.content.ComponentName;
+import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.util.Log;
+import android.util.Pair;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 
@@ -10,7 +15,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.File;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -20,96 +25,50 @@ import java.util.Queue;
  */
 public class DetectAppScreenAccessibilityService extends AccessibilityService {
 
-    protected String compareScreenWithJSONObject(AccessibilityNodeInfo androidIdContent) {
-        if (androidIdContent.getChildCount() < 1)
-            return "Unknown screen";
-
-        JSONObject jsonObject = InfoActivity.getJSONObject();
-        AccessibilityNodeInfo screenRoot = androidIdContent.getChild(0);
-
-        // Breadth-first search
-        Queue<JSONObject> jsonQueue = new LinkedList<>();
-        Queue<AccessibilityNodeInfo> nodeInfoQueue = new LinkedList<>();
-        jsonQueue.add(jsonObject);
-        nodeInfoQueue.add(screenRoot);
-
-        while (!nodeInfoQueue.isEmpty()) {
-            JSONObject currentJSONObject = jsonQueue.remove();
-            AccessibilityNodeInfo currentNodeInfo = nodeInfoQueue.remove();
-
-            try {
-                JSONArray children = currentJSONObject.getJSONArray("children");
-                if (children.length() != currentNodeInfo.getChildCount())
-                    return "Unknown screen (children)";
-
-
-                for (int i = 0; i < children.length(); ++i) {
-                    // compare
-                }
-            } catch (JSONException e) {
-                Log.e("WDebug", "Error traversing the nodeInfo tree: " + e.getMessage());
-            }
+    private ActivityInfo tryGetActivity(ComponentName componentName) {
+        try {
+            return getPackageManager().getActivityInfo(componentName, 0);
+        } catch (PackageManager.NameNotFoundException e) {
+            return null;
         }
-
-        return "Unknown screen";
     }
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         if (event.getPackageName() != null) {
+            if (event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+                ComponentName componentName = new ComponentName(
+                        event.getPackageName().toString(),
+                        event.getClassName().toString()
+                );
+
+                ActivityInfo activityInfo = tryGetActivity(componentName);
+                boolean isActivity = activityInfo != null;
+                if (isActivity)
+                    Log.i("CurrentActivity", componentName.flattenToShortString());
+            }
+
             if (event.getPackageName().toString().equalsIgnoreCase("com.whatsapp")) {
-                if (event.getSource() != null) {
-                    AccessibilityNodeInfo rootNodeInfo = event.getSource();
-                    AccessibilityNodeInfo androidIdContent = null;
-                    while (rootNodeInfo.getParent() != null) {
-                        if (rootNodeInfo.getViewIdResourceName() != null &&
-                            rootNodeInfo.getViewIdResourceName().equals("android:id/content")) {
-                            Log.i("WDebug", "got id/content.");
-                            androidIdContent = rootNodeInfo;
-                            break;
-                        }
-                        rootNodeInfo = rootNodeInfo.getParent();
-                    }
-                    Log.i("WDebug", "got root node.");
 
-                    if (androidIdContent == null) {
-                        List<AccessibilityNodeInfo> nodeInfos = new LinkedList<>();
-                        nodeInfos.add(rootNodeInfo);
-                        while (androidIdContent == null && nodeInfos.size() > 0) {
-                            AccessibilityNodeInfo currentNodeInfo = nodeInfos.get(0);
-                            if (currentNodeInfo.getViewIdResourceName() != null
-                                    && currentNodeInfo.getViewIdResourceName().equals("android:id/content")) {
-                                androidIdContent = currentNodeInfo;
-                            } else {
-                                for (int i = 0; i < currentNodeInfo.getChildCount(); ++i)
-                                    nodeInfos.add(currentNodeInfo.getChild(i));
-                            }
-                            nodeInfos.remove(0);
-                        }
-                    }
-
-                    if (androidIdContent != null) {
-                        compareScreenWithJSONObject(androidIdContent);
-
-
-//                        Log.i("WDebug", "...finally got id/content.");
-//                        if (androidIdContent.getChildCount() > 0) {
-//                            if (androidIdContent.getChild(0).getChildCount() == 1)
-//                                Log.i("WDebug", "On super2 awesome Mainscreen!");
-//                            else if (androidIdContent.getChild(0).getChildCount() == 2)
-//                                Log.i("WDebug", "On super2 awesome Conversation screen!");
-//                            else
-//                                Log.i("WDebug", "On unknown screen");
-//                        } else
-//                            Log.i("WDebug", "On another unknown screen");
-
-
-                        //event.getSource().getParent().
-                        //Log.i("WDebug", )
-                    }
-                }
             }
         }
+    }
+
+    @Override
+    protected void onServiceConnected() {
+        super.onServiceConnected();
+
+        //Configure these here for compatibility with API 13 and below.
+        AccessibilityServiceInfo config = new AccessibilityServiceInfo();
+        config.eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED;
+        config.feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC;
+
+        if (Build.VERSION.SDK_INT >= 16)
+            //Just in case this helps
+            config.flags = AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS;
+
+        setServiceInfo(config);
+
     }
 
     @Override
