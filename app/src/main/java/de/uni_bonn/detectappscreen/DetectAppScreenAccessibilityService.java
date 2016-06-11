@@ -34,6 +34,9 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
     protected List<Pair<String, JSONObject>> screenDefinitions = null;
     protected long timeOfLastLayoutComparison = 0;
 
+    protected JSONObject layouts = null;
+    protected JSONObject reverseMap = null;
+
     private ActivityInfo tryGetActivity(ComponentName componentName) {
         try {
             return getPackageManager().getActivityInfo(componentName, 0);
@@ -46,6 +49,8 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
         return source != null
                 && System.currentTimeMillis() - timeOfLastLayoutComparison >= TIME_BETWEEN_LAYOUT_COMPARISONS;
     }
+
+
 
     protected AccessibilityNodeInfo getIdContentNodeInfo(AccessibilityNodeInfo sourceNodeInfo) {
         AccessibilityNodeInfo currentNodeInfo = sourceNodeInfo;
@@ -159,38 +164,35 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
 
         setServiceInfo(config);
 
+        this.layouts = readJSONFile("layouts.json");
+        this.reverseMap = readJSONFile("reverseMap.json");
 
-        // TODO: temporary solution: read one json file for comparison
-        screenDefinitions = new LinkedList<>();
-        File[] testJsons = new File[6];
-        testJsons[0] = new File(Environment.getExternalStoragePublicDirectory("DetectAppScreen"), "main_activity.json");
-        testJsons[1] = new File(Environment.getExternalStoragePublicDirectory("DetectAppScreen"), "main_activity_fragment_description.json");
-        testJsons[2] = new File(Environment.getExternalStoragePublicDirectory("DetectAppScreen"), "main_activity_fragment_preview_dialog.json");
-        testJsons[3] = new File(Environment.getExternalStoragePublicDirectory("DetectAppScreen"), "main_activity_fragment_protection_switch.json");
-        testJsons[4] = new File(Environment.getExternalStoragePublicDirectory("DetectAppScreen"), "main_activity_fragment_statistics.json");
-        testJsons[5] = new File(Environment.getExternalStoragePublicDirectory("DetectAppScreen"), "main_activity_popup_instructions.json");
+    }
 
-        for (File testJson : testJsons) {
-            try (InputStream is = new FileInputStream(testJson);
-                 InputStreamReader isr = new InputStreamReader(is);
-                 BufferedReader br = new BufferedReader(isr)) {
-                String line = "";
-                StringBuilder stringBuilder = new StringBuilder();
-                while ((line = br.readLine()) != null) {
-                    stringBuilder.append(line);
-                    stringBuilder.append("\n");
-                }
-                screenDefinitions.add(new Pair<>(testJson.getName(), new JSONObject(stringBuilder.toString())));
-            } catch (FileNotFoundException e) {
-                Log.e("WDebug", "File not found: " + testJson.getAbsolutePath());
-                Log.e("WDebug", e.getMessage());
-            } catch (JSONException e) {
-                Log.e("WDebug", "Unable to create JSONObject from file (" + testJson.getAbsolutePath() + "): " + e.getMessage());
-            } catch (IOException e) {
-                e.printStackTrace();
+    public JSONObject readJSONFile(String filename) {
+        JSONObject result = null;
+
+        File file = new File(Environment.getExternalStoragePublicDirectory("DetectAppScreen"), filename);
+        try (InputStream is = new FileInputStream(file);
+             InputStreamReader isr = new InputStreamReader(is);
+             BufferedReader br = new BufferedReader(isr)) {
+            String line = "";
+            StringBuilder stringBuilder = new StringBuilder();
+            while ((line = br.readLine()) != null) {
+                stringBuilder.append(line);
+                stringBuilder.append("\n");
             }
+            result = new JSONObject(stringBuilder.toString());
+        } catch (FileNotFoundException e) {
+            Log.e("WDebug", "File not found: " + file.getAbsolutePath());
+            Log.e("WDebug", e.getMessage());
+        } catch (JSONException e) {
+            Log.e("WDebug", "Unable to create JSONObject from file (" + file.getAbsolutePath() + "): " + e.getMessage());
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
+        return result;
     }
 
     @Override
