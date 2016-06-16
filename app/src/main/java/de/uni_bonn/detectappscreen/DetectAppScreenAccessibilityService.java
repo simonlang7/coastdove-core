@@ -11,6 +11,7 @@ import android.util.Pair;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -21,8 +22,13 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.text.Collator;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Created by simon on 20/01/16.
@@ -34,8 +40,9 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
     protected List<Pair<String, JSONObject>> screenDefinitions = null;
     protected long timeOfLastLayoutComparison = 0;
 
-    protected JSONObject layouts = null;
-    protected JSONObject reverseMap = null;
+    protected Map<String, LayoutIdentification> layoutIdentificationMap;
+    protected Map<String, Set<String>> reverseMap;
+
 
     private ActivityInfo tryGetActivity(ComponentName componentName) {
         try {
@@ -50,13 +57,11 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
                 && System.currentTimeMillis() - timeOfLastLayoutComparison >= TIME_BETWEEN_LAYOUT_COMPARISONS;
     }
 
-
-
     protected AccessibilityNodeInfo getIdContentNodeInfo(AccessibilityNodeInfo sourceNodeInfo) {
         AccessibilityNodeInfo currentNodeInfo = sourceNodeInfo;
 
         // Try to find id/content by traversing the tree upwards
-        while (currentNodeInfo.getParent() != null) {
+        while (currentNodeInfo != null && currentNodeInfo.getParent() != null) {
             String resourceName = currentNodeInfo.getViewIdResourceName();
             if (resourceName != null && resourceName.equals("android:id/content")) {
                 // Found it
@@ -65,11 +70,17 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
             currentNodeInfo = currentNodeInfo.getParent();
         }
 
+        AccessibilityNodeInfo rootNodeInfo = currentNodeInfo;
+
         // Traverse tree downwards (breadth-first search)
         List<AccessibilityNodeInfo> nodeInfos = new LinkedList<>();
         nodeInfos.add(currentNodeInfo); // currently the root of the tree
         while (nodeInfos.size() > 0) {
             currentNodeInfo = nodeInfos.get(0);
+            if (currentNodeInfo == null) {
+                nodeInfos.remove(0);
+                continue;
+            }
             String resourceName = currentNodeInfo.getViewIdResourceName();
             if (resourceName != null && resourceName.equals("android:id/content")) {
                 // Found it
@@ -83,7 +94,7 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
             nodeInfos.remove(0);
         }
 
-        return null;
+        return rootNodeInfo;
     }
 
     protected String compareLayouts(AccessibilityNodeInfo androidIdContent) {
@@ -132,15 +143,65 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
 
             AccessibilityNodeInfo sourceNodeInfo = event.getSource();
             if (shallPerformLayoutComparison(sourceNodeInfo)) {
-                AccessibilityNodeInfo idContentNodeInfo = getIdContentNodeInfo(sourceNodeInfo);
+                AccessibilityNodeInfo currentNodeInfo = getIdContentNodeInfo(sourceNodeInfo);
+
+                if (event.getPackageName().toString().equalsIgnoreCase("com.whatsapp")) {
+                    Set<String> androidIDsOnScreen = new TreeSet<>(Collator.getInstance());
+                    Set<String> recognizedLayouts = new TreeSet<>(Collator.getInstance());
+                    Set<String> possibleLayouts = new TreeSet<>(Collator.getInstance());
+
+                    // Traverse tree downwards (breadth-first search)
+                    List<AccessibilityNodeInfo> nodeInfos = new LinkedList<>();
+                    nodeInfos.add(currentNodeInfo); // currently the root of the tree
+                    while (nodeInfos.size() > 0) {
+                        currentNodeInfo = nodeInfos.get(0);
+                        if (currentNodeInfo != null) {
+                            String viewIdResName = currentNodeInfo.getViewIdResourceName();
+                            String currentAndroidID = viewIdResName != null ? viewIdResName.replace("com.whatsapp:", "") : "";
+                            if (!currentAndroidID.equals("")) {
+                                androidIDsOnScreen.add(currentAndroidID);
+                            }
+
+                            // add children
+                            for (int i = 0; i < currentNodeInfo.getChildCount(); ++i)
+                                nodeInfos.add(currentNodeInfo.getChild(i));
+                        }
+
+
+                        nodeInfos.remove(0);
+                    }
+
+                    for (String androidIDOnScreen : androidIDsOnScreen) {
+                        Set<String> currentPossibleLayouts = this.reverseMap.get(androidIDOnScreen);
+                        if (currentPossibleLayouts != null)
+                            possibleLayouts.addAll(currentPossibleLayouts);
+                    }
+
+//                    StringBuilder sb = new StringBuilder();
+//                    for (String st : this.reverseMap.keySet())
+//                        sb.append(st + " ");
+//
+//                    Log.i("ReverseMap KeySet", sb.toString());
+//                    Log.i("AndroidIDs on Screen", androidIDsOnScreen.toString());
+//                    Log.i("WDebug", "POSSIBLE LAYOUTS");
+                    for (String possibleLayout : possibleLayouts) {
+//                        Log.i("WDebug", "possible Layout: " + possibleLayout);
+                        LayoutIdentification layout = this.layoutIdentificationMap.get(possibleLayout);
+                        for (Set<String> layoutIdentifierSet : layout.getLayoutIdentifiers()) {
+                            if (androidIDsOnScreen.containsAll(layoutIdentifierSet)) {
+                                recognizedLayouts.add(layout.getName());
+                                break;
+                            }
+                        }
+                    }
+
+                    Log.i("Recognized Layouts: ", recognizedLayouts.toString());
+                }
 
                 timeOfLastLayoutComparison = System.currentTimeMillis();
             }
 
 
-            if (event.getPackageName().toString().equalsIgnoreCase("com.whatsapp")) {
-
-            }
         }
 //        Log.i("AccessibilityEvent", "" + event.getEventType());
     }
@@ -155,7 +216,7 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
 //        config.feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC;
         config.eventTypes = AccessibilityEvent.TYPES_ALL_MASK;
         config.feedbackType = AccessibilityServiceInfo.FEEDBACK_ALL_MASK;
-        //config.flags = AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS | AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS;
+        config.flags = AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS | AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS;
         //config.flags = AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS;
 
 //        if (Build.VERSION.SDK_INT >= 16)
@@ -164,9 +225,46 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
 
         setServiceInfo(config);
 
-        this.layouts = readJSONFile("layouts.json");
-        this.reverseMap = readJSONFile("reverseMap.json");
+        Log.i("WDebug", "Reading layouts file...");
+        JSONObject layoutsAsJSON = readJSONFile("layouts.json");
+        Log.i("WDebug", "Reading reverse map file...");
+        JSONObject reverseMapAsJSON = readJSONFile("reverseMap.json");
 
+        Log.i("WDebug", "Building hashmaps...");
+        this.layoutIdentificationMap = new HashMap<>();
+        this.reverseMap = new HashMap<>();
+
+        try {
+            JSONArray layoutsAsArray = layoutsAsJSON.getJSONArray("layoutDefinitions");
+            for (int i = 0; i < layoutsAsArray.length(); ++i) {
+                JSONObject currentLayout = layoutsAsArray.getJSONObject(i);
+                String name = currentLayout.getString("name");
+                int ambiguity = currentLayout.getInt("ambiguity");
+                LayoutIdentification layoutIdentification
+                        = new LayoutIdentification(name, ambiguity, currentLayout.getJSONArray("layoutIdentifiers"));
+
+                this.layoutIdentificationMap.put(name, layoutIdentification);
+            }
+
+            JSONArray reverseMapAsArray = reverseMapAsJSON.getJSONArray("androidIDMap");
+            for (int i = 0; i < reverseMapAsArray.length(); ++i) {
+                JSONObject currentElement = reverseMapAsArray.getJSONObject(i);
+                String androidID = currentElement.getString("androidID");
+                JSONArray layoutsAssociatedAsArray = currentElement.getJSONArray("layouts");
+                Set<String> layoutsAssociated = new TreeSet<>(Collator.getInstance());
+                for (int j = 0; j < layoutsAssociatedAsArray.length(); ++j)
+                    layoutsAssociated.add(layoutsAssociatedAsArray.getString(j));
+
+                this.reverseMap.put(androidID, layoutsAssociated);
+            }
+        } catch (JSONException e) {
+            Log.e("WDebug", "Error reading from JSONObject: " + e.getMessage());
+        }
+
+        Log.i("WDebug", "Done building Hashmaps.");
+
+        // debug test
+        //Log.i("WDebug", "layouts[abc_action_bar_title_item] = " + layoutIdentificationMap.get("abc_action_bar_title_item").getLayoutIdentifiers().toString());
     }
 
     public JSONObject readJSONFile(String filename) {
