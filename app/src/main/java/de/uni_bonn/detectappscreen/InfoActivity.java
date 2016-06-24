@@ -7,6 +7,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.util.Pair;
+import android.view.View;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -26,10 +27,10 @@ public class InfoActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_info);
-        startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+        //setContentView(R.layout.activity_info);
+    }
 
-
-
+    public void openAccessibilityServices(View view) {
+        //startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
     }
 }
