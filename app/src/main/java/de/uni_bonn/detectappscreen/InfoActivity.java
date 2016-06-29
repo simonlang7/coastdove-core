@@ -27,7 +27,7 @@ public class InfoActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        //setContentView(R.layout.activity_info);
+        //setContentView(R.layout.main_view);
     }
 
     public void openAccessibilityServices(View view) {

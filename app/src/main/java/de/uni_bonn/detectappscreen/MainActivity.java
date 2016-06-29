@@ -20,7 +20,7 @@ import java.util.ArrayList;
 /**
  * Created by Slang on 21.06.2016.
  */
-public class ListViewLoader extends ListActivity implements LoaderManager.LoaderCallbacks<ArrayList<String>> {
+public class MainActivity extends ListActivity implements LoaderManager.LoaderCallbacks<ArrayList<String>> {
 
     private ArrayAdapter<String> adapter;
     private static final String APP_NAME = "DetectAppScreen";
@@ -28,7 +28,7 @@ public class ListViewLoader extends ListActivity implements LoaderManager.Loader
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_info);
+        setContentView(R.layout.main_view);
 
         // Progress bar while the list loads
         ProgressBar progressBar = new ProgressBar(this);
@@ -71,14 +71,9 @@ public class ListViewLoader extends ListActivity implements LoaderManager.Loader
     protected void onListItemClick(ListView listView, final View view, int position, long id) {
         super.onListItemClick(listView, view, position, id);
         final String item = (String)listView.getItemAtPosition(position);
-        view.animate().setDuration(2000).alpha(0).withEndAction(new Runnable() {
 
-            @Override
-            public void run() {
-                adapter.remove(item);
-                view.setAlpha(1);
-                DetectAppScreenAccessibilityService.startLoadingDetectionData(item);
-            }
-        });
+        Intent intent = new Intent(this, DetectableAppMenu.class);
+        intent.putExtra("appName", item); // TODO: make constant
+        startActivity(intent);
     }
 }

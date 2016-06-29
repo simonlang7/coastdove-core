@@ -51,6 +51,7 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
     }
 
     protected boolean shallPerformLayoutComparison(AccessibilityNodeInfo source) {
+        // TODO: only on window state changed or window content changed
         return source != null
                 && System.currentTimeMillis() - timeOfLastLayoutComparison >= TIME_BETWEEN_LAYOUT_COMPARISONS;
     }
