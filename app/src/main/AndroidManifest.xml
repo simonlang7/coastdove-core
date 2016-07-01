@@ -32,7 +32,7 @@
         </service>
 
         <activity
-            android:name=".DetectableAppMenu"
+            android:name=".DetectableAppDetails"
             android:parentActivityName=".MainActivity">
         </activity>
     </application>

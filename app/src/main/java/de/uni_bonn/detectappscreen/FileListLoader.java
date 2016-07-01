@@ -1,7 +1,7 @@
 package de.uni_bonn.detectappscreen;
 
 import android.content.Context;
-import android.content.Loader;
+import android.support.v4.content.Loader;
 import android.os.Environment;
 import android.util.Log;
 
@@ -34,7 +34,6 @@ public class FileListLoader extends Loader<ArrayList<String>> {
 
     @Override
     public void onStartLoading() {
-        Log.i("Files to exclude", filesToExclude.toString());
         File directory = Environment.getExternalStoragePublicDirectory(appName);
         String[] files = directory.list();
         ArrayList<String> data = new ArrayList<>(files.length);

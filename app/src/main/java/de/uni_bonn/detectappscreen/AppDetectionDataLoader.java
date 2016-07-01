@@ -7,12 +7,12 @@ import java.util.List;
 /**
  * Created by Slang on 24.06.2016.
  */
-public class LoadDetectionDataThread extends Thread {
+public class AppDetectionDataLoader implements Runnable {
 
     private String packageName;
     private List<AppDetectionData> detectableAppsLoaded;
 
-    public LoadDetectionDataThread(String packageName, List<AppDetectionData> detectableAppsLoaded) {
+    public AppDetectionDataLoader(String packageName, List<AppDetectionData> detectableAppsLoaded) {
         super();
         this.packageName = packageName;
         this.detectableAppsLoaded = detectableAppsLoaded;
@@ -22,13 +22,16 @@ public class LoadDetectionDataThread extends Thread {
     public void run() {
         JSONObject layouts;
         JSONObject reverseMap;
-        synchronized (detectableAppsLoaded) {
+        synchronized (DetectAppScreenAccessibilityService.detectableAppsLoadedLock) {
             layouts = AppDetectionData.readJSONFile(packageName, "layouts.json");
             reverseMap = AppDetectionData.readJSONFile(packageName, "reverseMap.json");
         }
         AppDetectionData detectableApp = new AppDetectionData(this.packageName, layouts, reverseMap);
-        synchronized (detectableAppsLoaded) {
-            detectableAppsLoaded.add(detectableApp);
+        detectableApp.load();
+        synchronized (DetectAppScreenAccessibilityService.detectableAppsLoadedLock) {
+            if (detectableApp.isFinishedLoading())
+                detectableAppsLoaded.add(detectableApp);
         }
+        DetectAppScreenAccessibilityService.onDetectionDataLoadFinished(this.packageName);
     }
 }

@@ -29,9 +29,13 @@ import java.util.TreeSet;
  */
 public class AppDetectionData {
 
-    protected String packageName;
-    protected Map<String, LayoutIdentification> layoutIdentificationMap;
-    protected Map<String, Set<String>> reverseMap;
+    private String packageName;
+    private Map<String, LayoutIdentification> layoutIdentificationMap;
+    private Map<String, Set<String>> reverseMap;
+
+    private boolean finishedLoading;
+    private JSONObject layoutsToLoad;
+    private JSONObject reverseMapToLoad;
 
     public static JSONObject readJSONFile(String subDirectory, String filename) {
         JSONObject result = null;
@@ -60,20 +64,28 @@ public class AppDetectionData {
     }
 
     public AppDetectionData(String packageName, JSONObject layouts, JSONObject reverseMap) {
-        buildHashMaps(packageName, layouts, reverseMap);
+        this.finishedLoading = false;
+        this.packageName = packageName;
+        this.layoutsToLoad = layouts;
+        this.reverseMapToLoad = reverseMap;
     }
 
     public AppDetectionData(String packageName) {
-        Log.i("WDebug", "Reading layouts file...");
-        JSONObject layoutsAsJSON = AppDetectionData.readJSONFile(packageName, "layouts.json");
-        Log.i("WDebug", "Reading reverse map file...");
-        JSONObject reverseMapAsJSON = AppDetectionData.readJSONFile(packageName, "reverseMap.json");
-
-        buildHashMaps(packageName, layoutsAsJSON, reverseMapAsJSON);
+        this.finishedLoading = false;
+        this.packageName = packageName;
+        this.layoutsToLoad = AppDetectionData.readJSONFile(packageName, "layouts.json");
+        this.reverseMapToLoad = AppDetectionData.readJSONFile(packageName, "reverseMap.json");
     }
 
-    private void buildHashMaps(String packageName, JSONObject layouts, JSONObject reverseMap) {
-        this.packageName = packageName;
+    public boolean isFinishedLoading() {
+        return this.finishedLoading;
+    }
+
+    public void load() {
+        this.finishedLoading = buildHashMaps(this.layoutsToLoad, this.reverseMapToLoad);
+    }
+
+    private boolean buildHashMaps(JSONObject layouts, JSONObject reverseMap) {
         Log.i("WDebug", "Building hashmaps...");
         this.layoutIdentificationMap = new HashMap<>();
         this.reverseMap = new HashMap<>();
@@ -81,6 +93,9 @@ public class AppDetectionData {
         try {
             JSONArray layoutsAsArray = layouts.getJSONArray("layoutDefinitions");
             for (int i = 0; i < layoutsAsArray.length(); ++i) {
+                if (Thread.interrupted())
+                    return false;
+
                 JSONObject currentLayout = layoutsAsArray.getJSONObject(i);
                 String name = currentLayout.getString("name");
                 int ambiguity = currentLayout.getInt("ambiguity");
@@ -92,6 +107,9 @@ public class AppDetectionData {
 
             JSONArray reverseMapAsArray = reverseMap.getJSONArray("androidIDMap");
             for (int i = 0; i < reverseMapAsArray.length(); ++i) {
+                if (Thread.interrupted())
+                    return false;
+
                 JSONObject currentElement = reverseMapAsArray.getJSONObject(i);
                 String androidID = currentElement.getString("androidID");
                 JSONArray layoutsAssociatedAsArray = currentElement.getJSONArray("layouts");
@@ -106,9 +124,11 @@ public class AppDetectionData {
         }
 
         Log.i("WDebug", "Done building Hashmaps.");
+
+        return true;
     }
 
-    protected AccessibilityNodeInfo getRootNodeInfo(AccessibilityNodeInfo sourceNodeInfo) {
+    private AccessibilityNodeInfo getRootNodeInfo(AccessibilityNodeInfo sourceNodeInfo) {
         AccessibilityNodeInfo currentNodeInfo = sourceNodeInfo;
 
         while (currentNodeInfo != null && currentNodeInfo.getParent() != null)
@@ -117,7 +137,7 @@ public class AppDetectionData {
         return currentNodeInfo;
     }
 
-    protected Set<String> androidIDsOnScreen(AccessibilityNodeInfo rootNodeInfo) {
+    private Set<String> androidIDsOnScreen(AccessibilityNodeInfo rootNodeInfo) {
         AccessibilityNodeInfo currentNodeInfo = rootNodeInfo;
         Set<String> androidIDsOnScreen = new TreeSet<>(Collator.getInstance());
 
@@ -145,7 +165,7 @@ public class AppDetectionData {
         return androidIDsOnScreen;
     }
 
-    protected Set<String> possibleLayouts(Set<String> androidIDs) {
+    private Set<String> possibleLayouts(Set<String> androidIDs) {
         Set<String> possibleLayouts = new TreeSet<>(Collator.getInstance());
         for (String androidIDOnScreen : androidIDs) {
             Set<String> currentPossibleLayouts = this.reverseMap.get(androidIDOnScreen);
@@ -156,7 +176,7 @@ public class AppDetectionData {
         return possibleLayouts;
     }
 
-    protected Set<String> recognizedLayouts(Set<String> androidIDs, Set<String> possibleLayouts) {
+    private Set<String> recognizedLayouts(Set<String> androidIDs, Set<String> possibleLayouts) {
         Set<String> recognizedLayouts = new TreeSet<>(Collator.getInstance());
         for (String possibleLayout : possibleLayouts) {
             LayoutIdentification layout = this.layoutIdentificationMap.get(possibleLayout);
@@ -171,6 +191,9 @@ public class AppDetectionData {
     }
 
     public void checkLayout(AccessibilityEvent event) {
+        if (!isFinishedLoading())
+            return;
+
         AccessibilityNodeInfo sourceNodeInfo = event.getSource();
 
         AccessibilityNodeInfo rootNodeInfo = getRootNodeInfo(sourceNodeInfo);
@@ -179,7 +202,6 @@ public class AppDetectionData {
         Set<String> recognizedLayouts = recognizedLayouts(androidIDsOnScreen, possibleLayouts);
 
         Log.i("Recognized Layouts: ", recognizedLayouts.toString());
-
     }
 
     public String getPackageName() {

@@ -10,6 +10,7 @@ import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -20,22 +21,69 @@ import java.util.Map;
 public class DetectAppScreenAccessibilityService extends AccessibilityService {
 
     protected static final int TIME_BETWEEN_LAYOUT_COMPARISONS = 100;
+    protected static Map<String, Thread> detectableAppsLoading = new HashMap<>();
     protected static List<AppDetectionData> detectableAppsLoaded = new LinkedList<>();
+    public static final Object detectableAppsLoadedLock = new Object();
 
     public static void startLoadingDetectionData(String packageName) {
-        LoadDetectionDataThread loader = new LoadDetectionDataThread(packageName, detectableAppsLoaded);
-        loader.start();
+        synchronized (detectableAppsLoadedLock) {
+            for (AppDetectionData data : detectableAppsLoaded) {
+                if (data.getPackageName().equals(packageName))
+                    return;
+            }
+        }
+        if (detectableAppsLoading.containsKey(packageName))
+            return;
+
+        AppDetectionDataLoader loader = new AppDetectionDataLoader(packageName, detectableAppsLoaded);
+        Thread loaderThread = new Thread(loader);
+        detectableAppsLoading.put(packageName, loaderThread);
+        loaderThread.start();
+        Log.i("AppDetectionData", "Loading " + packageName);
     }
 
-    public static List<String> listDetectableAppsLoaded() {
-        List<String> result = new LinkedList<>();
-        for (AppDetectionData data : detectableAppsLoaded) {
-            Log.i("detectableAppsLoaded", data.getPackageName());
-            result.add(data.getPackageName());
+    public static void removeDetectionData(String packageName) {
+        if (detectableAppsLoading.containsKey(packageName)) {
+            Thread loaderThread = detectableAppsLoading.get(packageName);
+            loaderThread.interrupt();
+            Log.i("AppDetectionData", "Stopped LoaderThread");
+            detectableAppsLoading.remove(packageName);
+            Log.i("AppDetectionData", "Removed LoaderThread");
         }
-        Log.i("detectableAppsLoadedStr", result.toString());
-        return result;
+
+        synchronized (detectableAppsLoadedLock) {
+            Iterator<AppDetectionData> iterator = detectableAppsLoaded.iterator();
+            while (iterator.hasNext()) {
+                AppDetectionData data = iterator.next();
+                if (data.getPackageName().equals(packageName)) {
+                    iterator.remove();
+                    Log.i("AppDetectionData", "Removed loaded data");
+                    break;
+                }
+            }
+        }
     }
+
+    public static boolean isDetectionDataLoadedOrLoading(String packageName) {
+        if (detectableAppsLoading.containsKey(packageName))
+            return true;
+        synchronized (detectableAppsLoadedLock) {
+            for (AppDetectionData data : detectableAppsLoaded) {
+                if (data.getPackageName().equals(packageName))
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static void onDetectionDataLoadFinished(String packageName) {
+        if (detectableAppsLoading.containsKey(packageName)) {
+            detectableAppsLoading.remove(packageName);
+            Log.i("AppDetectionData", "Removed LoaderThread");
+        }
+    }
+
 
 
     protected long timeOfLastLayoutComparison = 0;
