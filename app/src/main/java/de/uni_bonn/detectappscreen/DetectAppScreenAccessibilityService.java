@@ -85,9 +85,10 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
     }
 
 
-
-    protected long timeOfLastLayoutComparison = 0;
-    protected Map<String, AppDetectionData> detectableApps;
+    private String currentActivity;
+    private String previousPackageName;
+    private long timeOfLastLayoutComparison = 0;
+    private Map<String, AppDetectionData> detectableApps;
 
 
     private ActivityInfo tryGetActivity(ComponentName componentName) {
@@ -98,13 +99,13 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
         }
     }
 
-    protected boolean shallPerformLayoutComparison(AccessibilityNodeInfo source) {
+    private boolean shallPerformLayoutComparison(AccessibilityNodeInfo source) {
         // TODO: only on window state changed or window content changed
         return source != null
                 && System.currentTimeMillis() - timeOfLastLayoutComparison >= TIME_BETWEEN_LAYOUT_COMPARISONS;
     }
 
-    protected void checkActivity(AccessibilityEvent event) {
+    private void checkActivity(AccessibilityEvent event) {
         // New activity?
         if (event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             ComponentName componentName = new ComponentName(
@@ -113,28 +114,59 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
             );
 
             ActivityInfo activityInfo = tryGetActivity(componentName);
-            boolean isActivity = activityInfo != null;
-            if (isActivity)
+            if (activityInfo != null) {
+                this.currentActivity = componentName.flattenToShortString();
                 Log.i("CurrentActivity", componentName.flattenToShortString());
+            }
+        }
+    }
+
+    private void activateDetectableApps() {
+        synchronized (detectableAppsLoadedLock) {
+            for (AppDetectionData data : detectableAppsLoaded) {
+                if (!this.detectableApps.containsKey(data.getPackageName())) {
+                    Log.i("Loaded DetectableApp", data.getPackageName());
+                    this.detectableApps.put(data.getPackageName(), data);
+                }
+            }
         }
     }
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         if (event.getPackageName() != null) {
+            String packageName = event.getPackageName().toString();
 
             checkActivity(event);
 
-            AccessibilityNodeInfo sourceNodeInfo = event.getSource();
-            if (shallPerformLayoutComparison(sourceNodeInfo)) {
-                String packageName = event.getPackageName().toString();
-                AppDetectionData detectionData = this.detectableApps.get(packageName);
-                if (detectionData != null)
-                    detectionData.checkLayout(event);
-
-                timeOfLastLayoutComparison = System.currentTimeMillis();
+            // Handle layout detection
+            AppDetectionData detectionData = this.detectableApps.get(packageName);
+            if (detectionData != null) {
+                AccessibilityNodeInfo sourceNodeInfo = event.getSource();
+                if (shallPerformLayoutComparison(sourceNodeInfo)) {
+                    detectionData.checkLayout(event, currentActivity);
+                    timeOfLastLayoutComparison = System.currentTimeMillis();
+                }
             }
+
+            int slashPos = currentActivity.indexOf('/');
+            String activityPackageName = currentActivity.substring(0, slashPos < 0 ? 0 : slashPos);
+            // Changed app? Write gathered data to file
+            if (!activityPackageName.equals(previousPackageName)) {
+                AppDetectionData previousDetectionData = this.detectableApps.get(previousPackageName);
+                if (previousDetectionData != null)
+                    previousDetectionData.saveAppUsageData();
+            }
+
+            // Changed activity?
+            if (!activityPackageName.equals(previousPackageName))
+                activateDetectableApps();
+
+            this.previousPackageName = activityPackageName;
         }
+
+
+
 //        Log.i("AccessibilityEvent", "" + event.getEventType());
     }
 
@@ -157,13 +189,11 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
 
         setServiceInfo(config);
 
+        this.currentActivity = "";
+        this.previousPackageName = "";
+
         this.detectableApps = new HashMap<>();
-        synchronized (detectableAppsLoaded) {
-            for (AppDetectionData data : detectableAppsLoaded) {
-                Log.i("Loaded DetectableApp", data.getPackageName());
-                this.detectableApps.put(data.getPackageName(), data);
-            }
-        }
+        activateDetectableApps();
     }
 
     @Override

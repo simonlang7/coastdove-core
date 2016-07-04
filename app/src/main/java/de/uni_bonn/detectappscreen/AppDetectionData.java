@@ -1,5 +1,6 @@
 package de.uni_bonn.detectappscreen;
 
+import android.content.pm.ActivityInfo;
 import android.os.Environment;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
@@ -29,13 +30,15 @@ import java.util.TreeSet;
  */
 public class AppDetectionData {
 
+    private boolean finishedLoading;
+    private JSONObject layoutsToLoad;
+    private JSONObject reverseMapToLoad;
+
     private String packageName;
     private Map<String, LayoutIdentification> layoutIdentificationMap;
     private Map<String, Set<String>> reverseMap;
 
-    private boolean finishedLoading;
-    private JSONObject layoutsToLoad;
-    private JSONObject reverseMapToLoad;
+    private AppUsageData currentAppUsageData;
 
     public static JSONObject readJSONFile(String subDirectory, String filename) {
         JSONObject result = null;
@@ -68,6 +71,7 @@ public class AppDetectionData {
         this.packageName = packageName;
         this.layoutsToLoad = layouts;
         this.reverseMapToLoad = reverseMap;
+        this.currentAppUsageData = new AppUsageData(packageName);
     }
 
     public AppDetectionData(String packageName) {
@@ -75,6 +79,7 @@ public class AppDetectionData {
         this.packageName = packageName;
         this.layoutsToLoad = AppDetectionData.readJSONFile(packageName, "layouts.json");
         this.reverseMapToLoad = AppDetectionData.readJSONFile(packageName, "reverseMap.json");
+        this.currentAppUsageData = new AppUsageData(packageName);
     }
 
     public boolean isFinishedLoading() {
@@ -83,6 +88,35 @@ public class AppDetectionData {
 
     public void load() {
         this.finishedLoading = buildHashMaps(this.layoutsToLoad, this.reverseMapToLoad);
+    }
+
+    public void checkLayout(AccessibilityEvent event, String activity) {
+        if (!isFinishedLoading())
+            return;
+
+        AccessibilityNodeInfo sourceNodeInfo = event.getSource();
+
+        AccessibilityNodeInfo rootNodeInfo = getRootNodeInfo(sourceNodeInfo);
+        Set<String> androidIDsOnScreen = androidIDsOnScreen(rootNodeInfo);
+        Set<String> possibleLayouts = possibleLayouts(androidIDsOnScreen);
+        Set<String> recognizedLayouts = recognizedLayouts(androidIDsOnScreen, possibleLayouts);
+
+        currentAppUsageData.addDataEntry(activity, recognizedLayouts);
+        Log.i("Recognized Layouts: ", recognizedLayouts.toString());
+    }
+
+    public void saveAppUsageData() {
+        writeAppUsageData();
+        currentAppUsageData = new AppUsageData(this.packageName);
+    }
+
+    public String getPackageName() {
+        return packageName;
+    }
+
+    private void writeAppUsageData() {
+        AppUsageData appUsageData = currentAppUsageData;
+        new Thread(new AppUsageDataWriter("AppUsageData", appUsageData)).start();
     }
 
     private boolean buildHashMaps(JSONObject layouts, JSONObject reverseMap) {
@@ -188,23 +222,5 @@ public class AppDetectionData {
             }
         }
         return recognizedLayouts;
-    }
-
-    public void checkLayout(AccessibilityEvent event) {
-        if (!isFinishedLoading())
-            return;
-
-        AccessibilityNodeInfo sourceNodeInfo = event.getSource();
-
-        AccessibilityNodeInfo rootNodeInfo = getRootNodeInfo(sourceNodeInfo);
-        Set<String> androidIDsOnScreen = androidIDsOnScreen(rootNodeInfo);
-        Set<String> possibleLayouts = possibleLayouts(androidIDsOnScreen);
-        Set<String> recognizedLayouts = recognizedLayouts(androidIDsOnScreen, possibleLayouts);
-
-        Log.i("Recognized Layouts: ", recognizedLayouts.toString());
-    }
-
-    public String getPackageName() {
-        return packageName;
     }
 }
