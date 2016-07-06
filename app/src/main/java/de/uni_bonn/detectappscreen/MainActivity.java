@@ -6,13 +6,11 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 
 
 /**
- * Created by Slang on 21.06.2016.
+ * Main activity that is started when the app starts
  */
 public class MainActivity extends AppCompatActivity {
 
@@ -27,6 +25,9 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
     }
 
+    /**
+     * Opens the system's Accessibility Services menu that can otherwise be accessed via Android Settings
+     */
     public void openAccessibilityServices(View view) {
         startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
     }

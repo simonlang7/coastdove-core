@@ -14,27 +14,43 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Created by simon on 20/01/16.
+ * Accessibility Service for app screen detection. Once started, data needed for app detection
+ * are loaded and the service initializes. The service collects the following data: the current
+ * activity, the detected layouts of the current app (if the according data was loaded beforehand),
+ * TODO: the items clicked by the user, the navigation buttons (home/back) clicked by the user
  */
 public class DetectAppScreenAccessibilityService extends AccessibilityService {
 
+    /** Time (in milliseconds) between two layout comparisons */
     protected static final int TIME_BETWEEN_LAYOUT_COMPARISONS = 100;
-    protected static Map<String, Thread> detectableAppsLoading = new HashMap<>();
-    protected static List<AppDetectionData> detectableAppsLoaded = new LinkedList<>();
+    /** Threads that are currently loading app detection data */
+    protected static Map<String, Thread> detectableAppsLoading = new ConcurrentHashMap<>();
+    /** App detection data that has finished loading. Shall only be accessed in a synchronized
+     * block locking {@link DetectAppScreenAccessibilityService#detectableAppsLoadedLock} */
+    protected static List<AppDetectionData> detectableAppsLoaded = new LinkedList<>(); // todo: replace by concurrent hashmap?
+    /** Monitor for any synchronized block accessing {@link DetectAppScreenAccessibilityService#detectableAppsLoaded} */
     public static final Object detectableAppsLoadedLock = new Object();
 
+    /**
+     * Starts loading detection data for the given app. Loading is done in a new thread.
+     * @param packageName The package name of the app to load detection data for
+     */
     public static void startLoadingDetectionData(String packageName) {
+        // Already loaded?
         synchronized (detectableAppsLoadedLock) {
             for (AppDetectionData data : detectableAppsLoaded) {
                 if (data.getPackageName().equals(packageName))
                     return;
             }
         }
+        // Already loading?
         if (detectableAppsLoading.containsKey(packageName))
             return;
 
+        // Start new thread
         AppDetectionDataLoader loader = new AppDetectionDataLoader(packageName, detectableAppsLoaded);
         Thread loaderThread = new Thread(loader);
         detectableAppsLoading.put(packageName, loaderThread);
@@ -42,7 +58,13 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
         Log.i("AppDetectionData", "Loading " + packageName);
     }
 
+    /**
+     * Removes detection data for the given app, or stops loading the data if loading
+     * is currently in progress
+     * @param packageName
+     */
     public static void removeDetectionData(String packageName) {
+        // Stop loading, remove from loading threads
         if (detectableAppsLoading.containsKey(packageName)) {
             Thread loaderThread = detectableAppsLoading.get(packageName);
             loaderThread.interrupt();
@@ -51,6 +73,7 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
             Log.i("AppDetectionData", "Removed LoaderThread");
         }
 
+        // Remove from already loaded data
         synchronized (detectableAppsLoadedLock) {
             Iterator<AppDetectionData> iterator = detectableAppsLoaded.iterator();
             while (iterator.hasNext()) {
@@ -64,6 +87,12 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
         }
     }
 
+    /**
+     * Tells whether or not detection data for the given app is currently being
+     * loaded or finished loading
+     * @param packageName    Package name of the app in question
+     * @return true iff detection data for the given app loaded or in the process of being loaded
+     */
     public static boolean isDetectionDataLoadedOrLoading(String packageName) {
         if (detectableAppsLoading.containsKey(packageName))
             return true;
@@ -77,6 +106,10 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
         return false;
     }
 
+    /**
+     * Removes loader thread from {@link DetectAppScreenAccessibilityService#detectableAppsLoading}
+     * @param packageName Name of the package for the associated loader thread
+     */
     public static void onDetectionDataLoadFinished(String packageName) {
         if (detectableAppsLoading.containsKey(packageName)) {
             detectableAppsLoading.remove(packageName);
@@ -85,12 +118,19 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
     }
 
 
+    /** Name of the currenty activity, as acquired during the last window state change event */
     private String currentActivity;
+    /** Name of the previous app, as extracted from the last activity of the previous app */
     private String previousPackageName;
+    /** Time (in milliseconds) passed since the last layout comparison */
     private long timeOfLastLayoutComparison = 0;
+    /** Data for app detection */
     private Map<String, AppDetectionData> detectableApps;
 
 
+    /**
+     * Returns the activity info of the current activity
+     */
     private ActivityInfo tryGetActivity(ComponentName componentName) {
         try {
             return getPackageManager().getActivityInfo(componentName, 0);
@@ -99,12 +139,19 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
         }
     }
 
+    /**
+     * Returns true iff a layout comparison shall be performed
+     */
     private boolean shallPerformLayoutComparison(AccessibilityNodeInfo source) {
         // TODO: only on window state changed or window content changed
         return source != null
                 && System.currentTimeMillis() - timeOfLastLayoutComparison >= TIME_BETWEEN_LAYOUT_COMPARISONS;
     }
 
+    /**
+     * Stores the name of the current activity in {@link DetectAppScreenAccessibilityService#currentActivity}
+     * @param event    AccessibilityEvent that has occurred
+     */
     private void checkActivity(AccessibilityEvent event) {
         // New activity?
         if (event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
@@ -121,6 +168,9 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
         }
     }
 
+    /**
+     * Activates any detectable app that has finished loading
+     */
     private void activateDetectableApps() {
         synchronized (detectableAppsLoadedLock) {
             for (AppDetectionData data : detectableAppsLoaded) {
@@ -132,6 +182,10 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
         }
     }
 
+    /**
+     * Checks the current activity and compares layouts of the current app as necessary
+     * @param event
+     */
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         if (event.getPackageName() != null) {
@@ -149,9 +203,10 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
                 }
             }
 
+            // Changed app? Write gathered data to file
+            // todo: separate function
             int slashPos = currentActivity.indexOf('/');
             String activityPackageName = currentActivity.substring(0, slashPos < 0 ? 0 : slashPos);
-            // Changed app? Write gathered data to file
             if (!activityPackageName.equals(previousPackageName)) {
                 AppDetectionData previousDetectionData = this.detectableApps.get(previousPackageName);
                 if (previousDetectionData != null)
@@ -170,6 +225,9 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
 //        Log.i("AccessibilityEvent", "" + event.getEventType());
     }
 
+    /**
+     * Initializes this accessibility service
+     */
     @Override
     protected void onServiceConnected() {
         super.onServiceConnected();

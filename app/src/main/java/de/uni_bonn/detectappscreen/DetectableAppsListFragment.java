@@ -16,10 +16,11 @@ import android.widget.ProgressBar;
 import java.util.ArrayList;
 
 /**
- * Created by Slang on 29.06.2016.
+ * ListFragment containing all available apps that can be detected by the accessibility service
  */
 public class DetectableAppsListFragment extends ListFragment implements LoaderManager.LoaderCallbacks<ArrayList<String>> {
 
+    /** Adapter to be used for the list view */
     private ArrayAdapter<String> adapter;
 
     @Override

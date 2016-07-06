@@ -1,6 +1,5 @@
 package de.uni_bonn.detectappscreen;
 
-import android.content.pm.ActivityInfo;
 import android.os.Environment;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
@@ -26,20 +25,33 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * Created by Slang on 17.06.2016.
+ * Data needed for detecting layouts in an associated app
  */
 public class AppDetectionData {
 
+    /** Indicates whether the data has finished loading or not */
     private boolean finishedLoading;
+    /** Layout definitions as JSON, to be used for building hashmaps */
     private JSONObject layoutsToLoad;
+    /** Reverse map, mapping from sets of android IDs to layouts that can possibly be identified */
     private JSONObject reverseMapToLoad;
 
+    /** Name of the package associated, i.e. the app that can be detected */
     private String packageName;
+    /** Hashmap mapping from each layout to a set of android IDs that identify the layout*/
     private Map<String, LayoutIdentification> layoutIdentificationMap;
+    /** Reverse hashmap, mapping from sets of android IDs to layouts that can possibly be identified */
     private Map<String, Set<String>> reverseMap;
 
+    /** Usage data collected for this session (that starts when the app is opened and ends when it's closed) */
     private AppUsageData currentAppUsageData;
 
+    /**
+     * Reads a JSON file from the external storage public directory with the given sub-directory and filename
+     * @param subDirectory    Sub-directory to use
+     * @param filename        Filename of the file to read
+     * @return
+     */
     public static JSONObject readJSONFile(String subDirectory, String filename) {
         JSONObject result = null;
 
@@ -66,6 +78,12 @@ public class AppDetectionData {
         return result;
     }
 
+    /**
+     * Creates an AppDetectionData object using the given parameters
+     * @param packageName    Name of the package for app detection
+     * @param layouts        Layouts in JSON format
+     * @param reverseMap     Reverse map in JSON format
+     */
     public AppDetectionData(String packageName, JSONObject layouts, JSONObject reverseMap) {
         this.finishedLoading = false;
         this.packageName = packageName;
@@ -74,6 +92,11 @@ public class AppDetectionData {
         this.currentAppUsageData = new AppUsageData(packageName);
     }
 
+    /**
+     * Creates an AppDetectionData object using the given parameters, automatically loads
+     * the layouts and reverse map files from the according directory
+     * @param packageName
+     */
     public AppDetectionData(String packageName) {
         this.finishedLoading = false;
         this.packageName = packageName;
@@ -82,14 +105,25 @@ public class AppDetectionData {
         this.currentAppUsageData = new AppUsageData(packageName);
     }
 
+    /**
+     * Returns true iff the app detection data has finished loading
+     */
     public boolean isFinishedLoading() {
         return this.finishedLoading;
     }
 
+    /**
+     * Loads the app detection data, i.e. constructs hashmaps needed for realtime detection
+     */
     public void load() {
         this.finishedLoading = buildHashMaps(this.layoutsToLoad, this.reverseMapToLoad);
     }
 
+    /**
+     * Performs necessary operations to detect the layouts currently being used by the according app
+     * @param event       Accessibility event that was triggered
+     * @param activity    Current activity to add to the AppUsageDataEntry
+     */
     public void checkLayout(AccessibilityEvent event, String activity) {
         if (!isFinishedLoading())
             return;
@@ -105,20 +139,37 @@ public class AppDetectionData {
         Log.i("Recognized Layouts: ", recognizedLayouts.toString());
     }
 
+    /**
+     * Writes the current app usage data to a file and swaps it for an empty new one,
+     * shall be called whenever the app to be detected is exited
+     */
     public void saveAppUsageData() {
         writeAppUsageData();
         currentAppUsageData = new AppUsageData(this.packageName);
     }
 
+    /**
+     * Returns the package name of the app to be detected by these data
+     */
     public String getPackageName() {
         return packageName;
     }
 
+    /**
+     * Writes the current app usage data to a file
+     */
     private void writeAppUsageData() {
         AppUsageData appUsageData = currentAppUsageData;
         new Thread(new AppUsageDataWriter("AppUsageData", appUsageData)).start();
     }
 
+    /**
+     * Constructs hashmaps (layout -> (layout identifiers))
+     * and (android ID -> (possible layouts))
+     * @param layouts       Layout definitions in JSON
+     * @param reverseMap    Reverse map in JSON
+     * @return True if building the hashmaps was successful, false otherwise
+     */
     private boolean buildHashMaps(JSONObject layouts, JSONObject reverseMap) {
         Log.i("WDebug", "Building hashmaps...");
         this.layoutIdentificationMap = new HashMap<>();
@@ -162,6 +213,10 @@ public class AppDetectionData {
         return true;
     }
 
+    /**
+     * Returns the root of the tree of AccessibilityNodeInfos, needed for full traversal
+     * @param sourceNodeInfo    NodeInfo that triggered the AccessibilityEvent
+     */
     private AccessibilityNodeInfo getRootNodeInfo(AccessibilityNodeInfo sourceNodeInfo) {
         AccessibilityNodeInfo currentNodeInfo = sourceNodeInfo;
 
@@ -171,6 +226,10 @@ public class AppDetectionData {
         return currentNodeInfo;
     }
 
+    /**
+     * Returns a set of android IDs that occur on the current screen
+     * @param rootNodeInfo    Root of the node info tree that contains all objects on the current screen
+     */
     private Set<String> androidIDsOnScreen(AccessibilityNodeInfo rootNodeInfo) {
         AccessibilityNodeInfo currentNodeInfo = rootNodeInfo;
         Set<String> androidIDsOnScreen = new TreeSet<>(Collator.getInstance());
@@ -199,6 +258,10 @@ public class AppDetectionData {
         return androidIDsOnScreen;
     }
 
+    /**
+     * Returns a set of layouts that can possibly be detected, given a set of androidIDs
+     * @param androidIDs    set of android IDs detected on the screen
+     */
     private Set<String> possibleLayouts(Set<String> androidIDs) {
         Set<String> possibleLayouts = new TreeSet<>(Collator.getInstance());
         for (String androidIDOnScreen : androidIDs) {
@@ -210,6 +273,12 @@ public class AppDetectionData {
         return possibleLayouts;
     }
 
+    /**
+     * Returns the set of layouts recognized, given the set of android IDs detected on the screen,
+     * and the set of possibly recognizable layouts
+     * @param androidIDs         set of android IDs detected on the screen
+     * @param possibleLayouts    set of possibly recognizable layouts
+     */
     private Set<String> recognizedLayouts(Set<String> androidIDs, Set<String> possibleLayouts) {
         Set<String> recognizedLayouts = new TreeSet<>(Collator.getInstance());
         for (String possibleLayout : possibleLayouts) {

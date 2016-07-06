@@ -6,11 +6,16 @@ import android.support.v7.widget.SwitchCompat;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.CompoundButton;
 
+/**
+ * Activity started when a detectable app in the main list is clicked,
+ * displays a button to activate/deactivate detection, as well as a list
+ * of detection sessions
+ */
 public class DetectableAppDetails extends AppCompatActivity {
 
+    /** Name of the app to be detected */
     private String appName;
 
     @Override
@@ -18,6 +23,7 @@ public class DetectableAppDetails extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detectable_app_menu);
 
+        // Get appName
         if (savedInstanceState == null) {
             Bundle extras = getIntent().getExtras();
             if (extras == null)
@@ -29,6 +35,7 @@ public class DetectableAppDetails extends AppCompatActivity {
             this.appName = (String)savedInstanceState.getSerializable("appName");
 
 
+        // Set support action bar
         Toolbar toolbar = (Toolbar)findViewById(R.id.detectable_app_toolbar);
         toolbar.setTitle(this.appName);
         setSupportActionBar(toolbar);
@@ -38,6 +45,7 @@ public class DetectableAppDetails extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.detectable_app_menu, menu);
 
+        // Switch for enabling/disabling app detection
         final MenuItem detectAppSwitch = menu.findItem(R.id.detect_app);
         final SwitchCompat actionView = (SwitchCompat)detectAppSwitch.getActionView();
         actionView.setChecked(DetectAppScreenAccessibilityService.isDetectionDataLoadedOrLoading(appName));
@@ -50,6 +58,8 @@ public class DetectableAppDetails extends AppCompatActivity {
                     DetectAppScreenAccessibilityService.removeDetectionData(appName);
             }
         });
+
+
         return super.onCreateOptionsMenu(menu);
     }
 }
