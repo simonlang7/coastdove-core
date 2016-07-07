@@ -53,7 +53,7 @@ public class DetectableAppDetails extends AppCompatActivity {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked)
-                    DetectAppScreenAccessibilityService.startLoadingDetectionData(appName);
+                    DetectAppScreenAccessibilityService.startLoadingDetectionData(appName, getApplicationContext());
                 else
                     DetectAppScreenAccessibilityService.removeDetectionData(appName);
             }

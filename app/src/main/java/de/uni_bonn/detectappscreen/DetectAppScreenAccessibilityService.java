@@ -1,8 +1,8 @@
 package de.uni_bonn.detectappscreen;
 
 import android.accessibilityservice.AccessibilityService;
-import android.accessibilityservice.AccessibilityServiceInfo;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.util.Log;
@@ -37,8 +37,9 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
     /**
      * Starts loading detection data for the given app. Loading is done in a new thread.
      * @param packageName The package name of the app to load detection data for
+     * @param context     The application context
      */
-    public static void startLoadingDetectionData(String packageName) {
+    public static void startLoadingDetectionData(String packageName, Context context) {
         // Already loaded?
         synchronized (detectableAppsLoadedLock) {
             for (AppDetectionData data : detectableAppsLoaded) {
@@ -51,7 +52,7 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
             return;
 
         // Start new thread
-        AppDetectionDataLoader loader = new AppDetectionDataLoader(packageName, detectableAppsLoaded);
+        AppDetectionDataLoader loader = new AppDetectionDataLoader(packageName, detectableAppsLoaded, context);
         Thread loaderThread = new Thread(loader);
         detectableAppsLoading.put(packageName, loaderThread);
         loaderThread.start();
@@ -140,15 +141,6 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
     }
 
     /**
-     * Returns true iff a layout comparison shall be performed
-     */
-    private boolean shallPerformLayoutComparison(AccessibilityNodeInfo source) {
-        // TODO: only on window state changed or window content changed
-        return source != null
-                && System.currentTimeMillis() - timeOfLastLayoutComparison >= TIME_BETWEEN_LAYOUT_COMPARISONS;
-    }
-
-    /**
      * Stores the name of the current activity in {@link DetectAppScreenAccessibilityService#currentActivity}
      * @param event    AccessibilityEvent that has occurred
      */
@@ -166,6 +158,18 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
                 Log.i("CurrentActivity", componentName.flattenToShortString());
             }
         }
+    }
+
+    /**
+     * Returns true iff a layout comparison shall be performed
+     */
+    private boolean shallPerformLayoutComparison(AccessibilityEvent event) {
+        // TODO: only on window state changed or window content changed
+        AccessibilityNodeInfo source = event.getSource();
+        return source != null &&
+                (event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
+                || event.getEventType() == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
+                //&& System.currentTimeMillis() - timeOfLastLayoutComparison >= TIME_BETWEEN_LAYOUT_COMPARISONS;
     }
 
     /**
@@ -196,8 +200,7 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
             // Handle layout detection
             AppDetectionData detectionData = this.detectableApps.get(packageName);
             if (detectionData != null) {
-                AccessibilityNodeInfo sourceNodeInfo = event.getSource();
-                if (shallPerformLayoutComparison(sourceNodeInfo)) {
+                if (shallPerformLayoutComparison(event)) {
                     detectionData.checkLayout(event, currentActivity);
                     timeOfLastLayoutComparison = System.currentTimeMillis();
                 }
@@ -211,6 +214,16 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
                 AppDetectionData previousDetectionData = this.detectableApps.get(previousPackageName);
                 if (previousDetectionData != null)
                     previousDetectionData.saveAppUsageData();
+            }
+
+            // Clicked somewhere?
+            if (event.getEventType() == AccessibilityEvent.TYPE_VIEW_CLICKED) {
+                AccessibilityNodeInfo source = event.getSource();
+                if (source != null) {
+                    Log.i("CLICKED (id)", source.getViewIdResourceName() != null ? source.getViewIdResourceName() : "-");
+                    Log.i("CLICKED (descr)", source.getContentDescription() != null ? source.getContentDescription().toString() : "-");
+                    Log.i("CLICKED (text)", source.getText() != null ? source.getText().toString() : "-");
+                }
             }
 
             // Changed activity?
@@ -233,19 +246,19 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
         super.onServiceConnected();
 
         //Configure these here for compatibility with API 13 and below.
-        AccessibilityServiceInfo config = new AccessibilityServiceInfo();
+        //AccessibilityServiceInfo config = new AccessibilityServiceInfo();
 //        config.eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED;
 //        config.feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC;
-        config.eventTypes = AccessibilityEvent.TYPES_ALL_MASK;
-        config.feedbackType = AccessibilityServiceInfo.FEEDBACK_ALL_MASK;
-        config.flags = AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS | AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS;
+        //config.eventTypes = AccessibilityEvent.TYPES_ALL_MASK;
+        //config.feedbackType = AccessibilityServiceInfo.FEEDBACK_ALL_MASK;
+        //config.flags = AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS | AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS;
         //config.flags = AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS;
 
 //        if (Build.VERSION.SDK_INT >= 16)
 //            //Just in case this helps
 //            config.flags = AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS;
 
-        setServiceInfo(config);
+        //setServiceInfo(config);
 
         this.currentActivity = "";
         this.previousPackageName = "";

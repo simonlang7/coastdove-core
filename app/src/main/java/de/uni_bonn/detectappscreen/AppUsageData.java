@@ -26,11 +26,13 @@ public class AppUsageData {
      */
     private class AppUsageDataEntry {
         /** Time at which these data were collected */
-        public Date timestamp;
+        private Date timestamp;
         /** Activity detected */
-        public String activity;
+        private String activity;
         /** Layouts detected */
-        public Set<String> detectedLayouts;
+        private Set<String> detectedLayouts;
+        /** Number of consecutive occurrences of this data entry, disregarding the timestamp */
+        private int count;
 
         /**
          * Creates a new app usage data entry
@@ -42,6 +44,7 @@ public class AppUsageData {
             this.timestamp = timestamp;
             this.activity = activity;
             this.detectedLayouts = detectedLayouts;
+            this.count = 1;
         }
 
         /**
@@ -56,6 +59,7 @@ public class AppUsageData {
                 this.activity = entryJSON.getString("activity");
                 String timestamp = entryJSON.getString("timestamp");
                 this.timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS").parse(timestamp);
+                this.count = entryJSON.getInt("count");
                 JSONArray detectedLayoutsJSON = entryJSON.getJSONArray("detectedLayouts");
                 for (int i = 0; i < detectedLayoutsJSON.length(); ++i) {
                     String layout = detectedLayoutsJSON.getString(i);
@@ -69,6 +73,36 @@ public class AppUsageData {
         }
 
         /**
+         * Compares this entry with data for another entry, disregarding the timestamp
+         * @param activity           Activity to compare with this entry's activity
+         * @param detectedLayouts    Detected layouts to compare with this entry's detected layouts
+         * @return True if the activity and the detected layouts are equal, false otherwise
+         */
+        public boolean equals(String activity, Set<String> detectedLayouts) {
+            if (!this.activity.equals(activity))
+                return false;
+
+            if (this.detectedLayouts.size() != detectedLayouts.size())
+                return false;
+            outer: for (String layout : this.detectedLayouts) {
+                for (String otherLayout : detectedLayouts) {
+                    if (layout.equals(otherLayout))
+                        continue outer;
+                }
+                return false;
+            }
+
+            return true;
+        }
+
+        /**
+         * Increases the number of consecutive occurrences of this data entry (disregarding the timestamp)
+         */
+        public void increaseCount() {
+            ++this.count;
+        }
+
+        /**
          * Converts the entry to JSON and returns the according JSONObject
          */
         public JSONObject toJSON() {
@@ -77,6 +111,7 @@ public class AppUsageData {
                 result.put("timestamp", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS").format(this.timestamp));
                 result.put("activity", this.activity);
                 result.put("detectedLayouts", new JSONArray(this.detectedLayouts));
+                result.put("count", this.count);
             } catch (JSONException e) {
                 Log.e("AppUsageDataEntry", "Unable to create JSONObject: " + e.getMessage());
             }
@@ -126,20 +161,33 @@ public class AppUsageData {
      * @param timestamp          Time at which the data were collected
      * @param activity           Activity detected
      * @param detectedLayouts    Layouts detected
+     * @return True if a new data entry was added, false if the previous data entry equaled these data
      */
-    public void addDataEntry(Date timestamp, String activity, Set<String> detectedLayouts) {
-        AppUsageDataEntry entry = new AppUsageDataEntry(timestamp, activity, detectedLayouts);
-        this.dataEntries.add(entry);
+    public boolean addDataEntry(Date timestamp, String activity, Set<String> detectedLayouts) {
+        AppUsageDataEntry lastEntry = null;
+        if (this.dataEntries.size() > 0)
+            lastEntry = this.dataEntries.get(this.dataEntries.size()-1);
+
+        if (lastEntry != null && lastEntry.equals(activity, detectedLayouts)) {
+            lastEntry.increaseCount();
+            return false;
+        }
+        else {
+            AppUsageDataEntry entry = new AppUsageDataEntry(timestamp, activity, detectedLayouts);
+            this.dataEntries.add(entry);
+            return true;
+        }
     }
 
     /**
      * Adds a data entry, using the current time when creating the timestamp
      * @param activity           Activity detected
      * @param detectedLayouts    Layouts detected
+     * @return True if a new data entry was added, false if the previous data entry equaled these data
      */
-    public void addDataEntry(String activity, Set<String> detectedLayouts) {
+    public boolean addDataEntry(String activity, Set<String> detectedLayouts) {
         Date timestamp = new Date();
-        addDataEntry(timestamp, activity, detectedLayouts);
+        return addDataEntry(timestamp, activity, detectedLayouts);
     }
 
     /**

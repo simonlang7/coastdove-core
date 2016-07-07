@@ -1,5 +1,6 @@
 package de.uni_bonn.detectappscreen;
 
+import android.content.Context;
 import android.os.Environment;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
@@ -25,7 +26,10 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * Data needed for detecting layouts in an associated app
+ * Data needed for detecting layouts in an associated app. Layouts are identified by certain (if possible unique)
+ * identifiers their XML files contain. For now, only android:id properties are considered. There can be only one
+ * android ID that uniquely identifies a layout, or a set of several android IDs, though as few as possible are
+ * favored.
  */
 public class AppDetectionData {
 
@@ -46,11 +50,14 @@ public class AppDetectionData {
     /** Usage data collected for this session (that starts when the app is opened and ends when it's closed) */
     private AppUsageData currentAppUsageData;
 
+    /** Application context needed to scan files */
+    private Context context;
+
     /**
      * Reads a JSON file from the external storage public directory with the given sub-directory and filename
      * @param subDirectory    Sub-directory to use
      * @param filename        Filename of the file to read
-     * @return
+     * @return A JSONObject with the file's contents
      */
     public static JSONObject readJSONFile(String subDirectory, String filename) {
         JSONObject result = null;
@@ -84,12 +91,13 @@ public class AppDetectionData {
      * @param layouts        Layouts in JSON format
      * @param reverseMap     Reverse map in JSON format
      */
-    public AppDetectionData(String packageName, JSONObject layouts, JSONObject reverseMap) {
+    public AppDetectionData(String packageName, JSONObject layouts, JSONObject reverseMap, Context context) {
         this.finishedLoading = false;
         this.packageName = packageName;
         this.layoutsToLoad = layouts;
         this.reverseMapToLoad = reverseMap;
         this.currentAppUsageData = new AppUsageData(packageName);
+        this.context = context;
     }
 
     /**
@@ -97,12 +105,13 @@ public class AppDetectionData {
      * the layouts and reverse map files from the according directory
      * @param packageName
      */
-    public AppDetectionData(String packageName) {
+    public AppDetectionData(String packageName, Context context) {
         this.finishedLoading = false;
         this.packageName = packageName;
         this.layoutsToLoad = AppDetectionData.readJSONFile(packageName, "layouts.json");
         this.reverseMapToLoad = AppDetectionData.readJSONFile(packageName, "reverseMap.json");
         this.currentAppUsageData = new AppUsageData(packageName);
+        this.context = context;
     }
 
     /**
@@ -135,8 +144,9 @@ public class AppDetectionData {
         Set<String> possibleLayouts = possibleLayouts(androidIDsOnScreen);
         Set<String> recognizedLayouts = recognizedLayouts(androidIDsOnScreen, possibleLayouts);
 
-        currentAppUsageData.addDataEntry(activity, recognizedLayouts);
-        Log.i("Recognized Layouts: ", recognizedLayouts.toString());
+        boolean shallLog = currentAppUsageData.addDataEntry(activity, recognizedLayouts);
+        if (shallLog)
+            Log.i("Recognized Layouts", recognizedLayouts.toString());
     }
 
     /**
@@ -160,7 +170,7 @@ public class AppDetectionData {
      */
     private void writeAppUsageData() {
         AppUsageData appUsageData = currentAppUsageData;
-        new Thread(new AppUsageDataWriter("AppUsageData", appUsageData)).start();
+        new Thread(new AppUsageDataWriter("AppUsageData", appUsageData, this.context)).start();
     }
 
     /**
@@ -246,7 +256,7 @@ public class AppDetectionData {
                     androidIDsOnScreen.add(currentAndroidID);
                 }
 
-                // add children
+                // add children, todo: add only one child if this is a list
                 for (int i = 0; i < currentNodeInfo.getChildCount(); ++i)
                     nodeInfos.add(currentNodeInfo.getChild(i));
             }
