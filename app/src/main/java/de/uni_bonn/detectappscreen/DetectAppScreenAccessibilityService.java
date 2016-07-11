@@ -39,7 +39,8 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
      * @param packageName The package name of the app to load detection data for
      * @param context     The application context
      */
-    public static void startLoadingDetectionData(String packageName, Context context) {
+    public static void startLoadingDetectionData(String packageName, boolean performLayoutChecks,
+                                                 boolean performOnClickChecks, boolean performOnGestureChecks, Context context) {
         // Already loaded?
         synchronized (detectableAppsLoadedLock) {
             for (AppDetectionData data : detectableAppsLoaded) {
@@ -52,7 +53,8 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
             return;
 
         // Start new thread
-        AppDetectionDataLoader loader = new AppDetectionDataLoader(packageName, detectableAppsLoaded, context);
+        AppDetectionDataLoader loader = new AppDetectionDataLoader(packageName, detectableAppsLoaded,
+                performLayoutChecks, performOnClickChecks, performOnGestureChecks, context);
         Thread loaderThread = new Thread(loader);
         detectableAppsLoading.put(packageName, loaderThread);
         loaderThread.start();
@@ -161,18 +163,6 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
     }
 
     /**
-     * Returns true iff a layout comparison shall be performed
-     */
-    private boolean shallPerformLayoutComparison(AccessibilityEvent event) {
-        // TODO: only on window state changed or window content changed
-        AccessibilityNodeInfo source = event.getSource();
-        return source != null &&
-                (event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
-                || event.getEventType() == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
-                //&& System.currentTimeMillis() - timeOfLastLayoutComparison >= TIME_BETWEEN_LAYOUT_COMPARISONS;
-    }
-
-    /**
      * Activates any detectable app that has finished loading
      */
     private void activateDetectableApps() {
@@ -185,6 +175,8 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
             }
         }
     }
+
+    private String previousEventType = ""; // TODO DEBUG REMOVE
 
     /**
      * Checks the current activity and compares layouts of the current app as necessary
@@ -200,10 +192,8 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
             // Handle layout detection
             AppDetectionData detectionData = this.detectableApps.get(packageName);
             if (detectionData != null) {
-                if (shallPerformLayoutComparison(event)) {
-                    detectionData.checkLayout(event, currentActivity);
-                    timeOfLastLayoutComparison = System.currentTimeMillis();
-                }
+                detectionData.performChecks(event, getRootInActiveWindow(), currentActivity);
+                timeOfLastLayoutComparison = System.currentTimeMillis();
             }
 
             // Changed app? Write gathered data to file
@@ -217,14 +207,21 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
             }
 
             // Clicked somewhere?
-            if (event.getEventType() == AccessibilityEvent.TYPE_VIEW_CLICKED) {
-                AccessibilityNodeInfo source = event.getSource();
-                if (source != null) {
-                    Log.i("CLICKED (id)", source.getViewIdResourceName() != null ? source.getViewIdResourceName() : "-");
-                    Log.i("CLICKED (descr)", source.getContentDescription() != null ? source.getContentDescription().toString() : "-");
-                    Log.i("CLICKED (text)", source.getText() != null ? source.getText().toString() : "-");
-                }
-            }
+//            if (event.getEventType() == AccessibilityEvent.TYPE_VIEW_CLICKED) {
+//                AccessibilityNodeInfo source = event.getSource();
+//                if (source != null) {
+//
+//                    Log.i("CLICKED (id)   ", source.getViewIdResourceName() != null ? source.getViewIdResourceName() : "-");
+//                    Log.i("CLICKED (descr)", source.getContentDescription() != null ? source.getContentDescription().toString() : "-");
+//                    Log.i("CLICKED (text) ", source.getText() != null ? source.getText().toString() : "-");
+//                    Log.i("CLICKED (class)", source.getClassName() != null ? source.getClassName().toString() : "-");
+//                }
+//            }
+
+            String eventType = idToText(event);
+            if (!eventType.equals(previousEventType))
+                Log.i("Event type", eventType);
+            previousEventType = eventType;
 
             // Changed activity?
             if (!activityPackageName.equals(previousPackageName))
@@ -236,6 +233,58 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
 
 
 //        Log.i("AccessibilityEvent", "" + event.getEventType());
+    }
+
+    private String idToText(AccessibilityEvent event) {
+        switch (event.getEventType()) {
+            case AccessibilityEvent.TYPE_TOUCH_EXPLORATION_GESTURE_START:
+                return "TYPE_TOUCH_EXPLORATION_GESTURE_START";
+            case AccessibilityEvent.TYPE_TOUCH_EXPLORATION_GESTURE_END:
+                return "TYPE_TOUCH_EXPLORATION_GESTURE_END";
+            case AccessibilityEvent.TYPE_TOUCH_INTERACTION_START:
+                return "TYPE_TOUCH_INTERACTION_START";
+            case AccessibilityEvent.TYPE_TOUCH_INTERACTION_END:
+                return "TYPE_TOUCH_INTERACTION_END";
+            case AccessibilityEvent.TYPE_GESTURE_DETECTION_START:
+                return "TYPE_GESTURE_DETECTION_START";
+            case AccessibilityEvent.TYPE_GESTURE_DETECTION_END:
+                return "TYPE_GESTURE_DETECTION_END";
+            case AccessibilityEvent.TYPE_VIEW_HOVER_ENTER:
+                return "TYPE_VIEW_HOVER_ENTER";
+            case AccessibilityEvent.TYPE_VIEW_HOVER_EXIT:
+                return "TYPE_VIEW_HOVER_EXIT";
+            case AccessibilityEvent.TYPE_VIEW_SCROLLED:
+                return "TYPE_VIEW_SCROLLED";
+            case AccessibilityEvent.TYPE_VIEW_CLICKED:
+                return "TYPE_VIEW_CLICKED";
+            case AccessibilityEvent.TYPE_VIEW_LONG_CLICKED:
+                return "TYPE_VIEW_LONG_CLICKED";
+            case AccessibilityEvent.TYPE_VIEW_FOCUSED:
+                return "TYPE_VIEW_FOCUSED";
+            case AccessibilityEvent.TYPE_VIEW_SELECTED:
+                return "TYPE_VIEW_SELECTED";
+            case AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED:
+                return "TYPE_VIEW_ACCESSIBILITY_FOCUSED";
+            case AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED:
+                return "TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED";
+            case AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED:
+                return "TYPE_WINDOW_STATE_CHANGED";
+            case AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED:
+                return "TYPE_NOTIFICATION_STATE_CHANGED";
+            case AccessibilityEvent.TYPE_ANNOUNCEMENT:
+                return "TYPE_ANNOUNCEMENT";
+            case AccessibilityEvent.TYPE_WINDOWS_CHANGED:
+                return "TYPE_WINDOWS_CHANGED";
+            case AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED:
+                return "TYPE_WINDOW_CONTENT_CHANGED";
+            case AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED:
+                return "TYPE_VIEW_TEXT_CHANGED";
+            case AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED:
+                return "TYPE_VIEW_TEXT_SELECTION_CHANGED";
+            case AccessibilityEvent.TYPE_VIEW_TEXT_TRAVERSED_AT_MOVEMENT_GRANULARITY:
+                return "TYPE_VIEW_TEXT_TRAVERSED_AT_MOVEMENT_GRANULARITY";
+        }
+        return "Unknown";
     }
 
     /**

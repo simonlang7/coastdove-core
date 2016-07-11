@@ -16,29 +16,31 @@ import android.widget.CompoundButton;
 public class DetectableAppDetails extends AppCompatActivity {
 
     /** Name of the app to be detected */
-    private String appName;
+    private String packageName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detectable_app_menu);
 
-        // Get appName
+        // Get packageName
         if (savedInstanceState == null) {
             Bundle extras = getIntent().getExtras();
             if (extras == null)
-                this.appName = null;
+                this.packageName = null;
             else
-                this.appName = extras.getString("appName"); // TODO: make constant
+                this.packageName = extras.getString("packageName"); // TODO: make constant
         }
         else
-            this.appName = (String)savedInstanceState.getSerializable("appName");
+            this.packageName = (String)savedInstanceState.getSerializable("packageName");
 
 
         // Set support action bar
         Toolbar toolbar = (Toolbar)findViewById(R.id.detectable_app_toolbar);
-        toolbar.setTitle(this.appName);
+        toolbar.setTitle(this.packageName);
         setSupportActionBar(toolbar);
+
+        // todo: switches (how?)
     }
 
     @Override
@@ -48,14 +50,14 @@ public class DetectableAppDetails extends AppCompatActivity {
         // Switch for enabling/disabling app detection
         final MenuItem detectAppSwitch = menu.findItem(R.id.detect_app);
         final SwitchCompat actionView = (SwitchCompat)detectAppSwitch.getActionView();
-        actionView.setChecked(DetectAppScreenAccessibilityService.isDetectionDataLoadedOrLoading(appName));
+        actionView.setChecked(DetectAppScreenAccessibilityService.isDetectionDataLoadedOrLoading(packageName));
         actionView.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked)
-                    DetectAppScreenAccessibilityService.startLoadingDetectionData(appName, getApplicationContext());
+                    DetectAppScreenAccessibilityService.startLoadingDetectionData(packageName, false, true, true, getApplicationContext()); // todo: un-hardcode
                 else
-                    DetectAppScreenAccessibilityService.removeDetectionData(appName);
+                    DetectAppScreenAccessibilityService.removeDetectionData(packageName);
             }
         });
 

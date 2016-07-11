@@ -71,7 +71,7 @@ public class DetectableAppsListFragment extends ListFragment implements LoaderMa
         final String item = (String)listView.getItemAtPosition(position);
 
         Intent intent = new Intent(getActivity(), DetectableAppDetails.class);
-        intent.putExtra("appName", item); // TODO: make constant
+        intent.putExtra("packageName", item); // TODO: make constant
         startActivity(intent);
     }
 

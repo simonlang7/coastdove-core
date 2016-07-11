@@ -4,7 +4,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".DetectableAppDetails">
+    tools:context=".DetectableAppDetails"
+    android:orientation="vertical">
 
     <android.support.v7.widget.Toolbar
         android:id="@+id/detectable_app_toolbar"
@@ -14,5 +15,71 @@
         android:elevation="4dp"
         android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
         app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
+
+    <FrameLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:text="Perform Layout Checks"
+            android:id="@+id/layoutChecksTextView"
+            android:layout_gravity="center_vertical" />
+
+        <Switch
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/layoutChecksSwitch"
+            android:layout_gravity="right"
+            android:checked="false"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp" />
+    </FrameLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:text="Listen for OnClick events"
+            android:id="@+id/onClickTextView"
+            android:layout_gravity="center_vertical" />
+
+        <Switch
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/onClickSwitch"
+            android:layout_gravity="right"
+            android:checked="false"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp" />
+    </FrameLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:text="Listen for OnGesture events"
+            android:id="@+id/onGestureTextView"
+            android:layout_gravity="center_vertical" />
+
+        <Switch
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/onGestureSwitch"
+            android:layout_gravity="right"
+            android:checked="false"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp" />
+    </FrameLayout>
 
 </LinearLayout>

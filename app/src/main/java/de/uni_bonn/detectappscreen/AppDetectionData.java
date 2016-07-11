@@ -2,6 +2,7 @@ package de.uni_bonn.detectappscreen;
 
 import android.content.Context;
 import android.os.Environment;
+import android.support.v4.util.Pair;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
@@ -24,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * Data needed for detecting layouts in an associated app. Layouts are identified by certain (if possible unique)
@@ -33,7 +35,7 @@ import java.util.TreeSet;
  */
 public class AppDetectionData {
 
-    /** Indicates whether the data has finished loading or not */
+    /** Indicates whether the data has finished loading */
     private boolean finishedLoading;
     /** Layout definitions as JSON, to be used for building hashmaps */
     private JSONObject layoutsToLoad;
@@ -46,6 +48,10 @@ public class AppDetectionData {
     private Map<String, LayoutIdentification> layoutIdentificationMap;
     /** Reverse hashmap, mapping from sets of android IDs to layouts that can possibly be identified */
     private Map<String, Set<String>> reverseMap;
+
+    private boolean performLayoutChecks;
+    private boolean performOnClickChecks;
+    private boolean performOnGestureChecks;
 
     /** Usage data collected for this session (that starts when the app is opened and ends when it's closed) */
     private AppUsageData currentAppUsageData;
@@ -93,6 +99,9 @@ public class AppDetectionData {
      */
     public AppDetectionData(String packageName, JSONObject layouts, JSONObject reverseMap, Context context) {
         this.finishedLoading = false;
+        this.performLayoutChecks = false;
+        this.performOnClickChecks = false;
+        this.performOnGestureChecks = false;
         this.packageName = packageName;
         this.layoutsToLoad = layouts;
         this.reverseMapToLoad = reverseMap;
@@ -107,6 +116,9 @@ public class AppDetectionData {
      */
     public AppDetectionData(String packageName, Context context) {
         this.finishedLoading = false;
+        this.performLayoutChecks = false;
+        this.performOnClickChecks = false;
+        this.performOnGestureChecks = false;
         this.packageName = packageName;
         this.layoutsToLoad = AppDetectionData.readJSONFile(packageName, "layouts.json");
         this.reverseMapToLoad = AppDetectionData.readJSONFile(packageName, "reverseMap.json");
@@ -124,29 +136,39 @@ public class AppDetectionData {
     /**
      * Loads the app detection data, i.e. constructs hashmaps needed for realtime detection
      */
-    public void load() {
-        this.finishedLoading = buildHashMaps(this.layoutsToLoad, this.reverseMapToLoad);
+    public void load(boolean performLayoutChecks, boolean performOnClickChecks, boolean performOnGestureChecks) {
+        this.performLayoutChecks = performLayoutChecks;
+        this.performOnClickChecks = performOnClickChecks;
+        this.performOnGestureChecks = performOnGestureChecks;
+        boolean finishedLoading = true;
+
+        if (performLayoutChecks) {
+            boolean hashMapsLoaded = buildHashMaps(this.layoutsToLoad, this.reverseMapToLoad);
+            finishedLoading = finishedLoading && hashMapsLoaded;
+        }
+
+        this.finishedLoading = finishedLoading;
     }
 
     /**
-     * Performs necessary operations to detect the layouts currently being used by the according app
+     * Performs necessary operations to detect the layouts currently being used by the according app,
+     * and/or gesture events and/or on-click events
      * @param event       Accessibility event that was triggered
      * @param activity    Current activity to add to the AppUsageDataEntry
      */
-    public void checkLayout(AccessibilityEvent event, String activity) {
+    public void performChecks(AccessibilityEvent event, AccessibilityNodeInfo rootNodeInfo, String activity) {
         if (!isFinishedLoading())
             return;
 
-        AccessibilityNodeInfo sourceNodeInfo = event.getSource();
+        if (shallPerformLayoutChecks(event))
+            checkLayouts(event.getSource(), activity);
 
-        AccessibilityNodeInfo rootNodeInfo = getRootNodeInfo(sourceNodeInfo);
-        Set<String> androidIDsOnScreen = androidIDsOnScreen(rootNodeInfo);
-        Set<String> possibleLayouts = possibleLayouts(androidIDsOnScreen);
-        Set<String> recognizedLayouts = recognizedLayouts(androidIDsOnScreen, possibleLayouts);
+        if (shallPerformOnClickChecks(event)) {
+            Set<ClickedEventData> clickedEventData = checkOnClickEvents(event.getSource(), rootNodeInfo);
+            Log.i("Clicked events", clickedEventData.toString());
+        }
 
-        boolean shallLog = currentAppUsageData.addDataEntry(activity, recognizedLayouts);
-        if (shallLog)
-            Log.i("Recognized Layouts", recognizedLayouts.toString());
+        //boolean shallLog = currentAppUsageData.addDataEntry(activity, recognizedLayouts);
     }
 
     /**
@@ -163,6 +185,125 @@ public class AppDetectionData {
      */
     public String getPackageName() {
         return packageName;
+    }
+
+    /**
+     * Returns true iff a layout comparison shall be performed
+     */
+    private boolean shallPerformLayoutChecks(AccessibilityEvent event) {
+        if (event.getEventType() != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED &&
+                event.getEventType() != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED)
+            return false;
+        if (event.getSource() == null)
+            return false;
+        if (!performLayoutChecks)
+            return false;
+
+        return true;
+    }
+
+    /**
+     * Returns true iff an on-click event check shall be performed
+     */
+    private boolean shallPerformOnClickChecks(AccessibilityEvent event) {
+        if (event.getEventType() != AccessibilityEvent.TYPE_VIEW_CLICKED)
+            return false;
+        if (event.getSource() == null)
+            return false;
+        if (!performOnClickChecks)
+            return false;
+
+        return true;
+    }
+
+    /**
+     * Performs necessary operations to detect the layouts currently being used
+     * @param source      Source node info
+     * @param activity    Current activity to add to the AppUsageDataEntry
+     */
+    private void checkLayouts(AccessibilityNodeInfo source, String activity) {
+        AccessibilityNodeInfo rootNodeInfo = getRootNodeInfo(source);
+
+        Set<String> androidIDsOnScreen = androidIDsOnScreen(rootNodeInfo);
+        Set<String> possibleLayouts = possibleLayouts(androidIDsOnScreen);
+        Set<String> recognizedLayouts = recognizedLayouts(androidIDsOnScreen, possibleLayouts);
+
+        boolean shallLog = currentAppUsageData.addDataEntry(activity, recognizedLayouts);
+        if (shallLog)
+            Log.i("Recognized Layouts", recognizedLayouts.toString());
+    }
+
+    /**
+     * Handles on-click events, i.e. creates a data entry showing what element was clicked (todo)
+     * @param source    Source node info
+     * @return todo: subject to change
+     */
+    private Set<ClickedEventData> checkOnClickEvents(AccessibilityNodeInfo source, AccessibilityNodeInfo rootNodeInfo) {
+        Set<ClickedEventData> result = new CopyOnWriteArraySet<>();
+        //AccessibilityNodeInfo rootNodeInfo = getRootNodeInfo(source);
+        AccessibilityNodeInfo nodeInfo = null;
+
+        // Try to find the node info with the same text as the source.
+        // For some reason, the source does not contain any View ID information,
+        // so we need to find the same node info again in order to get the view ID.
+        if (source.getText() != null)
+            nodeInfo = findNodeInfo(rootNodeInfo, source.getText().toString(),
+                    source.getClassName() != null ? source.getClassName().toString() : null);
+        if (nodeInfo == null)
+            nodeInfo = source;
+
+        if (nodeInfo.getViewIdResourceName() != null || nodeInfo.getText() != null) {
+            result.add(new ClickedEventData(nodeInfo));
+        }
+        else {
+            // If that didn't work, try to get the view IDs of the children
+            if (source.getChildCount() > 0) {
+                for (int i = 0; i < source.getChildCount(); ++i) {
+                    AccessibilityNodeInfo child = source.getChild(i);
+                    if (child.getViewIdResourceName() != null)
+                        result.add(new ClickedEventData(child));
+                }
+            }
+            // ... or the parent, if we still haven't had any luck
+            if (result.size() == 0) {
+                AccessibilityNodeInfo parent = source.getParent();
+                if (parent != null && parent.getViewIdResourceName() != null)
+                    result.add(new ClickedEventData(parent));
+            }
+        }
+
+        return result;
+    }
+
+    private AccessibilityNodeInfo findNodeInfo(AccessibilityNodeInfo startNodeInfo, String matchingText, String matchingClassName) {
+        if (matchingText == null)
+            return null;
+
+        AccessibilityNodeInfo currentNodeInfo = startNodeInfo;
+        List<AccessibilityNodeInfo> nodeInfos = new LinkedList<>();
+        nodeInfos.add(currentNodeInfo);
+
+        // breadth-first search for a node info with matching text and/or matching class name
+        while (nodeInfos.size() > 0) {
+            currentNodeInfo = nodeInfos.get(0);
+            if (currentNodeInfo != null) {
+                boolean textMatch = currentNodeInfo.getText() != null && matchingText.equals(currentNodeInfo.getText().toString());
+                boolean classNameMatch = matchingClassName == null
+                        || (currentNodeInfo.getClassName() != null && matchingClassName.equals(currentNodeInfo.getClassName().toString()));
+
+                if (textMatch && classNameMatch)
+                    return currentNodeInfo;
+
+                // add children
+                for (int i = 0; i < currentNodeInfo.getChildCount(); ++i)
+                    nodeInfos.add(currentNodeInfo.getChild(i));
+            }
+
+
+            nodeInfos.remove(0);
+        }
+
+        return null;
     }
 
     /**
@@ -238,10 +379,10 @@ public class AppDetectionData {
 
     /**
      * Returns a set of android IDs that occur on the current screen
-     * @param rootNodeInfo    Root of the node info tree that contains all objects on the current screen
+     * @param startNodeInfo    Starting node from which to consider objects on screen (root node for all)
      */
-    private Set<String> androidIDsOnScreen(AccessibilityNodeInfo rootNodeInfo) {
-        AccessibilityNodeInfo currentNodeInfo = rootNodeInfo;
+    private Set<String> androidIDsOnScreen(AccessibilityNodeInfo startNodeInfo) {
+        AccessibilityNodeInfo currentNodeInfo = startNodeInfo;
         Set<String> androidIDsOnScreen = new TreeSet<>(Collator.getInstance());
 
         // Traverse tree downwards (breadth-first search)
