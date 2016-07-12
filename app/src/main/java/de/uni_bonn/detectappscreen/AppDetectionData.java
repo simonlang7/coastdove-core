@@ -51,7 +51,6 @@ public class AppDetectionData {
 
     private boolean performLayoutChecks;
     private boolean performOnClickChecks;
-    private boolean performOnGestureChecks;
 
     /** Usage data collected for this session (that starts when the app is opened and ends when it's closed) */
     private AppUsageData currentAppUsageData;
@@ -101,7 +100,6 @@ public class AppDetectionData {
         this.finishedLoading = false;
         this.performLayoutChecks = false;
         this.performOnClickChecks = false;
-        this.performOnGestureChecks = false;
         this.packageName = packageName;
         this.layoutsToLoad = layouts;
         this.reverseMapToLoad = reverseMap;
@@ -118,7 +116,6 @@ public class AppDetectionData {
         this.finishedLoading = false;
         this.performLayoutChecks = false;
         this.performOnClickChecks = false;
-        this.performOnGestureChecks = false;
         this.packageName = packageName;
         this.layoutsToLoad = AppDetectionData.readJSONFile(packageName, "layouts.json");
         this.reverseMapToLoad = AppDetectionData.readJSONFile(packageName, "reverseMap.json");
@@ -136,10 +133,9 @@ public class AppDetectionData {
     /**
      * Loads the app detection data, i.e. constructs hashmaps needed for realtime detection
      */
-    public void load(boolean performLayoutChecks, boolean performOnClickChecks, boolean performOnGestureChecks) {
+    public void load(boolean performLayoutChecks, boolean performOnClickChecks) {
         this.performLayoutChecks = performLayoutChecks;
         this.performOnClickChecks = performOnClickChecks;
-        this.performOnGestureChecks = performOnGestureChecks;
         boolean finishedLoading = true;
 
         if (performLayoutChecks) {

@@ -7,7 +7,6 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
-import android.view.accessibility.AccessibilityNodeInfo;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -40,7 +39,7 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
      * @param context     The application context
      */
     public static void startLoadingDetectionData(String packageName, boolean performLayoutChecks,
-                                                 boolean performOnClickChecks, boolean performOnGestureChecks, Context context) {
+                                                 boolean performOnClickChecks, Context context) {
         // Already loaded?
         synchronized (detectableAppsLoadedLock) {
             for (AppDetectionData data : detectableAppsLoaded) {
@@ -54,7 +53,7 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
 
         // Start new thread
         AppDetectionDataLoader loader = new AppDetectionDataLoader(packageName, detectableAppsLoaded,
-                performLayoutChecks, performOnClickChecks, performOnGestureChecks, context);
+                performLayoutChecks, performOnClickChecks, context);
         Thread loaderThread = new Thread(loader);
         detectableAppsLoading.put(packageName, loaderThread);
         loaderThread.start();
@@ -62,9 +61,8 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
     }
 
     /**
-     * Removes detection data for the given app, or stops loading the data if loading
+     * Removes detection data for the given app / package name, or stops loading the data if loading
      * is currently in progress
-     * @param packageName
      */
     public static void removeDetectionData(String packageName) {
         // Stop loading, remove from loading threads
@@ -97,12 +95,14 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
      * @return true iff detection data for the given app loaded or in the process of being loaded
      */
     public static boolean isDetectionDataLoadedOrLoading(String packageName) {
-        if (detectableAppsLoading.containsKey(packageName))
+        if (detectableAppsLoading != null && detectableAppsLoading.containsKey(packageName))
             return true;
-        synchronized (detectableAppsLoadedLock) {
-            for (AppDetectionData data : detectableAppsLoaded) {
-                if (data.getPackageName().equals(packageName))
-                    return true;
+        if (detectableAppsLoaded != null) {
+            synchronized (detectableAppsLoadedLock) {
+                for (AppDetectionData data : detectableAppsLoaded) {
+                    if (data.getPackageName().equals(packageName))
+                        return true;
+                }
             }
         }
 
@@ -114,7 +114,7 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
      * @param packageName Name of the package for the associated loader thread
      */
     public static void onDetectionDataLoadFinished(String packageName) {
-        if (detectableAppsLoading.containsKey(packageName)) {
+        if (detectableAppsLoading != null && detectableAppsLoading.containsKey(packageName)) {
             detectableAppsLoading.remove(packageName);
             Log.i("AppDetectionData", "Removed LoaderThread");
         }
@@ -176,8 +176,6 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
         }
     }
 
-    private String previousEventType = ""; // TODO DEBUG REMOVE
-
     /**
      * Checks the current activity and compares layouts of the current app as necessary
      * @param event
@@ -206,23 +204,6 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
                     previousDetectionData.saveAppUsageData();
             }
 
-            // Clicked somewhere?
-//            if (event.getEventType() == AccessibilityEvent.TYPE_VIEW_CLICKED) {
-//                AccessibilityNodeInfo source = event.getSource();
-//                if (source != null) {
-//
-//                    Log.i("CLICKED (id)   ", source.getViewIdResourceName() != null ? source.getViewIdResourceName() : "-");
-//                    Log.i("CLICKED (descr)", source.getContentDescription() != null ? source.getContentDescription().toString() : "-");
-//                    Log.i("CLICKED (text) ", source.getText() != null ? source.getText().toString() : "-");
-//                    Log.i("CLICKED (class)", source.getClassName() != null ? source.getClassName().toString() : "-");
-//                }
-//            }
-
-            String eventType = idToText(event);
-            if (!eventType.equals(previousEventType))
-                Log.i("Event type", eventType);
-            previousEventType = eventType;
-
             // Changed activity?
             if (!activityPackageName.equals(previousPackageName))
                 activateDetectableApps();
@@ -235,6 +216,7 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
 //        Log.i("AccessibilityEvent", "" + event.getEventType());
     }
 
+    // TODO: remove?
     private String idToText(AccessibilityEvent event) {
         switch (event.getEventType()) {
             case AccessibilityEvent.TYPE_TOUCH_EXPLORATION_GESTURE_START:

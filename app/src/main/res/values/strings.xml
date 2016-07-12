@@ -1,6 +1,10 @@
 <resources>
     <string name="app_name">DetectAppScreen</string>
+    <string name="shared_prefs_name">DetectAppScreen</string>
 
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <!-- Detectable App Details -->
+    <string name="activate">Activate</string>
+    <string name="detect_layouts">Detect Layouts</string>
+    <string name="detect_clicks">Detect Clicks</string>
+    <string name="detect_activities">Detect Activities</string>
 </resources>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Preference Names -->
+    <string name="pref_detect_layouts">:detect_layouts</string>
+    <string name="pref_detect_clicks">:detect_clicks</string>
+
+    <!-- Intent Extras -->
+    <string name="extras_package_name">packageName</string>
+
+</resources>
