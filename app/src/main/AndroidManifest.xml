@@ -33,7 +33,7 @@
         </service>
 
         <activity
-            android:name=".DetectableAppDetails"
+            android:name=".DetectableAppDetailsActivity"
             android:parentActivityName=".MainActivity">
         </activity>
     </application>

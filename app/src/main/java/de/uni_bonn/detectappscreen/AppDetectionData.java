@@ -2,7 +2,6 @@ package de.uni_bonn.detectappscreen;
 
 import android.content.Context;
 import android.os.Environment;
-import android.support.v4.util.Pair;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
@@ -44,6 +43,8 @@ public class AppDetectionData {
 
     /** Name of the package associated, i.e. the app that can be detected */
     private String packageName;
+    /** Indicates whether the hash maps (layoutIdentificationMap and reverseMap) have been loaded or not */
+    private boolean hashMapsLoaded;
     /** Hashmap mapping from each layout to a set of android IDs that identify the layout*/
     private Map<String, LayoutIdentification> layoutIdentificationMap;
     /** Reverse hashmap, mapping from sets of android IDs to layouts that can possibly be identified */
@@ -101,6 +102,7 @@ public class AppDetectionData {
         this.performLayoutChecks = false;
         this.performOnClickChecks = false;
         this.packageName = packageName;
+        this.hashMapsLoaded = false;
         this.layoutsToLoad = layouts;
         this.reverseMapToLoad = reverseMap;
         this.currentAppUsageData = new AppUsageData(packageName);
@@ -117,6 +119,7 @@ public class AppDetectionData {
         this.performLayoutChecks = false;
         this.performOnClickChecks = false;
         this.packageName = packageName;
+        this.hashMapsLoaded = false;
         this.layoutsToLoad = AppDetectionData.readJSONFile(packageName, "layouts.json");
         this.reverseMapToLoad = AppDetectionData.readJSONFile(packageName, "reverseMap.json");
         this.currentAppUsageData = new AppUsageData(packageName);
@@ -131,15 +134,15 @@ public class AppDetectionData {
     }
 
     /**
-     * Loads the app detection data, i.e. constructs hashmaps needed for realtime detection
+     * Loads the app detection data, i.e. constructs hash maps needed for real-time detection
      */
     public void load(boolean performLayoutChecks, boolean performOnClickChecks) {
         this.performLayoutChecks = performLayoutChecks;
         this.performOnClickChecks = performOnClickChecks;
         boolean finishedLoading = true;
 
-        if (performLayoutChecks) {
-            boolean hashMapsLoaded = buildHashMaps(this.layoutsToLoad, this.reverseMapToLoad);
+        if (performLayoutChecks && !this.hashMapsLoaded) {
+            this.hashMapsLoaded = buildHashMaps(this.layoutsToLoad, this.reverseMapToLoad);
             finishedLoading = finishedLoading && hashMapsLoaded;
         }
 
@@ -156,15 +159,22 @@ public class AppDetectionData {
         if (!isFinishedLoading())
             return;
 
-        if (shallPerformLayoutChecks(event))
-            checkLayouts(event.getSource(), activity);
+        if (shallPerformLayoutChecks(event)) {
+            Set<String> recognizedLayouts = checkLayouts(event.getSource());
+
+            boolean shallLog = currentAppUsageData.addLayoutDataEntry(activity, recognizedLayouts);
+            if (shallLog)
+                Log.i("Recognized layouts", recognizedLayouts.toString());
+        }
 
         if (shallPerformOnClickChecks(event)) {
             Set<ClickedEventData> clickedEventData = checkOnClickEvents(event.getSource(), rootNodeInfo);
-            Log.i("Clicked events", clickedEventData.toString());
+
+            boolean shallLog = currentAppUsageData.addClickDataEntry(activity, clickedEventData);
+            if (shallLog)
+                Log.i("Clicked events", clickedEventData.toString());
         }
 
-        //boolean shallLog = currentAppUsageData.addDataEntry(activity, recognizedLayouts);
     }
 
     /**
@@ -181,6 +191,14 @@ public class AppDetectionData {
      */
     public String getPackageName() {
         return packageName;
+    }
+
+    public boolean getPerformLayoutChecks() {
+        return this.performLayoutChecks;
+    }
+
+    public boolean getPerformOnClickChecks() {
+        return this.performOnClickChecks;
     }
 
     /**
@@ -215,24 +233,22 @@ public class AppDetectionData {
     /**
      * Performs necessary operations to detect the layouts currently being used
      * @param source      Source node info
-     * @param activity    Current activity to add to the AppUsageDataEntry
+     * @return Detected layouts
      */
-    private void checkLayouts(AccessibilityNodeInfo source, String activity) {
+    private Set<String> checkLayouts(AccessibilityNodeInfo source) {
         AccessibilityNodeInfo rootNodeInfo = getRootNodeInfo(source);
 
         Set<String> androidIDsOnScreen = androidIDsOnScreen(rootNodeInfo);
         Set<String> possibleLayouts = possibleLayouts(androidIDsOnScreen);
         Set<String> recognizedLayouts = recognizedLayouts(androidIDsOnScreen, possibleLayouts);
 
-        boolean shallLog = currentAppUsageData.addDataEntry(activity, recognizedLayouts);
-        if (shallLog)
-            Log.i("Recognized Layouts", recognizedLayouts.toString());
+        return recognizedLayouts;
     }
 
     /**
      * Handles on-click events, i.e. creates a data entry showing what element was clicked (todo)
      * @param source    Source node info
-     * @return todo: subject to change
+     * @return Data regarding this on-click event
      */
     private Set<ClickedEventData> checkOnClickEvents(AccessibilityNodeInfo source, AccessibilityNodeInfo rootNodeInfo) {
         Set<ClickedEventData> result = new CopyOnWriteArraySet<>();

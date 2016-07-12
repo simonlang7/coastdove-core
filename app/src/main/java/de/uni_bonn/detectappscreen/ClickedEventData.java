@@ -1,14 +1,31 @@
 package de.uni_bonn.detectappscreen;
 
+import android.util.Log;
 import android.view.accessibility.AccessibilityNodeInfo;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Data gathered when a TYPE_VIEW_CLICKED event occurs
  */
 public class ClickedEventData {
-    public String androidID;
-    public String text;
-    public String className;
+    private String androidID;
+    private String text;
+    private String className;
+
+    public ClickedEventData(JSONObject dataJSON) {
+        this.androidID = null;
+        this.text = null;
+        this.className = null;
+        try {
+            this.androidID = dataJSON.getString("androidID");
+            this.text = dataJSON.getString("text");
+            this.className = dataJSON.getString("className");
+        } catch (JSONException e) {
+            Log.e("ClickedEventData", "Unable to read from JSONObject: " + e.getMessage());
+        }
+    }
 
     public ClickedEventData(String androidID, String text, String className) {
         this.androidID = androidID;
@@ -25,5 +42,37 @@ public class ClickedEventData {
     @Override
     public String toString() {
         return "(ID: " + androidID + ", Text: " + text + ", Class: " + className + ")";
+    }
+
+    public boolean equals(ClickedEventData other) {
+        return this.androidID.equals(other.androidID) &&
+                this.text.equals(other.text) &&
+                this.className.equals(other.className);
+    }
+
+    public JSONObject toJSON() {
+        JSONObject result = new JSONObject();
+
+        try {
+            result.put("androidID", this.androidID);
+            result.put("text", this.text);
+            result.put("className", this.className);
+        } catch (JSONException e) {
+            Log.e("ClickedEventData", "Unable to create JSONObject for " + androidID + " (" + text + "): " + e.getMessage());
+        }
+
+        return result;
+    }
+
+    public String getClassName() {
+        return className;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public String getAndroidID() {
+        return androidID;
     }
 }
