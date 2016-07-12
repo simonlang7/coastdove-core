@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Accessibility Service for app screen detection. Once started, data needed for app detection
  * are loaded and the service initializes. The service collects the following data: the current
  * activity, the detected layouts of the current app (if the according data was loaded beforehand),
- * TODO: the items clicked by the user, the navigation buttons (home/back) clicked by the user
+ * and the items clicked by the user
  */
 public class DetectAppScreenAccessibilityService extends AccessibilityService {
 

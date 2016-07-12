@@ -52,29 +52,11 @@ public class AppUsageDataWriter implements Runnable {
              PrintWriter out = new PrintWriter(bw)) {
 
             out.println(data.toJSON().toString(4));
-            scanFile(file.getAbsolutePath());
+            FileHelper.scanFile(this.context, file.getAbsolutePath());
         } catch (JSONException e) {
             Log.e("AppUsageDataWriter", "Error writing JSONObject for " + data.getPackageName() + ": " + e.getMessage());
         } catch (IOException e) {
             Log.e("AppUsageDataWriter", "Input/Output error for " + data.getPackageName() + ": " + e.getMessage());
         }
-    }
-
-    /**
-     * Lets the media scanner scan any files given
-     * @param paths Absolute paths of the files to scan
-     */
-    private void scanFile(String... paths) {
-        MediaScannerConnection.scanFile(this.context, paths, null, new MediaScannerConnection.MediaScannerConnectionClient() {
-            @Override
-            public void onMediaScannerConnected() {
-
-            }
-
-            @Override
-            public void onScanCompleted(String path, Uri uri) {
-                Log.v("Media scanner", "Scanned file: " + path);
-            }
-        });
     }
 }

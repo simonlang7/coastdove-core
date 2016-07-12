@@ -5,6 +5,7 @@ import android.util.Log;
 import org.json.JSONArray;
 import org.json.JSONException;
 
+import java.io.Serializable;
 import java.text.Collator;
 import java.util.Collection;
 import java.util.List;
@@ -16,7 +17,9 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * Contains data needed in order to identify a certain layout of an app.
  * Usually, each of the layouts in res/layout/ can be identified using the according LayoutIdentification.
  */
-public class LayoutIdentification {
+public class LayoutIdentification implements Serializable {
+    private static final long serialVersionUID = -7572723163463700247L;
+
     /** Name of the layout to be identified, e.g. anything in res/layout/ of the according app */
     protected String name;
     /** Ambiguity factor; shows the number of ambiguous layouts to be identified the same way as this one.
@@ -49,14 +52,14 @@ public class LayoutIdentification {
         this.layoutIdentifiers = new CopyOnWriteArraySet<>();
         try {
             for (int i = 0; i < layoutIdentifiers.length(); ++i) {
-                Set<String> currentSet = new TreeSet<>(Collator.getInstance());
+                Set<String> currentSet = new TreeSet<>(new CollatorWrapper());
                 JSONArray currentArray = layoutIdentifiers.getJSONArray(i);
                 for (int j = 0; j < currentArray.length(); ++j)
                     currentSet.add(currentArray.getString(j));
                 this.layoutIdentifiers.add(currentSet);
             }
         } catch (JSONException e) {
-            Log.e("WDebug", "Error reading LayoutIdentification " + name + ": " + e.getMessage());
+            Log.e("LayoutIdentification", "Error reading JSONObject for LayoutIdentification " + name + ": " + e.getMessage());
         }
     }
 
@@ -80,5 +83,17 @@ public class LayoutIdentification {
      */
     public String getName() {
         return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setAmbiguity(int ambiguity) {
+        this.ambiguity = ambiguity;
+    }
+
+    public void setLayoutIdentifiers(Set<Set<String>> layoutIdentifiers) {
+        this.layoutIdentifiers = layoutIdentifiers;
     }
 }

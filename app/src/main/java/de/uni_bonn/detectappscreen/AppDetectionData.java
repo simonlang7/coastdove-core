@@ -1,7 +1,6 @@
 package de.uni_bonn.detectappscreen;
 
 import android.content.Context;
-import android.os.Environment;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
@@ -10,14 +9,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.text.Collator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -60,38 +51,6 @@ public class AppDetectionData {
     private Context context;
 
     /**
-     * Reads a JSON file from the external storage public directory with the given sub-directory and filename
-     * @param subDirectory    Sub-directory to use
-     * @param filename        Filename of the file to read
-     * @return A JSONObject with the file's contents
-     */
-    public static JSONObject readJSONFile(String subDirectory, String filename) {
-        JSONObject result = null;
-
-        File file = new File(Environment.getExternalStoragePublicDirectory("DetectAppScreen"), subDirectory + "/" + filename);
-        try (InputStream is = new FileInputStream(file);
-             InputStreamReader isr = new InputStreamReader(is);
-             BufferedReader br = new BufferedReader(isr)) {
-            String line;
-            StringBuilder stringBuilder = new StringBuilder();
-            while ((line = br.readLine()) != null) {
-                stringBuilder.append(line);
-                stringBuilder.append("\n");
-            }
-            result = new JSONObject(stringBuilder.toString());
-        } catch (FileNotFoundException e) {
-            Log.e("WDebug", "File not found: " + file.getAbsolutePath());
-            Log.e("WDebug", e.getMessage());
-        } catch (JSONException e) {
-            Log.e("WDebug", "Unable to create JSONObject from file (" + file.getAbsolutePath() + "): " + e.getMessage());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return result;
-    }
-
-    /**
      * Creates an AppDetectionData object using the given parameters
      * @param packageName    Name of the package for app detection
      * @param layouts        Layouts in JSON format
@@ -105,6 +64,8 @@ public class AppDetectionData {
         this.hashMapsLoaded = false;
         this.layoutsToLoad = layouts;
         this.reverseMapToLoad = reverseMap;
+        this.layoutIdentificationMap = null;
+        this.reverseMap = null;
         this.currentAppUsageData = new AppUsageData(packageName);
         this.context = context;
     }
@@ -112,7 +73,7 @@ public class AppDetectionData {
     /**
      * Creates an AppDetectionData object using the given parameters, automatically loads
      * the layouts and reverse map files from the according directory
-     * @param packageName
+     * @param packageName    Name of the package for app detection
      */
     public AppDetectionData(String packageName, Context context) {
         this.finishedLoading = false;
@@ -120,8 +81,10 @@ public class AppDetectionData {
         this.performOnClickChecks = false;
         this.packageName = packageName;
         this.hashMapsLoaded = false;
-        this.layoutsToLoad = AppDetectionData.readJSONFile(packageName, "layouts.json");
-        this.reverseMapToLoad = AppDetectionData.readJSONFile(packageName, "reverseMap.json");
+        this.layoutsToLoad = FileHelper.readJSONFile(packageName, "layouts.json");
+        this.reverseMapToLoad = FileHelper.readJSONFile(packageName, "reverseMap.json");
+        this.layoutIdentificationMap = null;
+        this.reverseMap = null;
         this.currentAppUsageData = new AppUsageData(packageName);
         this.context = context;
     }
@@ -142,7 +105,19 @@ public class AppDetectionData {
         boolean finishedLoading = true;
 
         if (performLayoutChecks && !this.hashMapsLoaded) {
-            this.hashMapsLoaded = buildHashMaps(this.layoutsToLoad, this.reverseMapToLoad);
+            // Are the hash maps ready in binary format? Load them.
+            this.hashMapsLoaded = buildHashMapsFromBinary();
+            // Otherwise, revert to building them from JSON files
+            if (!this.hashMapsLoaded) {
+                this.hashMapsLoaded = buildHashMapsFromJSON(this.layoutsToLoad, this.reverseMapToLoad);
+
+                // And save them as binaries
+                if (!FileHelper.fileExists(getPackageName(), "layoutsMap.bin"))
+                    FileHelper.writeHashMap(this.context, (HashMap)this.layoutIdentificationMap, getPackageName(), "layoutsMap.bin");
+                if (!FileHelper.fileExists(getPackageName(), "reverseMap.bin"))
+                    FileHelper.writeHashMap(this.context, (HashMap)this.reverseMap, getPackageName(), "reverseMap.bin");
+            }
+
             finishedLoading = finishedLoading && hashMapsLoaded;
         }
 
@@ -240,9 +215,7 @@ public class AppDetectionData {
 
         Set<String> androidIDsOnScreen = androidIDsOnScreen(rootNodeInfo);
         Set<String> possibleLayouts = possibleLayouts(androidIDsOnScreen);
-        Set<String> recognizedLayouts = recognizedLayouts(androidIDsOnScreen, possibleLayouts);
-
-        return recognizedLayouts;
+        return recognizedLayouts(androidIDsOnScreen, possibleLayouts);
     }
 
     /**
@@ -327,14 +300,36 @@ public class AppDetectionData {
     }
 
     /**
-     * Constructs hashmaps (layout -> (layout identifiers))
+     * Constructs hash maps (layout -> (layout identifiers))
      * and (android ID -> (possible layouts))
+     * from serialized objects
+     * @return True if building the hash maps was successful, false otherwise
+     */
+    private boolean buildHashMapsFromBinary() {
+        // TODO: un-hardcode
+        if (FileHelper.fileExists(getPackageName(), "layoutsMap.bin") &&
+                FileHelper.fileExists(getPackageName(), "reverseMap.bin")) {
+            Log.v("AppDetectionData", "Building hash maps from binary...");
+            this.layoutIdentificationMap =
+                    (Map<String, LayoutIdentification>)FileHelper.readHashMap(getPackageName(), "layoutsMap.bin");
+            this.reverseMap = (Map<String, Set<String>>)FileHelper.readHashMap(getPackageName(), "reverseMap.bin");
+            Log.v("AppDetectionData", "Finished building hash maps from binary");
+            return this.layoutIdentificationMap != null && this.reverseMap != null;
+        }
+
+        return false;
+    }
+
+    /**
+     * Constructs hash maps (layout -> (layout identifiers))
+     * and (android ID -> (possible layouts))
+     * from the given JSON objects
      * @param layouts       Layout definitions in JSON
      * @param reverseMap    Reverse map in JSON
-     * @return True if building the hashmaps was successful, false otherwise
+     * @return True if building the hash maps was successful, false otherwise
      */
-    private boolean buildHashMaps(JSONObject layouts, JSONObject reverseMap) {
-        Log.i("WDebug", "Building hashmaps...");
+    private boolean buildHashMapsFromJSON(JSONObject layouts, JSONObject reverseMap) {
+        Log.v("AppDetectionData", "Building hash maps from JSON...");
         this.layoutIdentificationMap = new HashMap<>();
         this.reverseMap = new HashMap<>();
 
@@ -361,17 +356,17 @@ public class AppDetectionData {
                 JSONObject currentElement = reverseMapAsArray.getJSONObject(i);
                 String androidID = currentElement.getString("androidID");
                 JSONArray layoutsAssociatedAsArray = currentElement.getJSONArray("layouts");
-                Set<String> layoutsAssociated = new TreeSet<>(Collator.getInstance());
+                Set<String> layoutsAssociated = new TreeSet<>(new CollatorWrapper());
                 for (int j = 0; j < layoutsAssociatedAsArray.length(); ++j)
                     layoutsAssociated.add(layoutsAssociatedAsArray.getString(j));
 
                 this.reverseMap.put(androidID, layoutsAssociated);
             }
         } catch (JSONException e) {
-            Log.e("WDebug", "Error reading from JSONObject: " + e.getMessage());
+            Log.e("AppDetectionData", "Error reading from JSONObject: " + e.getMessage());
         }
 
-        Log.i("WDebug", "Done building Hashmaps.");
+        Log.v("AppDetectionData", "Finished building hash maps from JSON");
 
         return true;
     }
@@ -395,7 +390,7 @@ public class AppDetectionData {
      */
     private Set<String> androidIDsOnScreen(AccessibilityNodeInfo startNodeInfo) {
         AccessibilityNodeInfo currentNodeInfo = startNodeInfo;
-        Set<String> androidIDsOnScreen = new TreeSet<>(Collator.getInstance());
+        Set<String> androidIDsOnScreen = new TreeSet<>(new CollatorWrapper());
 
         // Traverse tree downwards (breadth-first search)
         List<AccessibilityNodeInfo> nodeInfos = new LinkedList<>();
@@ -426,7 +421,7 @@ public class AppDetectionData {
      * @param androidIDs    set of android IDs detected on the screen
      */
     private Set<String> possibleLayouts(Set<String> androidIDs) {
-        Set<String> possibleLayouts = new TreeSet<>(Collator.getInstance());
+        Set<String> possibleLayouts = new TreeSet<>(new CollatorWrapper());
         for (String androidIDOnScreen : androidIDs) {
             Set<String> currentPossibleLayouts = this.reverseMap.get(androidIDOnScreen);
             if (currentPossibleLayouts != null)
@@ -443,7 +438,7 @@ public class AppDetectionData {
      * @param possibleLayouts    set of possibly recognizable layouts
      */
     private Set<String> recognizedLayouts(Set<String> androidIDs, Set<String> possibleLayouts) {
-        Set<String> recognizedLayouts = new TreeSet<>(Collator.getInstance());
+        Set<String> recognizedLayouts = new TreeSet<>(new CollatorWrapper());
         for (String possibleLayout : possibleLayouts) {
             LayoutIdentification layout = this.layoutIdentificationMap.get(possibleLayout);
             for (Set<String> layoutIdentifierSet : layout.getLayoutIdentifiers()) {

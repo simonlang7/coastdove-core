@@ -47,10 +47,11 @@ public class AppDetectionDataLoader implements Runnable {
         JSONObject layouts;
         JSONObject reverseMap;
         synchronized (DetectAppScreenAccessibilityService.detectableAppsLoadedLock) {
-            layouts = AppDetectionData.readJSONFile(packageName, "layouts.json");
-            reverseMap = AppDetectionData.readJSONFile(packageName, "reverseMap.json");
+            layouts = FileHelper.readJSONFile(packageName, "layouts.json");
+            reverseMap = FileHelper.readJSONFile(packageName, "reverseMap.json");
         }
         AppDetectionData detectableApp = new AppDetectionData(this.packageName, layouts, reverseMap, context);
+
         detectableApp.load(this.performLayoutChecks, this.performOnClickChecks);
         synchronized (DetectAppScreenAccessibilityService.detectableAppsLoadedLock) {
             if (detectableApp.isFinishedLoading())

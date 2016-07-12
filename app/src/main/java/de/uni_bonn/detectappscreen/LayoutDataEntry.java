@@ -27,7 +27,7 @@ public class LayoutDataEntry extends AppUsageDataEntry {
     public LayoutDataEntry(JSONObject entryJSON) {
         super(entryJSON);
 
-        this.detectedLayouts = new TreeSet<>(Collator.getInstance());
+        this.detectedLayouts = new TreeSet<>(new CollatorWrapper());
         try {
             JSONArray detectedLayoutsJSON = entryJSON.getJSONArray("detectedLayouts");
             for (int i = 0; i < detectedLayoutsJSON.length(); ++i) {
