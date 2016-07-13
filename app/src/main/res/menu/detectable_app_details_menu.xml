@@ -13,4 +13,9 @@
         app:showAsAction="never"
         android:checkable="true"/>
 
+    <item
+        android:id="@+id/item_delete_cache"
+        android:title="@string/delete_cache"
+        app:showAsAction="never"/>
+
 </menu>

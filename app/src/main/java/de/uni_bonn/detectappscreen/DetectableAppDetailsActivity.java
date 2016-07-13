@@ -76,11 +76,14 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
     public boolean onPrepareOptionsMenu(Menu menu) {
         MenuItem checkboxDetectLayouts = menu.findItem(R.id.checkbox_detect_layouts);
         MenuItem checkboxDetectClicks = menu.findItem(R.id.checkbox_detect_clicks);
+        MenuItem itemDeleteCache = menu.findItem(R.id.item_delete_cache);
+        boolean cacheExists = FileHelper.fileExists(packageName, "layoutsMap.bin") && FileHelper.fileExists(packageName, "reverseMap.bin");
 
         // If the detection data is currently in use, the menu items are disabled
         boolean detectionDataInUse = DetectAppScreenAccessibilityService.isDetectionDataLoadedOrLoading(packageName);
         checkboxDetectLayouts.setEnabled(!detectionDataInUse);
         checkboxDetectClicks.setEnabled(!detectionDataInUse);
+        itemDeleteCache.setEnabled(cacheExists && !detectionDataInUse);
 
         return super.onPrepareOptionsMenu(menu);
     }
@@ -96,6 +99,10 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
             case R.id.checkbox_detect_clicks:
                 item.setChecked(!item.isChecked());
                 setSharedPreference(packageName + getString(R.string.pref_detect_clicks), item.isChecked());
+                return true;
+            case R.id.item_delete_cache:
+                FileHelper.deleteFile(packageName, "layoutsMap.bin");
+                FileHelper.deleteFile(packageName, "reverseMap.bin");
                 return true;
             default:
                 return super.onOptionsItemSelected(item);

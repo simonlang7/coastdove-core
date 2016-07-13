@@ -1,6 +1,8 @@
 package de.uni_bonn.detectappscreen;
 
+import android.app.NotificationManager;
 import android.content.Context;
+import android.support.v7.app.NotificationCompat;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
@@ -49,6 +51,8 @@ public class AppDetectionData {
 
     /** Application context needed to scan files */
     private Context context;
+    /** Unique identifier for the notification progress bar */
+    private int uid;
 
     /**
      * Creates an AppDetectionData object using the given parameters
@@ -68,6 +72,7 @@ public class AppDetectionData {
         this.reverseMap = null;
         this.currentAppUsageData = new AppUsageData(packageName);
         this.context = context;
+        this.uid = packageName.hashCode();
     }
 
     /**
@@ -87,6 +92,7 @@ public class AppDetectionData {
         this.reverseMap = null;
         this.currentAppUsageData = new AppUsageData(packageName);
         this.context = context;
+        this.uid = packageName.hashCode();
     }
 
     /**
@@ -107,14 +113,18 @@ public class AppDetectionData {
         if (performLayoutChecks && !this.hashMapsLoaded) {
             // Are the hash maps ready in binary format? Load them.
             this.hashMapsLoaded = buildHashMapsFromBinary();
+            // If the thread was interrupted, do not load anything else
+            if (Thread.interrupted())
+                return;
+
             // Otherwise, revert to building them from JSON files
             if (!this.hashMapsLoaded) {
                 this.hashMapsLoaded = buildHashMapsFromJSON(this.layoutsToLoad, this.reverseMapToLoad);
 
                 // And save them as binaries
-                if (!FileHelper.fileExists(getPackageName(), "layoutsMap.bin"))
+                if (this.hashMapsLoaded && !FileHelper.fileExists(getPackageName(), "layoutsMap.bin"))
                     FileHelper.writeHashMap(this.context, (HashMap)this.layoutIdentificationMap, getPackageName(), "layoutsMap.bin");
-                if (!FileHelper.fileExists(getPackageName(), "reverseMap.bin"))
+                if (this.hashMapsLoaded && !FileHelper.fileExists(getPackageName(), "reverseMap.bin"))
                     FileHelper.writeHashMap(this.context, (HashMap)this.reverseMap, getPackageName(), "reverseMap.bin");
             }
 
@@ -309,11 +319,22 @@ public class AppDetectionData {
         // TODO: un-hardcode
         if (FileHelper.fileExists(getPackageName(), "layoutsMap.bin") &&
                 FileHelper.fileExists(getPackageName(), "reverseMap.bin")) {
+            if (Thread.currentThread().isInterrupted())
+                return false;
+
             Log.v("AppDetectionData", "Building hash maps from binary...");
             this.layoutIdentificationMap =
                     (Map<String, LayoutIdentification>)FileHelper.readHashMap(getPackageName(), "layoutsMap.bin");
+
+            if (Thread.currentThread().isInterrupted())
+                return false;
+
             this.reverseMap = (Map<String, Set<String>>)FileHelper.readHashMap(getPackageName(), "reverseMap.bin");
             Log.v("AppDetectionData", "Finished building hash maps from binary");
+
+            if (Thread.currentThread().isInterrupted())
+                return false;
+
             return this.layoutIdentificationMap != null && this.reverseMap != null;
         }
 
@@ -330,11 +351,23 @@ public class AppDetectionData {
      */
     private boolean buildHashMapsFromJSON(JSONObject layouts, JSONObject reverseMap) {
         Log.v("AppDetectionData", "Building hash maps from JSON...");
-        this.layoutIdentificationMap = new HashMap<>();
-        this.reverseMap = new HashMap<>();
+
+        NotificationManager notifyManager = (NotificationManager)this.context.getSystemService(Context.NOTIFICATION_SERVICE);
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this.context);
+        builder.setContentTitle(getPackageName())
+                .setContentText("Loading data")
+                .setSmallIcon(R.drawable.notification_template_icon_bg);
 
         try {
             JSONArray layoutsAsArray = layouts.getJSONArray("layoutDefinitions");
+            JSONArray reverseMapAsArray = reverseMap.getJSONArray("androidIDMap");
+            this.layoutIdentificationMap = new HashMap<>(layoutsAsArray.length(), 1.0f);
+            this.reverseMap = new HashMap<>(reverseMapAsArray.length(), 1.0f);
+            //int maxProgress = layoutsAsArray.length() + reverseMapAsArray.length();
+
+            builder.setProgress(0, 0, true);
+            notifyManager.notify(this.uid, builder.build());
+
             for (int i = 0; i < layoutsAsArray.length(); ++i) {
                 if (Thread.interrupted())
                     return false;
@@ -348,7 +381,6 @@ public class AppDetectionData {
                 this.layoutIdentificationMap.put(name, layoutIdentification);
             }
 
-            JSONArray reverseMapAsArray = reverseMap.getJSONArray("androidIDMap");
             for (int i = 0; i < reverseMapAsArray.length(); ++i) {
                 if (Thread.interrupted())
                     return false;
@@ -365,6 +397,8 @@ public class AppDetectionData {
         } catch (JSONException e) {
             Log.e("AppDetectionData", "Error reading from JSONObject: " + e.getMessage());
         }
+        builder.setContentText("Data loaded").setProgress(0, 0, false);
+        notifyManager.notify(this.uid, builder.build());
 
         Log.v("AppDetectionData", "Finished building hash maps from JSON");
 

@@ -111,6 +111,11 @@ public class FileHelper {
         return result;
     }
 
+    public static boolean deleteFile(String subDirectory, String filename) {
+        File file = new File(Environment.getExternalStoragePublicDirectory("DetectAppScreen"), subDirectory + "/" + filename);
+        return file.delete();
+    }
+
     public static boolean fileExists(String subDirectory, String filename) {
         File file = new File(Environment.getExternalStoragePublicDirectory("DetectAppScreen"), subDirectory + "/" + filename);
         return file.exists();

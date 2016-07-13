@@ -4,7 +4,8 @@
 
     <!-- Detectable App Details -->
     <string name="activate">Activate</string>
-    <string name="detect_layouts">Detect Layouts</string>
-    <string name="detect_clicks">Detect Clicks</string>
-    <string name="detect_activities">Detect Activities</string>
+    <string name="detect_layouts">Detect layouts</string>
+    <string name="detect_clicks">Detect clicks</string>
+    <string name="detect_activities">Detect activities</string>
+    <string name="delete_cache">Delete cache</string>
 </resources>
