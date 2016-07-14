@@ -43,8 +43,13 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         // Switch to activate detection of the specified app
+        boolean detectionDataLoadedOrLoading = false;
+        try {
+            detectionDataLoadedOrLoading = DetectAppScreenAccessibilityService.isDetectionDataLoadedOrLoading(this.packageName);
+        } catch (NullPointerException e) {
+        }
         final Switch activateSwitch = (Switch)findViewById(R.id.detectable_app_activate_switch);
-        activateSwitch.setChecked(DetectAppScreenAccessibilityService.isDetectionDataLoadedOrLoading(this.packageName));
+        activateSwitch.setChecked(detectionDataLoadedOrLoading);
         activateSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {

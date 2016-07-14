@@ -317,23 +317,44 @@ public class AppDetectionData {
      */
     private boolean buildHashMapsFromBinary() {
         // TODO: un-hardcode
+
+        NotificationManager notifyManager = (NotificationManager)this.context.getSystemService(Context.NOTIFICATION_SERVICE);
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this.context);
+        builder.setContentTitle(context.getString(R.string.app_name))
+                .setContentText(context.getString(R.string.notification_loading_1) + " " + getPackageName()
+                        + " " + context.getString(R.string.notification_loading_2))
+                .setSmallIcon(R.drawable.notification_template_icon_bg)
+                .setProgress(0, 0, true);
         if (FileHelper.fileExists(getPackageName(), "layoutsMap.bin") &&
                 FileHelper.fileExists(getPackageName(), "reverseMap.bin")) {
-            if (Thread.currentThread().isInterrupted())
+            if (Thread.currentThread().isInterrupted()) {
+                notifyManager.cancel(this.uid);
                 return false;
+            }
+
+            notifyManager.notify(this.uid, builder.build());
 
             Log.v("AppDetectionData", "Building hash maps from binary...");
             this.layoutIdentificationMap =
                     (Map<String, LayoutIdentification>)FileHelper.readHashMap(getPackageName(), "layoutsMap.bin");
 
-            if (Thread.currentThread().isInterrupted())
+            if (Thread.currentThread().isInterrupted()) {
+                notifyManager.cancel(this.uid);
                 return false;
+            }
 
             this.reverseMap = (Map<String, Set<String>>)FileHelper.readHashMap(getPackageName(), "reverseMap.bin");
             Log.v("AppDetectionData", "Finished building hash maps from binary");
 
-            if (Thread.currentThread().isInterrupted())
+            if (Thread.currentThread().isInterrupted()) {
+                notifyManager.cancel(this.uid);
                 return false;
+            }
+
+            builder.setContentText(context.getString(R.string.notification_finished_loading_1) + " " + getPackageName()
+                    + " " + context.getString(R.string.notification_finished_loading_2));
+            builder.setProgress(0, 0, false);
+            notifyManager.notify(this.uid, builder.build());
 
             return this.layoutIdentificationMap != null && this.reverseMap != null;
         }
@@ -354,9 +375,11 @@ public class AppDetectionData {
 
         NotificationManager notifyManager = (NotificationManager)this.context.getSystemService(Context.NOTIFICATION_SERVICE);
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this.context);
-        builder.setContentTitle(getPackageName())
-                .setContentText("Loading data")
-                .setSmallIcon(R.drawable.notification_template_icon_bg);
+        builder.setContentTitle(context.getString(R.string.app_name))
+                .setContentText(context.getString(R.string.notification_loading_1) + " " + getPackageName()
+                        + " " + context.getString(R.string.notification_loading_2))
+                .setSmallIcon(R.drawable.notification_template_icon_bg)
+                .setProgress(0, 0, true);
 
         try {
             JSONArray layoutsAsArray = layouts.getJSONArray("layoutDefinitions");
@@ -365,12 +388,13 @@ public class AppDetectionData {
             this.reverseMap = new HashMap<>(reverseMapAsArray.length(), 1.0f);
             //int maxProgress = layoutsAsArray.length() + reverseMapAsArray.length();
 
-            builder.setProgress(0, 0, true);
             notifyManager.notify(this.uid, builder.build());
 
             for (int i = 0; i < layoutsAsArray.length(); ++i) {
-                if (Thread.interrupted())
+                if (Thread.interrupted()) {
+                    notifyManager.cancel(this.uid);
                     return false;
+                }
 
                 JSONObject currentLayout = layoutsAsArray.getJSONObject(i);
                 String name = currentLayout.getString("name");
@@ -382,8 +406,10 @@ public class AppDetectionData {
             }
 
             for (int i = 0; i < reverseMapAsArray.length(); ++i) {
-                if (Thread.interrupted())
+                if (Thread.interrupted()) {
+                    notifyManager.cancel(this.uid);
                     return false;
+                }
 
                 JSONObject currentElement = reverseMapAsArray.getJSONObject(i);
                 String androidID = currentElement.getString("androidID");
@@ -397,7 +423,9 @@ public class AppDetectionData {
         } catch (JSONException e) {
             Log.e("AppDetectionData", "Error reading from JSONObject: " + e.getMessage());
         }
-        builder.setContentText("Data loaded").setProgress(0, 0, false);
+        builder.setContentText(context.getString(R.string.notification_finished_loading_1) + " " + getPackageName()
+                            + " " + context.getString(R.string.notification_finished_loading_2))
+                .setProgress(0, 0, false);
         notifyManager.notify(this.uid, builder.build());
 
         Log.v("AppDetectionData", "Finished building hash maps from JSON");

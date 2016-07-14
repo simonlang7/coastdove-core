@@ -8,4 +8,9 @@
     <string name="detect_clicks">Detect clicks</string>
     <string name="detect_activities">Detect activities</string>
     <string name="delete_cache">Delete cache</string>
+    <!-- Detectable App Notifications -->
+    <string name="notification_loading_1">Loading data for</string>
+    <string name="notification_loading_2"></string>
+    <string name="notification_finished_loading_1">Data loaded for</string>
+    <string name="notification_finished_loading_2"></string>
 </resources>
