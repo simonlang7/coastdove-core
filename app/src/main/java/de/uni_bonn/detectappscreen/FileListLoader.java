@@ -15,7 +15,10 @@ import java.util.List;
 public class FileListLoader extends Loader<ArrayList<String>> {
 
     /** Name of the app, needed for the external storage public directory */
-    private String appName;
+    private String packageName;
+
+    /** Name of the sub-directory to use */
+    private String subDirectory;
 
     /** Files to be excluded from the list */
     private List<String> filesToExclude;
@@ -26,31 +29,35 @@ public class FileListLoader extends Loader<ArrayList<String>> {
      * @param appName           Name of the app, needed for the external storage public directory
      * @param filesToExclude    Files to be excluded from the list
      */
-    public FileListLoader(Context context, String appName, List<String> filesToExclude) {
+    public FileListLoader(Context context, String appName, String subDirectory, String... filesToExclude) {
         super(context);
-        this.appName = appName;
-        this.filesToExclude = filesToExclude;
+        this.packageName = appName;
+        this.filesToExclude = new LinkedList<>();
+        for (String file : filesToExclude)
+            this.filesToExclude.add(file);
+        this.subDirectory = subDirectory != null ? subDirectory : "";
     }
 
     /**
      * Creates a new FileListLoader using the given data
      * @param context           Application context
-     * @param appName           Name of the app, needed for the external storage public directory
+     * @param packageName           Name of the app, needed for the external storage public directory
      */
-    public FileListLoader(Context context, String appName) {
+    public FileListLoader(Context context, String packageName, String subDirectory) {
         super(context);
-        this.appName = appName;
+        this.packageName = packageName;
         this.filesToExclude = new LinkedList<>();
+        this.subDirectory = subDirectory != null ? subDirectory : "";
     }
 
     /**
      * Loads the list of files in the external storage public directory of the given app name, usually
-     * /sdcard/{appName}/, and delivers the result
+     * /sdcard/{packageName}/{subDirectory}/, and delivers the result
      */
     @Override
     public void onStartLoading() {
-        File directory = Environment.getExternalStoragePublicDirectory(appName);
-        String[] files = directory.list();
+        File directory = new File(Environment.getExternalStoragePublicDirectory(packageName), subDirectory);
+        String[] files = directory.exists() ? directory.list() : new String[0];
         ArrayList<String> data = new ArrayList<>(files.length);
         for (int i = 0; i < files.length; ++i) {
             if (!this.filesToExclude.contains(files[i]))

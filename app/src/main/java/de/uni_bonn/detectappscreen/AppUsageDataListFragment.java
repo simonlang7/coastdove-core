@@ -1,6 +1,5 @@
 package de.uni_bonn.detectappscreen;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.content.Loader;
 import android.view.View;
@@ -10,34 +9,36 @@ import android.widget.ListView;
 import java.util.ArrayList;
 
 /**
- * ListFragment containing all available apps that can be detected by the accessibility service
+ * ListFragment displayed in the DetectableAppDetailsActivity,
+ * shows a list of collected usage data for the according app
  */
-public class DetectableAppsListFragment extends FileListFragment {
+public class AppUsageDataListFragment extends FileListFragment {
+
 
     @Override
     public Loader<ArrayList<String>> onCreateLoader(int id, Bundle args) {
-        return new FileListLoader(getActivity(), getString(R.string.external_folder_name), null);
+        String subDirectory = ((DetectableAppDetailsActivity)getActivity()).getAppPackageName();
+        return new FileListLoader(getActivity(), getString(R.string.external_folder_name),
+                subDirectory + "/" + getString(R.string.app_usage_data_folder_name));
     }
 
     @Override
     public void onLoaderReset(Loader<ArrayList<String>> loader) {
     }
 
+
     @Override
     public void onListItemClick(ListView listView, View view, int position, long id) {
         super.onListItemClick(listView, view, position, id);
-        super.onListItemClick(listView, view, position, id);
         final String item = (String)listView.getItemAtPosition(position);
 
-        Intent intent = new Intent(getActivity(), DetectableAppDetailsActivity.class);
-        intent.putExtra(getString(R.string.extras_package_name), item);
-        startActivity(intent);
+//        Intent intent = new Intent(getActivity(), DetectableAppDetailsActivity.class);
+//        intent.putExtra("filename", item); // TODO: make constant
+//        startActivity(intent);
     }
-
     @Override
     protected void addProgressBarToViewGroup() {
-        ViewGroup root = (ViewGroup)getActivity().findViewById(R.id.fragment_detectable_apps_file_list);
+        ViewGroup root = (ViewGroup)getActivity().findViewById(R.id.fragment_app_usage_data_file_list);
         root.addView(this.progressBar);
     }
-
 }

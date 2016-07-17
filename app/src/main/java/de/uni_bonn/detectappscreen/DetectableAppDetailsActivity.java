@@ -18,7 +18,7 @@ import android.widget.Switch;
 public class DetectableAppDetailsActivity extends AppCompatActivity {
 
     /** Package name of the app to be detected */
-    private String packageName;
+    private String appPackageName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,23 +29,23 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
         if (savedInstanceState == null) {
             Bundle extras = getIntent().getExtras();
             if (extras == null)
-                this.packageName = null;
+                this.appPackageName = null;
             else
-                this.packageName = extras.getString(getString(R.string.extras_package_name));
+                this.appPackageName = extras.getString(getString(R.string.extras_package_name));
         }
         else
-            this.packageName = (String)savedInstanceState.getSerializable(getString(R.string.extras_package_name));
+            this.appPackageName = (String)savedInstanceState.getSerializable(getString(R.string.extras_package_name));
 
 
         // Set support action bar
         Toolbar toolbar = (Toolbar)findViewById(R.id.detectable_app_toolbar);
-        toolbar.setTitle(this.packageName);
+        toolbar.setTitle(this.appPackageName);
         setSupportActionBar(toolbar);
 
         // Switch to activate detection of the specified app
         boolean detectionDataLoadedOrLoading = false;
         try {
-            detectionDataLoadedOrLoading = DetectAppScreenAccessibilityService.isDetectionDataLoadedOrLoading(this.packageName);
+            detectionDataLoadedOrLoading = DetectAppScreenAccessibilityService.isDetectionDataLoadedOrLoading(this.appPackageName);
         } catch (NullPointerException e) {
         }
         final Switch activateSwitch = (Switch)findViewById(R.id.detectable_app_activate_switch);
@@ -56,12 +56,12 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
                 if (isChecked) {
                     // Check whether to load layout and click detection
                     SharedPreferences preferences = getPreferences(MODE_PRIVATE);
-                    boolean detectLayouts = preferences.getBoolean(packageName + getString(R.string.pref_detect_layouts), false);
-                    boolean detectClicks = preferences.getBoolean(packageName + getString(R.string.pref_detect_clicks), false);
-                    DetectAppScreenAccessibilityService.startLoadingDetectionData(packageName, detectLayouts, detectClicks, getApplicationContext());
+                    boolean detectLayouts = preferences.getBoolean(appPackageName + getString(R.string.pref_detect_layouts), false);
+                    boolean detectClicks = preferences.getBoolean(appPackageName + getString(R.string.pref_detect_clicks), false);
+                    DetectAppScreenAccessibilityService.startLoadingDetectionData(appPackageName, detectLayouts, detectClicks, getApplicationContext());
                 }
                 else
-                    DetectAppScreenAccessibilityService.removeDetectionData(packageName);
+                    DetectAppScreenAccessibilityService.removeDetectionData(appPackageName);
             }
         });
     }
@@ -82,10 +82,10 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
         MenuItem checkboxDetectLayouts = menu.findItem(R.id.checkbox_detect_layouts);
         MenuItem checkboxDetectClicks = menu.findItem(R.id.checkbox_detect_clicks);
         MenuItem itemDeleteCache = menu.findItem(R.id.item_delete_cache);
-        boolean cacheExists = FileHelper.fileExists(packageName, "layoutsMap.bin") && FileHelper.fileExists(packageName, "reverseMap.bin");
+        boolean cacheExists = FileHelper.fileExists(appPackageName, "layoutsMap.bin") && FileHelper.fileExists(appPackageName, "reverseMap.bin");
 
         // If the detection data is currently in use, the menu items are disabled
-        boolean detectionDataInUse = DetectAppScreenAccessibilityService.isDetectionDataLoadedOrLoading(packageName);
+        boolean detectionDataInUse = DetectAppScreenAccessibilityService.isDetectionDataLoadedOrLoading(appPackageName);
         checkboxDetectLayouts.setEnabled(!detectionDataInUse);
         checkboxDetectClicks.setEnabled(!detectionDataInUse);
         itemDeleteCache.setEnabled(cacheExists && !detectionDataInUse);
@@ -99,15 +99,15 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
         switch (item.getItemId()) {
             case R.id.checkbox_detect_layouts:
                 item.setChecked(!item.isChecked());
-                setSharedPreference(packageName + getString(R.string.pref_detect_layouts), item.isChecked());
+                setSharedPreference(appPackageName + getString(R.string.pref_detect_layouts), item.isChecked());
                 return true;
             case R.id.checkbox_detect_clicks:
                 item.setChecked(!item.isChecked());
-                setSharedPreference(packageName + getString(R.string.pref_detect_clicks), item.isChecked());
+                setSharedPreference(appPackageName + getString(R.string.pref_detect_clicks), item.isChecked());
                 return true;
             case R.id.item_delete_cache:
-                FileHelper.deleteFile(packageName, "layoutsMap.bin");
-                FileHelper.deleteFile(packageName, "reverseMap.bin");
+                FileHelper.deleteFile(appPackageName, "layoutsMap.bin");
+                FileHelper.deleteFile(appPackageName, "reverseMap.bin");
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -120,6 +120,13 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
     public void activateDetectableApp(View view) {
         Switch activateSwitch = (Switch)findViewById(R.id.detectable_app_activate_switch);
         activateSwitch.setChecked(!activateSwitch.isChecked());
+    }
+
+    /**
+     * Returns the package name of the app to be detected
+     */
+    public String getAppPackageName() {
+        return this.appPackageName;
     }
 
     /**
@@ -141,7 +148,7 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
      */
     private void setUpCheckbox(MenuItem item, String prefString) {
         SharedPreferences preferences = getPreferences(MODE_PRIVATE);
-        boolean checked = preferences.getBoolean(packageName + prefString, false);
+        boolean checked = preferences.getBoolean(appPackageName + prefString, false);
         item.setChecked(checked);
     }
 }

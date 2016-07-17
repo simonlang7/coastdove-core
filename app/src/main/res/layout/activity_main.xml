@@ -20,9 +20,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:name="de.uni_bonn.detectappscreen.DetectableAppsListFragment"
-        android:id="@+id/fragment"
+        android:id="@+id/fragment_detectable_apps_file_list"
         android:layout_gravity="center_horizontal"
-        tools:layout="@layout/fragment_detectable_app_list"
+        tools:layout="@layout/fragment_file_list"
         android:layout_weight="1" />
 
     <Button

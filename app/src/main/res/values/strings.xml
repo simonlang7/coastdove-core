@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">DetectAppScreen</string>
-    <string name="shared_prefs_name">DetectAppScreen</string>
 
     <!-- Detectable App Details -->
     <string name="activate">Activate</string>
