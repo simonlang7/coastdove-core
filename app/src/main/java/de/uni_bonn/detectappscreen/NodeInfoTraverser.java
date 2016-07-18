@@ -11,32 +11,6 @@ import java.util.Queue;
  * returning all nodes that match a certain criterion
  */
 public class NodeInfoTraverser<T> {
-    /**
-     * Class to filter node infos according to specified rules
-     */
-    public abstract class NodeInfoFilter {
-        /**
-         * Indicates whether the given node info applies to the
-         * implemented filter or not.
-         * @param nodeInfo    Node info to be filtered
-         * @return True if the rule applies to the node info, false otherwise.
-         */
-        public abstract boolean filter(AccessibilityNodeInfo nodeInfo);
-    }
-
-    /**
-     * Class to extract data from a node info
-     */
-    public abstract class NodeInfoDataExtractor<T> {
-        /**
-         * Extracts data from a given node info.
-         * @param nodeInfo    Node info to extract data from
-         * @return Data extracted
-         */
-        public abstract T extractData(AccessibilityNodeInfo nodeInfo);
-    }
-
-
     /** Node info from which to start traversing the tree */
     private AccessibilityNodeInfo startNodeInfo;
     /** Queue of node infos needed for processing */
@@ -87,6 +61,15 @@ public class NodeInfoTraverser<T> {
     }
 
     /**
+     * Start over with a new start node info
+     * @param startNodeInfo
+     */
+    public void reset(AccessibilityNodeInfo startNodeInfo) {
+        this.startNodeInfo = startNodeInfo;
+        reset();
+    }
+
+    /**
      * @return True if there is at least one element left in the tree,
      * false otherwise
      */
@@ -105,6 +88,19 @@ public class NodeInfoTraverser<T> {
             return extractData(currentNodeInfo);
         else
             return null;
+    }
+
+    /**
+     * Extracts data from the next node info in the tree to which the filter applies
+     * @return The data extracted from the next node info to which the filter applies
+     */
+    public T nextFiltered() {
+        while (hasNext()) {
+            AccessibilityNodeInfo currentNodeInfo = nextNodeInfo();
+            if (currentNodeInfo != null && filter(currentNodeInfo))
+                return extractData(currentNodeInfo);
+        }
+        return null;
     }
 
     /**

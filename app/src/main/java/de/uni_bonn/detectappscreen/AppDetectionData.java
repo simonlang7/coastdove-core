@@ -2,6 +2,7 @@ package de.uni_bonn.detectappscreen;
 
 import android.app.NotificationManager;
 import android.content.Context;
+import android.graphics.Rect;
 import android.support.v7.app.NotificationCompat;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
@@ -236,74 +237,73 @@ public class AppDetectionData {
     private Set<ClickedEventData> checkOnClickEvents(AccessibilityNodeInfo source, AccessibilityNodeInfo rootNodeInfo) {
         Set<ClickedEventData> result = new CopyOnWriteArraySet<>();
         //AccessibilityNodeInfo rootNodeInfo = getRootNodeInfo(source);
-        AccessibilityNodeInfo nodeInfo = null;
+        AccessibilityNodeInfo subTree = null;
 
-        // Try to find the node info with the same text as the source.
+        // Try to find the node info with the same bounds as the source.
         // For some reason, the source does not contain any View ID information,
         // so we need to find the same node info again in order to get the view ID.
-        if (source.getText() != null) {
-            nodeInfo = findNodeInfo(rootNodeInfo, source.getText().toString(),
-                    source.getClassName() != null ? source.getClassName().toString() : null);
-        }
-        if (nodeInfo == null)
-            nodeInfo = source;
+        Rect bounds = new Rect();
+        source.getBoundsInParent(bounds);
+        final Rect boundsInParent = new Rect(bounds);
+        source.getBoundsInScreen(bounds);
+        final Rect boundsInScreen = new Rect(bounds);
 
-        if (nodeInfo.getViewIdResourceName() != null || nodeInfo.getText() != null) {
-            result.add(new ClickedEventData(nodeInfo));
-        }
-        else {
-            // If that didn't work, try to get the view IDs of the children
-            if (source.getChildCount() > 0) {
-                for (int i = 0; i < source.getChildCount(); ++i) {
-                    AccessibilityNodeInfo child = source.getChild(i);
-                    if (child != null &&
-                            (child.getViewIdResourceName() != null
-                            || child.getText() != null))
-                        result.add(new ClickedEventData(child));
-                }
-            }
-            // ... or the parent, if we still haven't had any luck
-            if (result.size() == 0) {
-                AccessibilityNodeInfo parent = source.getParent();
-                if (parent != null &&
-                        (parent.getViewIdResourceName() != null
-                        || parent.getText() != null))
-                    result.add(new ClickedEventData(parent));
-            }
+        NodeInfoTraverser<AccessibilityNodeInfo> nodeFinder = new NodeInfoTraverser<>(rootNodeInfo,
+                new NodeInfoDataExtractor<AccessibilityNodeInfo>() {
+                    @Override
+                    public AccessibilityNodeInfo extractData(AccessibilityNodeInfo nodeInfo) {
+                        // We need the node info directly
+                        return nodeInfo;
+                    }
+                },
+                new NodeInfoFilter() {
+                    @Override
+                    public boolean filter(AccessibilityNodeInfo nodeInfo) {
+                        // But only the (first) one with matching bounds
+                        if (nodeInfo == null)
+                            return false;
+                        Rect bounds = new Rect();
+                        nodeInfo.getBoundsInParent(bounds);
+                        if (!bounds.equals(boundsInParent))
+                            return false;
+                        nodeInfo.getBoundsInScreen(bounds);
+                        if (!bounds.equals(boundsInScreen))
+                            return false;
+
+                        return true;
+                    }
+                });
+        subTree = nodeFinder.nextFiltered();
+        if (subTree == null)
+            subTree = source;
+
+        NodeInfoTraverser<ClickedEventData> traverser = new NodeInfoTraverser<>(subTree,
+                new NodeInfoDataExtractor<ClickedEventData>() {
+                    @Override
+                    public ClickedEventData extractData(AccessibilityNodeInfo nodeInfo) {
+                        return new ClickedEventData(nodeInfo);
+                    }
+                },
+                new NodeInfoFilter() {
+                    @Override
+                    public boolean filter(AccessibilityNodeInfo nodeInfo) {
+                        return nodeInfo != null &&
+                                (nodeInfo.getViewIdResourceName() != null || nodeInfo.getText() != null);
+                    }
+                });
+
+        result.addAll(traverser.getAllFiltered());
+
+        // todo: do not add parent?
+        if (result.size() == 0) {
+            AccessibilityNodeInfo parent = source.getParent();
+            if (parent != null &&
+                    (parent.getViewIdResourceName() != null
+                    || parent.getText() != null))
+                result.add(new ClickedEventData(parent));
         }
 
         return result;
-    }
-
-    private AccessibilityNodeInfo findNodeInfo(AccessibilityNodeInfo startNodeInfo, String matchingText, String matchingClassName) {
-        if (matchingText == null)
-            return null;
-
-        AccessibilityNodeInfo currentNodeInfo = startNodeInfo;
-        List<AccessibilityNodeInfo> nodeInfos = new LinkedList<>();
-        nodeInfos.add(currentNodeInfo);
-
-        // breadth-first search for a node info with matching text and/or matching class name
-        while (nodeInfos.size() > 0) {
-            currentNodeInfo = nodeInfos.get(0);
-            if (currentNodeInfo != null) {
-                boolean textMatch = currentNodeInfo.getText() != null && matchingText.equals(currentNodeInfo.getText().toString());
-                boolean classNameMatch = matchingClassName == null
-                        || (currentNodeInfo.getClassName() != null && matchingClassName.equals(currentNodeInfo.getClassName().toString()));
-
-                if (textMatch && classNameMatch)
-                    return currentNodeInfo;
-
-                // add children
-                for (int i = 0; i < currentNodeInfo.getChildCount(); ++i)
-                    nodeInfos.add(currentNodeInfo.getChild(i));
-            }
-
-
-            nodeInfos.remove(0);
-        }
-
-        return null;
     }
 
     /**
