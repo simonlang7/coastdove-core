@@ -158,8 +158,9 @@ public class AppUsageData {
     }
 
     /**
-     * If the previous entry of the same type is equal to the given one, that entry's
-     * count is increased.
+     * If the previous layout entry of the is equal to the given one, that entry's
+     * count is increased. If the given entry and the last processed entry are both
+     * click entries, and they're equal, the last processed entry's count is increased.
      * @param other    Entry to compare the previous same-type entry with
      * @return True if the entries are equal, false otherwise
      */

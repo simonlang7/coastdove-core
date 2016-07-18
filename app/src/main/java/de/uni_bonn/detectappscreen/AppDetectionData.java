@@ -241,9 +241,10 @@ public class AppDetectionData {
         // Try to find the node info with the same text as the source.
         // For some reason, the source does not contain any View ID information,
         // so we need to find the same node info again in order to get the view ID.
-        if (source.getText() != null)
+        if (source.getText() != null) {
             nodeInfo = findNodeInfo(rootNodeInfo, source.getText().toString(),
                     source.getClassName() != null ? source.getClassName().toString() : null);
+        }
         if (nodeInfo == null)
             nodeInfo = source;
 
@@ -255,14 +256,18 @@ public class AppDetectionData {
             if (source.getChildCount() > 0) {
                 for (int i = 0; i < source.getChildCount(); ++i) {
                     AccessibilityNodeInfo child = source.getChild(i);
-                    if (child.getViewIdResourceName() != null)
+                    if (child != null &&
+                            (child.getViewIdResourceName() != null
+                            || child.getText() != null))
                         result.add(new ClickedEventData(child));
                 }
             }
             // ... or the parent, if we still haven't had any luck
             if (result.size() == 0) {
                 AccessibilityNodeInfo parent = source.getParent();
-                if (parent != null && parent.getViewIdResourceName() != null)
+                if (parent != null &&
+                        (parent.getViewIdResourceName() != null
+                        || parent.getText() != null))
                     result.add(new ClickedEventData(parent));
             }
         }
