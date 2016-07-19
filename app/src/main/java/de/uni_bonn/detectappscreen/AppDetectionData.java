@@ -30,7 +30,7 @@ public class AppDetectionData {
 
     /** Indicates whether the data has finished loading */
     private boolean finishedLoading;
-    /** Layout definitions as JSON, to be used for building hashmaps */
+    /** Layout definitions as JSON, to be used for building hash maps */
     private JSONObject layoutsToLoad;
     /** Reverse map, mapping from sets of android IDs to layouts that can possibly be identified */
     private JSONObject reverseMapToLoad;
@@ -44,7 +44,9 @@ public class AppDetectionData {
     /** Reverse hashmap, mapping from sets of android IDs to layouts that can possibly be identified */
     private Map<String, Set<String>> reverseMap;
 
+    /** Indicates whether to perform layout checks or not */
     private boolean performLayoutChecks;
+    /** Indicates whether to perform on-click checks or not */
     private boolean performOnClickChecks;
 
     /** Usage data collected for this session (that starts when the app is opened and ends when it's closed) */
@@ -129,7 +131,7 @@ public class AppDetectionData {
                     FileHelper.writeHashMap(this.context, (HashMap)this.reverseMap, getPackageName(), "reverseMap.bin");
             }
 
-            finishedLoading = finishedLoading && hashMapsLoaded;
+            finishedLoading = hashMapsLoaded;
         }
 
         this.finishedLoading = finishedLoading;
@@ -146,7 +148,7 @@ public class AppDetectionData {
             return;
 
         if (shallPerformLayoutChecks(event)) {
-            Set<String> recognizedLayouts = checkLayouts(event.getSource());
+            Set<String> recognizedLayouts = checkLayouts(event.getSource(), rootNodeInfo);
 
             boolean shallLog = currentAppUsageData.addLayoutDataEntry(activity, recognizedLayouts);
             if (shallLog)
@@ -221,23 +223,21 @@ public class AppDetectionData {
      * @param source      Source node info
      * @return Detected layouts
      */
-    private Set<String> checkLayouts(AccessibilityNodeInfo source) {
-        AccessibilityNodeInfo rootNodeInfo = getRootNodeInfo(source);
-
+    private Set<String> checkLayouts(AccessibilityNodeInfo source, AccessibilityNodeInfo rootNodeInfo) {
         Set<String> androidIDsOnScreen = androidIDsOnScreen(rootNodeInfo);
         Set<String> possibleLayouts = possibleLayouts(androidIDsOnScreen);
         return recognizedLayouts(androidIDsOnScreen, possibleLayouts);
     }
 
     /**
-     * Handles on-click events, i.e. creates a data entry showing what element was clicked (todo)
+     * Handles on-click events, i.e. creates a data entry showing which element was clicked
      * @param source    Source node info
      * @return Data regarding this on-click event
      */
     private Set<ClickedEventData> checkOnClickEvents(AccessibilityNodeInfo source, AccessibilityNodeInfo rootNodeInfo) {
         Set<ClickedEventData> result = new CopyOnWriteArraySet<>();
         //AccessibilityNodeInfo rootNodeInfo = getRootNodeInfo(source);
-        AccessibilityNodeInfo subTree = null;
+        AccessibilityNodeInfo subTree;
 
         // Try to find the node info with the same bounds as the source.
         // For some reason, the source does not contain any View ID information,
@@ -295,6 +295,7 @@ public class AppDetectionData {
         result.addAll(traverser.getAllFiltered());
 
         // todo: do not add parent?
+        // If we still didn't get any node with at least an ID or a text, add the source node's parent
         if (result.size() == 0) {
             AccessibilityNodeInfo parent = source.getParent();
             if (parent != null &&
@@ -439,46 +440,27 @@ public class AppDetectionData {
     }
 
     /**
-     * Returns the root of the tree of AccessibilityNodeInfos, needed for full traversal
-     * @param sourceNodeInfo    NodeInfo that triggered the AccessibilityEvent
-     */
-    private AccessibilityNodeInfo getRootNodeInfo(AccessibilityNodeInfo sourceNodeInfo) {
-        AccessibilityNodeInfo currentNodeInfo = sourceNodeInfo;
-
-        while (currentNodeInfo != null && currentNodeInfo.getParent() != null)
-            currentNodeInfo = currentNodeInfo.getParent();
-
-        return currentNodeInfo;
-    }
-
-    /**
      * Returns a set of android IDs that occur on the current screen
      * @param startNodeInfo    Starting node from which to consider objects on screen (root node for all)
      */
     private Set<String> androidIDsOnScreen(AccessibilityNodeInfo startNodeInfo) {
-        AccessibilityNodeInfo currentNodeInfo = startNodeInfo;
         Set<String> androidIDsOnScreen = new TreeSet<>(new CollatorWrapper());
 
-        // Traverse tree downwards (breadth-first search)
-        List<AccessibilityNodeInfo> nodeInfos = new LinkedList<>();
-        nodeInfos.add(currentNodeInfo); // currently the root of the tree
-        while (nodeInfos.size() > 0) {
-            currentNodeInfo = nodeInfos.get(0);
-            if (currentNodeInfo != null) {
-                String viewIdResName = currentNodeInfo.getViewIdResourceName();
-                String currentAndroidID = viewIdResName != null ? viewIdResName.replace(this.packageName + ":", "") : "";
-                if (!currentAndroidID.equals("")) {
-                    androidIDsOnScreen.add(currentAndroidID);
-                }
-
-                // add children, todo: add only one child if this is a list
-                for (int i = 0; i < currentNodeInfo.getChildCount(); ++i)
-                    nodeInfos.add(currentNodeInfo.getChild(i));
-            }
-
-
-            nodeInfos.remove(0);
-        }
+        NodeInfoTraverser<String> traverser = new NodeInfoTraverser<>(startNodeInfo,
+                new NodeInfoDataExtractor<String>() {
+                    @Override
+                    public String extractData(AccessibilityNodeInfo nodeInfo) {
+                        return nodeInfo.getViewIdResourceName().replace(packageName + ":", "");
+                    }
+                },
+                new NodeInfoFilter() {
+                    @Override
+                    public boolean filter(AccessibilityNodeInfo nodeInfo) {
+                        return nodeInfo != null &&
+                                nodeInfo.getViewIdResourceName() != null;
+                    }
+                });
+        androidIDsOnScreen.addAll(traverser.getAllFiltered());
 
         return androidIDsOnScreen;
     }
