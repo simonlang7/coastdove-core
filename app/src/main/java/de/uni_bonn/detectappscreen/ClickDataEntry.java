@@ -76,6 +76,16 @@ public class ClickDataEntry extends AppUsageDataEntry {
         return result;
     }
 
+    @Override
+    public String getType() {
+        return "Click";
+    }
+
+    @Override
+    public String getContent() {
+        return detectedClick.toString();
+    }
+
     public Set<ClickedEventData> getDetectedClick() {
         return this.detectedClick;
     }

@@ -87,6 +87,12 @@ public abstract class AppUsageDataEntry {
         return result;
     }
 
+    /** Type of data entry */
+    public abstract String getType();
+
+    /** Content of this data entry as a string */
+    public abstract String getContent();
+
     /** Time at which these data were collected */
     public Date getTimestamp() {
         return timestamp;

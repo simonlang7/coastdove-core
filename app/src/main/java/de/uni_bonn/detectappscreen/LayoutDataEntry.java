@@ -73,6 +73,16 @@ public class LayoutDataEntry extends AppUsageDataEntry {
         return result;
     }
 
+    @Override
+    public String getType() {
+        return "Layouts";
+    }
+
+    @Override
+    public String getContent() {
+        return detectedLayouts.toString();
+    }
+
     /** Layouts detected */
     public Set<String> getDetectedLayouts() {
         return detectedLayouts;

@@ -11,5 +11,6 @@
 
     <!-- Intent Extras -->
     <string name="extras_package_name">packageName</string>
+    <string name="extras_filename">filename</string>
 
 </resources>

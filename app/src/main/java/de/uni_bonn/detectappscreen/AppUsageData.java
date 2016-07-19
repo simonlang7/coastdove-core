@@ -158,6 +158,13 @@ public class AppUsageData {
     }
 
     /**
+     * Returns the data entries, each containing detailed information
+     */
+    public LinkedList<AppUsageDataEntry> getDataEntries() {
+        return dataEntries;
+    }
+
+    /**
      * If the previous layout entry of the is equal to the given one, that entry's
      * count is increased. If the given entry and the last processed entry are both
      * click entries, and they're equal, the last processed entry's count is increased.

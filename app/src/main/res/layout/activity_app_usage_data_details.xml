@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    tools:context="de.uni_bonn.detectappscreen.AppUsageDataDetailsActivity">
+
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/detectable_app_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:elevation="4dp"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
+
+    <fragment
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:name="de.uni_bonn.detectappscreen.DataEntryListFragment"
+        android:id="@+id/fragment_data_entries"
+        android:layout_gravity="center_horizontal"
+        tools:layout="@layout/list_item_data_entry" />
+
+</LinearLayout>

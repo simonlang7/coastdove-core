@@ -34,8 +34,11 @@
 
         <activity
             android:name=".DetectableAppDetailsActivity"
-            android:parentActivityName=".MainActivity">
-        </activity>
+            android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".AppUsageDataDetailsActivity"
+            android:parentActivityName=".DetectableAppDetailsActivity" />
     </application>
 
 </manifest>

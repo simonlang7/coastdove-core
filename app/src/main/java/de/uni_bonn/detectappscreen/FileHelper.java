@@ -77,7 +77,7 @@ public class FileHelper {
     }
 
     public static void writeHashMap(Context context, HashMap hashMap, String subDirectory, String filename) {
-        File file = new File(Environment.getExternalStoragePublicDirectory("DetectAppScreen"), subDirectory + "/" + filename);
+        File file = new File(Environment.getExternalStoragePublicDirectory(context.getString(R.string.external_folder_name)), subDirectory + "/" + filename);
         try (FileOutputStream fos = new FileOutputStream(file);
              ObjectOutputStream oos = new ObjectOutputStream(fos)) {
             oos.writeObject(hashMap);

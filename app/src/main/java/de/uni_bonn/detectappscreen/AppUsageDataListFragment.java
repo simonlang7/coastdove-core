@@ -1,6 +1,8 @@
 package de.uni_bonn.detectappscreen;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.v4.content.Loader;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,6 +16,11 @@ import java.util.ArrayList;
  */
 public class AppUsageDataListFragment extends FileListFragment {
 
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        //getListView().setChoiceMode(AbsListView.CHOICE_MODE_MULTIPLE_MODAL);
+    }
 
     @Override
     public Loader<ArrayList<String>> onCreateLoader(int id, Bundle args) {
@@ -32,9 +39,12 @@ public class AppUsageDataListFragment extends FileListFragment {
         super.onListItemClick(listView, view, position, id);
         final String item = (String)listView.getItemAtPosition(position);
 
-//        Intent intent = new Intent(getActivity(), DetectableAppDetailsActivity.class);
-//        intent.putExtra("filename", item); // TODO: make constant
-//        startActivity(intent);
+        String appPackageName = ((DetectableAppDetailsActivity)getActivity()).getAppPackageName();
+
+        Intent intent = new Intent(getActivity(), AppUsageDataDetailsActivity.class);
+        intent.putExtra(getString(R.string.extras_package_name), appPackageName);
+        intent.putExtra(getString(R.string.extras_filename), item);
+        startActivity(intent);
     }
     @Override
     protected void addProgressBarToViewGroup() {
