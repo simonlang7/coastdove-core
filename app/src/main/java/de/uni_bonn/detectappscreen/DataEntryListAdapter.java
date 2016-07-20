@@ -19,17 +19,20 @@ public class DataEntryListAdapter extends BaseAdapter {
     private Context context;
     private LayoutInflater inflater;
 
+    private String appPackageName;
     protected List<AppUsageDataEntry> dataEntries;
 
-    public DataEntryListAdapter(Context context) {
+    public DataEntryListAdapter(Context context, String appPackageName) {
         this.context = context;
         this.inflater = LayoutInflater.from(context);
+        this.appPackageName = appPackageName;
         this.dataEntries = new ArrayList<>();
     }
 
-    public DataEntryListAdapter(Context context, List<AppUsageDataEntry> dataEntries) {
+    public DataEntryListAdapter(Context context, String appPackageName, List<AppUsageDataEntry> dataEntries) {
         this.context = context;
         this.inflater = LayoutInflater.from(context);
+        this.appPackageName = appPackageName;
         this.dataEntries = dataEntries;
     }
 
@@ -86,7 +89,7 @@ public class DataEntryListAdapter extends BaseAdapter {
 
         holder.entryType.setText(dataEntry.getType());
         holder.entryCount.setText("(" + dataEntry.getCount() + "x)");
-        holder.entryActivity.setText(dataEntry.getActivity());
+        holder.entryActivity.setText(dataEntry.getActivity().replace(this.appPackageName + "/", ""));
         holder.entryContent.setText(dataEntry.getContent());
 
         return convertView;

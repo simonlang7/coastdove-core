@@ -13,8 +13,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -39,9 +37,9 @@ public class AppDetectionData {
     private String packageName;
     /** Indicates whether the hash maps (layoutIdentificationMap and reverseMap) have been loaded or not */
     private boolean hashMapsLoaded;
-    /** Hashmap mapping from each layout to a set of android IDs that identify the layout*/
+    /** Hash map mapping from each layout to a set of android IDs that identify the layout*/
     private Map<String, LayoutIdentification> layoutIdentificationMap;
-    /** Reverse hashmap, mapping from sets of android IDs to layouts that can possibly be identified */
+    /** Reverse hash map, mapping from sets of android IDs to layouts that can possibly be identified */
     private Map<String, Set<String>> reverseMap;
 
     /** Indicates whether to perform layout checks or not */
@@ -155,6 +153,14 @@ public class AppDetectionData {
                 Log.i("Recognized layouts", recognizedLayouts.toString());
         }
 
+        if (shallPerformScrollChecks(event)) {
+            String scrolledElement = checkScrollEvent(event.getSource(), rootNodeInfo);
+
+            boolean shallLog = currentAppUsageData.addScrollDataEntry(activity, scrolledElement);
+            if (shallLog)
+                Log.i("Scrolled element", scrolledElement);
+        }
+
         if (shallPerformOnClickChecks(event)) {
             Set<ClickedEventData> clickedEventData = checkOnClickEvents(event.getSource(), rootNodeInfo);
 
@@ -205,6 +211,20 @@ public class AppDetectionData {
     }
 
     /**
+     * Returns true iff a scroll check shall be performed
+     */
+    private boolean shallPerformScrollChecks(AccessibilityEvent event) {
+        if (event.getEventTime() != AccessibilityEvent.TYPE_VIEW_SCROLLED)
+            return false;
+        if (event.getSource() == null)
+            return false;
+        if (!performLayoutChecks)
+            return false;
+
+        return true;
+    }
+
+    /**
      * Returns true iff an on-click event check shall be performed
      */
     private boolean shallPerformOnClickChecks(AccessibilityEvent event) {
@@ -230,6 +250,18 @@ public class AppDetectionData {
     }
 
     /**
+     * Creates a data entry showing which element was scrolled
+     * @return Data regarding the scroll event
+     */
+    private String checkScrollEvent(AccessibilityNodeInfo source, AccessibilityNodeInfo rootNodeInfo) {
+        AccessibilityNodeInfo nodeInfo = findNodeInfo(source, rootNodeInfo);
+        if (nodeInfo == null)
+            nodeInfo = source;
+        String scrolledElement = nodeInfo.getViewIdResourceName();
+        return scrolledElement != null ? scrolledElement : "";
+    }
+
+    /**
      * Handles on-click events, i.e. creates a data entry showing which element was clicked
      * @param source    Source node info
      * @return Data regarding this on-click event
@@ -237,43 +269,12 @@ public class AppDetectionData {
     private Set<ClickedEventData> checkOnClickEvents(AccessibilityNodeInfo source, AccessibilityNodeInfo rootNodeInfo) {
         Set<ClickedEventData> result = new CopyOnWriteArraySet<>();
         //AccessibilityNodeInfo rootNodeInfo = getRootNodeInfo(source);
-        AccessibilityNodeInfo subTree;
 
         // Try to find the node info with the same bounds as the source.
         // For some reason, the source does not contain any View ID information,
         // so we need to find the same node info again in order to get the view ID.
-        Rect bounds = new Rect();
-        source.getBoundsInParent(bounds);
-        final Rect boundsInParent = new Rect(bounds);
-        source.getBoundsInScreen(bounds);
-        final Rect boundsInScreen = new Rect(bounds);
+        AccessibilityNodeInfo subTree = findNodeInfo(source, rootNodeInfo);
 
-        NodeInfoTraverser<AccessibilityNodeInfo> nodeFinder = new NodeInfoTraverser<>(rootNodeInfo,
-                new NodeInfoDataExtractor<AccessibilityNodeInfo>() {
-                    @Override
-                    public AccessibilityNodeInfo extractData(AccessibilityNodeInfo nodeInfo) {
-                        // We need the node info directly
-                        return nodeInfo;
-                    }
-                },
-                new NodeInfoFilter() {
-                    @Override
-                    public boolean filter(AccessibilityNodeInfo nodeInfo) {
-                        // But only the (first) one with matching bounds
-                        if (nodeInfo == null)
-                            return false;
-                        Rect bounds = new Rect();
-                        nodeInfo.getBoundsInParent(bounds);
-                        if (!bounds.equals(boundsInParent))
-                            return false;
-                        nodeInfo.getBoundsInScreen(bounds);
-                        if (!bounds.equals(boundsInScreen))
-                            return false;
-
-                        return true;
-                    }
-                });
-        subTree = nodeFinder.nextFiltered();
         if (subTree == null)
             subTree = source;
 
@@ -305,6 +306,50 @@ public class AppDetectionData {
         }
 
         return result;
+    }
+
+    /**
+     * Tries to find a given node info in the given tree of node infos, comparing them
+     * by their bounds only. This is needed for some events where the delivered source
+     * node info does not contain any View ID information, but the entire tree of node
+     * infos does. Finding the same node info in the tree solves this problem.
+     * @param nodeInfoToFind    Node info to be found in the tree
+     * @param nodeInfoTree      Tree in which to look for the node info
+     * @return The node info found in the tree, or null if none was found
+     */
+    private AccessibilityNodeInfo findNodeInfo(AccessibilityNodeInfo nodeInfoToFind, AccessibilityNodeInfo nodeInfoTree) {
+        Rect bounds = new Rect();
+        nodeInfoToFind.getBoundsInParent(bounds);
+        final Rect boundsInParent = new Rect(bounds);
+        nodeInfoToFind.getBoundsInScreen(bounds);
+        final Rect boundsInScreen = new Rect(bounds);
+
+        NodeInfoTraverser<AccessibilityNodeInfo> nodeFinder = new NodeInfoTraverser<>(nodeInfoTree,
+                new NodeInfoDataExtractor<AccessibilityNodeInfo>() {
+                    @Override
+                    public AccessibilityNodeInfo extractData(AccessibilityNodeInfo nodeInfo) {
+                        // We need the node info directly
+                        return nodeInfo;
+                    }
+                },
+                new NodeInfoFilter() {
+                    @Override
+                    public boolean filter(AccessibilityNodeInfo nodeInfo) {
+                        // But only the (first) one with matching bounds
+                        if (nodeInfo == null)
+                            return false;
+                        Rect bounds = new Rect();
+                        nodeInfo.getBoundsInParent(bounds);
+                        if (!bounds.equals(boundsInParent))
+                            return false;
+                        nodeInfo.getBoundsInScreen(bounds);
+                        if (!bounds.equals(boundsInScreen))
+                            return false;
+
+                        return true;
+                    }
+                });
+        return nodeFinder.nextFiltered();
     }
 
     /**

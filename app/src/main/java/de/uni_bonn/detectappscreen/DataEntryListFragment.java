@@ -42,7 +42,7 @@ public class DataEntryListFragment extends ListFragment
         getListView().setEmptyView(this.progressBar);
         addProgressBarToViewGroup();
 
-        this.adapter = new DataEntryListAdapter(getActivity());
+        this.adapter = new DataEntryListAdapter(getActivity(), this.appPackageName);
         setListAdapter(this.adapter);
 
         AppUsageDataDetailsActivity activity = (AppUsageDataDetailsActivity)getActivity();

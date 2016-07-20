@@ -119,6 +119,34 @@ public class AppUsageData {
     }
 
     /**
+     * Adds a scroll data entry
+     * @param timestamp        Time at which the data were collected
+     * @param activity         Activity detected
+     * @return True if there was a previous scroll data entry, false otherwise
+     */
+    public boolean addScrollDataEntry(Date timestamp, String activity, String scrolledElement) {
+        boolean lastEntryEqual = increasePreviousEntryCountIfEqual(new ScrollDataEntry(null, activity, scrolledElement));
+        if (!lastEntryEqual) {
+            AppUsageDataEntry entry = new ScrollDataEntry(timestamp, activity, scrolledElement);
+            this.dataEntries.add(entry);
+            return true;
+        }
+        else
+            return false;
+    }
+
+    /**
+     * Adds a scroll data entry, using the current time when creating the timestamp
+     * @param activity         Activity detected
+     * @param scrolledElement  Element scrolled
+     * @return True if there was a previous scroll data entry, false otherwise
+     */
+    public boolean addScrollDataEntry(String activity, String scrolledElement) {
+        Date timestamp = new Date();
+        return addScrollDataEntry(timestamp, activity, scrolledElement);
+    }
+
+    /**
      * Converts the AppUsageData object to JSON and returns the according JSONObject
      */
     public JSONObject toJSON() {
@@ -173,21 +201,18 @@ public class AppUsageData {
      */
     private boolean increasePreviousEntryCountIfEqual(AppUsageDataEntry other) {
         AppUsageDataEntry previousEntry = null;
-        if (other instanceof ClickDataEntry) {
+        if (other instanceof ScrollDataEntry) {
             AppUsageDataEntry last = this.dataEntries.peekLast();
-            if (last != null && last instanceof ClickDataEntry) {
+            if (last != null && last instanceof ScrollDataEntry)
                 previousEntry = last;
-            }
+        }
+        else if (other instanceof ClickDataEntry) {
+            AppUsageDataEntry last = this.dataEntries.peekLast();
+            if (last != null && last instanceof ClickDataEntry)
+                previousEntry = last;
         }
         else {
-            Iterator<AppUsageDataEntry> it = this.dataEntries.descendingIterator();
-            while (it.hasNext()) {
-                AppUsageDataEntry entry = it.next();
-                if (entry instanceof LayoutDataEntry) {
-                    previousEntry = entry;
-                    break;
-                }
-            }
+            previousEntry = findLastLayoutEntry();
         }
 
         if (previousEntry != null && previousEntry.equals(other)) {
@@ -196,5 +221,19 @@ public class AppUsageData {
         }
         else
             return false;
+    }
+
+    /**
+     * Returns the last layout entry found, or null if none is found
+     */
+    private AppUsageDataEntry findLastLayoutEntry() {
+        Iterator<AppUsageDataEntry> it = this.dataEntries.descendingIterator();
+        while (it.hasNext()) {
+            AppUsageDataEntry entry = it.next();
+            if (entry instanceof LayoutDataEntry) {
+                return entry;
+            }
+        }
+        return null;
     }
 }
