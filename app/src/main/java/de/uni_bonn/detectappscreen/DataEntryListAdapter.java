@@ -82,11 +82,6 @@ public class DataEntryListAdapter extends BaseAdapter {
         // Set the actual data
         AppUsageDataEntry dataEntry = dataEntries.get(position);
 
-//        ((TextView)convertView.findViewById(R.id.entryType)).setText(dataEntry.getType());
-//        ((TextView)convertView.findViewById(R.id.entryCount)).setText("(" + dataEntry.getCount() + "x)");
-//        ((TextView)convertView.findViewById(R.id.entryActivity)).setText(dataEntry.getActivity());
-//        ((TextView)convertView.findViewById(R.id.entryContent)).setText(dataEntry.getContent());
-
         holder.entryType.setText(dataEntry.getType());
         holder.entryCount.setText("(" + dataEntry.getCount() + "x)");
         holder.entryActivity.setText(dataEntry.getActivity().replace(this.appPackageName + "/", ""));

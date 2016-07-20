@@ -58,7 +58,7 @@ public class ScrollDataEntry extends AppUsageDataEntry {
 
     @Override
     public String getType() {
-        return "Scroll";
+        return "Scrolling";
     }
 
     @Override

@@ -145,6 +145,12 @@ public class AppDetectionData {
         if (!isFinishedLoading())
             return;
 
+        if (shallPerformActivityChecks(event)) {
+            boolean shallLog = currentAppUsageData.addActivityDataEntry(activity);
+            if (shallLog)
+                Log.i("Activity", activity);
+        }
+
         if (shallPerformLayoutChecks(event)) {
             Set<String> recognizedLayouts = checkLayouts(event.getSource(), rootNodeInfo);
 
@@ -195,6 +201,13 @@ public class AppDetectionData {
         return this.performOnClickChecks;
     }
 
+    private boolean shallPerformActivityChecks(AccessibilityEvent event) {
+        if (event.getEventType() != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED)
+            return false;
+
+        return true;
+    }
+
     /**
      * Returns true iff a layout comparison shall be performed
      */
@@ -214,7 +227,7 @@ public class AppDetectionData {
      * Returns true iff a scroll check shall be performed
      */
     private boolean shallPerformScrollChecks(AccessibilityEvent event) {
-        if (event.getEventTime() != AccessibilityEvent.TYPE_VIEW_SCROLLED)
+        if (event.getEventType() != AccessibilityEvent.TYPE_VIEW_SCROLLED)
             return false;
         if (event.getSource() == null)
             return false;
@@ -258,7 +271,7 @@ public class AppDetectionData {
         if (nodeInfo == null)
             nodeInfo = source;
         String scrolledElement = nodeInfo.getViewIdResourceName();
-        return scrolledElement != null ? scrolledElement : "";
+        return scrolledElement != null ? scrolledElement : "-";
     }
 
     /**

@@ -51,6 +51,10 @@ public class AppUsageData {
                     dataEntry = new LayoutDataEntry(dataEntryJSON);
                 else if (dataEntryJSON.has("detectedClick"))
                     dataEntry = new ClickDataEntry(dataEntryJSON);
+                else if (dataEntryJSON.has("scrolledElement"))
+                    dataEntry = new ScrollDataEntry(dataEntryJSON);
+                else
+                    dataEntry = new ActivityDataEntry(dataEntryJSON);
 
                 if (dataEntry != null)
                     this.dataEntries.add(dataEntry);
@@ -58,6 +62,33 @@ public class AppUsageData {
         } catch (JSONException e) {
             Log.e("AppUsageData", "Unable to read from JSONObject: " + e.getMessage());
         }
+    }
+
+    /**
+     * Adds an activity data entry
+     * @param timestamp    Time at which the data were collected
+     * @param activity     Activity detected
+     * @return True if a new data entry was added, false if the previous data entry equals these data
+     */
+    public boolean addActivityDataEntry(Date timestamp, String activity) {
+        boolean lastEntryEqual = increasePreviousEntryCountIfEqual(new ActivityDataEntry(null, activity));
+        if (!lastEntryEqual) {
+            AppUsageDataEntry entry = new ActivityDataEntry(timestamp, activity);
+            this.dataEntries.add(entry);
+            return true;
+        }
+        else
+            return false;
+    }
+
+    /**
+     * Adds an activity data entry, using the current time when creating the timestamp
+     * @param activity           Activity detected
+     * @return True if a new data entry was added, false if the previous data entry equals these data
+     */
+    public boolean addActivityDataEntry(String activity) {
+        Date timestamp = new Date();
+        return addActivityDataEntry(timestamp, activity);
     }
 
     /**
@@ -211,8 +242,11 @@ public class AppUsageData {
             if (last != null && last instanceof ClickDataEntry)
                 previousEntry = last;
         }
-        else {
-            previousEntry = findLastLayoutEntry();
+        else if (other instanceof LayoutDataEntry) {
+            previousEntry = findLastEntryOfType(LayoutDataEntry.class);
+        }
+        else if (other instanceof ActivityDataEntry) {
+            previousEntry = findLastEntryOfType(ActivityDataEntry.class);
         }
 
         if (previousEntry != null && previousEntry.equals(other)) {
@@ -226,11 +260,11 @@ public class AppUsageData {
     /**
      * Returns the last layout entry found, or null if none is found
      */
-    private AppUsageDataEntry findLastLayoutEntry() {
+    private AppUsageDataEntry findLastEntryOfType(Class<?> classType) {
         Iterator<AppUsageDataEntry> it = this.dataEntries.descendingIterator();
         while (it.hasNext()) {
             AppUsageDataEntry entry = it.next();
-            if (entry instanceof LayoutDataEntry) {
+            if (entry.getClass().equals(classType)) {
                 return entry;
             }
         }

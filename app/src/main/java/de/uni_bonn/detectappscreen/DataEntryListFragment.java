@@ -5,7 +5,6 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.ListFragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -42,12 +41,13 @@ public class DataEntryListFragment extends ListFragment
         getListView().setEmptyView(this.progressBar);
         addProgressBarToViewGroup();
 
-        this.adapter = new DataEntryListAdapter(getActivity(), this.appPackageName);
-        setListAdapter(this.adapter);
-
         AppUsageDataDetailsActivity activity = (AppUsageDataDetailsActivity)getActivity();
         this.appPackageName = activity.getAppPackageName();
         this.filename = activity.getFilename();
+
+        this.adapter = new DataEntryListAdapter(getActivity(), this.appPackageName);
+        setListAdapter(this.adapter);
+
 
         getLoaderManager().initLoader(0, null, this);
     }
@@ -66,7 +66,7 @@ public class DataEntryListFragment extends ListFragment
     public void onLoadFinished(Loader<AppUsageData> loader, AppUsageData data) {
         this.adapter.clear();
         this.adapter.addAll(data.getDataEntries());
-        //this.progressBar.setVisibility(View.GONE);
+        this.progressBar.setVisibility(View.GONE);
     }
 
     @Override
