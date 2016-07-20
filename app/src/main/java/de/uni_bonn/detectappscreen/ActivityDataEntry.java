@@ -24,6 +24,6 @@ public class ActivityDataEntry extends AppUsageDataEntry {
 
     @Override
     public String getContent() {
-        return getActivity();
+        return "";//getActivity();
     }
 }

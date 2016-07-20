@@ -515,7 +515,8 @@ public class AppDetectionData {
                     @Override
                     public boolean filter(AccessibilityNodeInfo nodeInfo) {
                         return nodeInfo != null &&
-                                nodeInfo.getViewIdResourceName() != null;
+                                nodeInfo.getViewIdResourceName() != null &&
+                                nodeInfo.isVisibleToUser();
                     }
                 });
         androidIDsOnScreen.addAll(traverser.getAllFiltered());
