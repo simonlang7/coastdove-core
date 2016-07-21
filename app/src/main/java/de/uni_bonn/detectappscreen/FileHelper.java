@@ -10,6 +10,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -19,6 +20,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.StreamCorruptedException;
 import java.util.HashMap;
 
@@ -52,10 +55,31 @@ public class FileHelper {
         } catch (JSONException e) {
             Log.e("FileHelper", "Unable to create JSONObject from file (" + file.getAbsolutePath() + "): " + e.getMessage());
         } catch (IOException e) {
-            e.printStackTrace();
+            Log.e("FileHelper", "Unable to create JSONObject from file (" + file.getAbsolutePath() + "): " + e.getMessage());
         }
 
         return result;
+    }
+
+    /**
+     * Writes a String array to a text file
+     * @param lines           Array to write
+     * @param subDirectory    Sub-directory to create the file in
+     * @param filename        Filename to write to
+     */
+    public static void writeTxtFile(String[] lines, String subDirectory, String filename) {
+        File file = new File(Environment.getExternalStoragePublicDirectory("DetectAppScreen"), subDirectory + "/" + filename);
+        try (OutputStream os = new FileOutputStream(file);
+             OutputStreamWriter osw = new OutputStreamWriter(os);
+             BufferedWriter br = new BufferedWriter(osw)) {
+            for (int i = 0; i < lines.length; ++i)
+                br.write(lines[i] + "\n");
+        } catch (FileNotFoundException e) {
+            Log.e("FileHelper", "File not found: " + file.getAbsolutePath());
+            Log.e("FileHelper", e.getMessage());
+        } catch (IOException e) {
+            Log.e("FileHelper", "Unable to write to file (" + file.getAbsolutePath() + "): " + e.getMessage());
+        }
     }
 
     /**
