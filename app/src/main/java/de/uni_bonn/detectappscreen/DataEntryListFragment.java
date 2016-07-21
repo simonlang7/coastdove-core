@@ -67,6 +67,8 @@ public class DataEntryListFragment extends ListFragment
         this.adapter.clear();
         this.adapter.addAll(data.getDataEntries());
         this.progressBar.setVisibility(View.GONE);
+        AppUsageDataDetailsActivity activity = (AppUsageDataDetailsActivity)getActivity();
+        activity.setAppUsageData(data);
     }
 
     @Override

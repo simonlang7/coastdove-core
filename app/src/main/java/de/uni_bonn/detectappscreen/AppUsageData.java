@@ -10,6 +10,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -195,6 +196,19 @@ public class AppUsageData {
             Log.e("AppUsageData", "Unable to create JSONObject for " + this.packageName + ": " + e.getMessage());
         }
 
+        return result;
+    }
+
+    /**
+     * Returns an array with each data entry converted to a String
+     * @return An array of all data entries converted to Strings
+     */
+    public String[] toStrings() {
+        String[] result = new String[this.dataEntries.size()];
+        int i = 0;
+        for (AppUsageDataEntry entry : this.dataEntries) {
+            result[i++] = entry.toString();
+        }
         return result;
     }
 

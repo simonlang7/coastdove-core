@@ -12,4 +12,11 @@
     <string name="notification_loading_2"></string>
     <string name="notification_finished_loading_1">Data loaded for</string>
     <string name="notification_finished_loading_2"></string>
+
+    <!-- App Usage Data Details -->
+    <string name="export_to_txt">Export to txt</string>
+    <string name="delete">Delete</string>
+    <string name="toast_saved_to_txt">Saved</string>
+    <string name="toast_file_exists">File exists</string>
+    <string name="toast_file_deleted">File deleted</string>
 </resources>

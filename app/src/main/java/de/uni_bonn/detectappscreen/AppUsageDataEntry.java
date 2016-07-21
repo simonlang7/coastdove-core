@@ -87,6 +87,11 @@ public abstract class AppUsageDataEntry {
         return result;
     }
 
+    @Override
+    public String toString() {
+        return getTimestamp() + " " + getActivity() + ": " + getType() + " (" + getCount() + "): " + getContent();
+    }
+
     /** Type of data entry */
     public abstract String getType();
 
