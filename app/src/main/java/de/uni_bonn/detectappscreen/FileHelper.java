@@ -67,8 +67,10 @@ public class FileHelper {
      * @param subDirectory    Sub-directory to create the file in
      * @param filename        Filename to write to
      */
-    public static void writeTxtFile(String[] lines, String subDirectory, String filename) {
+    public static void writeTxtFile(Context context, String[] lines, String subDirectory, String filename) {
         File file = new File(Environment.getExternalStoragePublicDirectory("DetectAppScreen"), subDirectory + "/" + filename);
+        File directory = file.getParentFile();
+        directory.mkdirs();
         try (OutputStream os = new FileOutputStream(file);
              OutputStreamWriter osw = new OutputStreamWriter(os);
              BufferedWriter br = new BufferedWriter(osw)) {
@@ -80,6 +82,7 @@ public class FileHelper {
         } catch (IOException e) {
             Log.e("FileHelper", "Unable to write to file (" + file.getAbsolutePath() + "): " + e.getMessage());
         }
+        scanFile(context, file.getAbsolutePath());
     }
 
     /**

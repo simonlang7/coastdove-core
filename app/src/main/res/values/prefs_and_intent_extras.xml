@@ -3,6 +3,7 @@
     <!-- Global Data -->
     <string name="external_folder_name">DetectAppScreen</string>
     <string name="app_usage_data_folder_name">AppUsageData</string>
+    <string name="app_usage_data_export_folder_name">AppUsageDataExport</string>
     <string name="shared_prefs_name">DetectAppScreen</string>
 
     <!-- Preference Names -->

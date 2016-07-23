@@ -26,7 +26,7 @@ public class AppUsageDataListFragment extends FileListFragment {
     public Loader<ArrayList<String>> onCreateLoader(int id, Bundle args) {
         String subDirectory = ((DetectableAppDetailsActivity)getActivity()).getAppPackageName();
         return new FileListLoader(getActivity(), getString(R.string.external_folder_name),
-                subDirectory + "/" + getString(R.string.app_usage_data_folder_name));
+                subDirectory + "/" + getString(R.string.app_usage_data_folder_name), ".json");
     }
 
     @Override

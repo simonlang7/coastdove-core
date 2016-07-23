@@ -89,7 +89,8 @@ public abstract class AppUsageDataEntry {
 
     @Override
     public String toString() {
-        return getTimestamp() + " " + getActivity() + ": " + getType() + " (" + getCount() + "): " + getContent();
+        String timestamp = new SimpleDateFormat("yyyy-MM-dd HH-mm-ss").format(getTimestamp());
+        return timestamp + " " + getShortenedActivity() + ": " + getType() + " (" + getCount() + "): " + getContent();
     }
 
     /** Type of data entry */
@@ -106,6 +107,11 @@ public abstract class AppUsageDataEntry {
     /** Activity detected */
     public String getActivity() {
         return activity;
+    }
+
+    /** Activity detected, shortened String (omits everything up to and including the first '/') */
+    public String getShortenedActivity() {
+        return activity.replaceAll(".*/", "");
     }
 
     /** Number of consecutive occurrences of this data entry, disregarding the timestamp */

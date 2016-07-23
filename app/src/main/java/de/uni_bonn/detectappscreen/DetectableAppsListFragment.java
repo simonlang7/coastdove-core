@@ -16,7 +16,7 @@ public class DetectableAppsListFragment extends FileListFragment {
 
     @Override
     public Loader<ArrayList<String>> onCreateLoader(int id, Bundle args) {
-        return new FileListLoader(getActivity(), getString(R.string.external_folder_name), null);
+        return new FileListLoader(getActivity(), getString(R.string.external_folder_name), null, null);
     }
 
     @Override
