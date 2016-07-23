@@ -11,16 +11,9 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".MainActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
 
         <service
-            android:name=".DetectAppScreenAccessibilityService"
+            android:name=".detection.DetectAppScreenAccessibilityService"
             android:label="DetectAppScreen"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
@@ -32,13 +25,20 @@
                 android:resource="@xml/serviceconfig" />
         </service>
 
-        <activity
-            android:name=".DetectableAppDetailsActivity"
-            android:parentActivityName=".MainActivity" />
+        <activity android:name=".ui.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
 
         <activity
-            android:name=".AppUsageDataDetailsActivity"
-            android:parentActivityName=".DetectableAppDetailsActivity" />
+            android:name=".ui.DetectableAppDetailsActivity"
+            android:parentActivityName=".ui.MainActivity" />
+
+        <activity
+            android:name=".ui.AppUsageDataDetailsActivity"
+            android:parentActivityName=".ui.DetectableAppDetailsActivity" />
     </application>
 
 </manifest>

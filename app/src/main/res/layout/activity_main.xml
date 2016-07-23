@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context=".MainActivity">
+    tools:context=".ui.MainActivity">
 
     <android.support.v7.widget.Toolbar
         android:id="@+id/main_toolbar"
@@ -19,7 +19,7 @@
     <fragment
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:name="de.uni_bonn.detectappscreen.DetectableAppsListFragment"
+        android:name="de.uni_bonn.detectappscreen.ui.DetectableAppsListFragment"
         android:id="@+id/fragment_detectable_apps_file_list"
         android:layout_gravity="center_horizontal"
         tools:layout="@layout/fragment_file_list"
