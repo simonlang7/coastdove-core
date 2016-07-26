@@ -46,7 +46,7 @@ public class AppUsageDataProcessor {
     private Context context;
 
     /** Meta data for app usage data entries */
-    private List<AppUsageMetaData> appUsageMetaDataList;
+    private List<MetaEntry> metaEntries;
 
     /**
      * Creates an AppUsageDataProcessor with the given parameters
@@ -58,8 +58,8 @@ public class AppUsageDataProcessor {
         this.context = context;
         this.appPackageName = appPackageName;
         this.appUsageData = appUsageData;
-        this.appUsageMetaDataList = null;
-        assignAppMetaInformation();
+        this.metaEntries = null;
+        initAppMetaInformation();
     }
 
     /**
@@ -74,15 +74,28 @@ public class AppUsageDataProcessor {
         JSONObject appUsageDataJSON = FileHelper.readJSONFile(
                 this.appPackageName + "/" + this.context.getString(R.string.app_usage_data_folder_name), filename);
         this.appUsageData = new AppUsageData(appUsageDataJSON);
-        this.appUsageMetaDataList = null;
-        assignAppMetaInformation();
+        this.metaEntries = null;
+        initAppMetaInformation();
     }
 
-    public List<AppUsageMetaData> getAppUsageMetaData() {
-        if (this.appUsageMetaDataList != null)
-            return this.appUsageMetaDataList;
+    public List<MetaEntry> getAppUsageMetaData() {
+        if (this.metaEntries == null)
+            initMetaEntries();
 
-        this.appUsageMetaDataList = new LinkedList<>();
+        return this.metaEntries;
+    }
+
+    private void initAppMetaInformation() {
+        if (FileHelper.fileExists(appPackageName, "appInformation.json")) {
+            JSONObject appMetaInformationJSON = FileHelper.readJSONFile(appPackageName, "appInformation.json");
+            this.appMetaInformation = new AppMetaInformation(appMetaInformationJSON);
+        }
+        else
+            this.appMetaInformation = new AppMetaInformation(appPackageName, new LinkedList<String>());
+    }
+
+    private void initMetaEntries() {
+        this.metaEntries = new LinkedList<>();
 
         List<AppUsageDataEntry> dataEntries = new ArrayList<>(this.appUsageData.getDataEntries());
         int firstMainActivityPos = 0;
@@ -95,17 +108,8 @@ public class AppUsageDataProcessor {
             }
         }
 
-        
 
-        return this.appUsageMetaDataList;
     }
 
-    private void assignAppMetaInformation() {
-        if (FileHelper.fileExists(appPackageName, "appInformation.json")) {
-            JSONObject appMetaInformationJSON = FileHelper.readJSONFile(appPackageName, "appInformation.json");
-            this.appMetaInformation = new AppMetaInformation(appMetaInformationJSON);
-        }
-        else
-            this.appMetaInformation = new AppMetaInformation(appPackageName, new LinkedList<String>());
-    }
+    private MetaEntry buildMetaEntry()
 }

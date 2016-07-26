@@ -27,18 +27,18 @@ import de.uni_bonn.detectappscreen.app_usage.AppUsageDataEntry;
  * Meta data for app usage data entries, containing additional information needed
  * for formatting, todo: among other things
  */
-public class AppUsageMetaData {
+public class MetaEntry {
     private List<AppUsageDataEntry> dataEntries;
     private int level;
-    public AppUsageMetaData() {
+    public MetaEntry() {
         this.dataEntries = new LinkedList<>();
         this.level = 0;
     }
-    public AppUsageMetaData(List<AppUsageDataEntry> entries) {
+    public MetaEntry(List<AppUsageDataEntry> entries) {
         this.dataEntries = entries;
         this.level = 0;
     }
-    public AppUsageMetaData(List<AppUsageDataEntry> entries, int level) {
+    public MetaEntry(List<AppUsageDataEntry> entries, int level) {
         this.dataEntries = entries;
         this.level = level;
     }
