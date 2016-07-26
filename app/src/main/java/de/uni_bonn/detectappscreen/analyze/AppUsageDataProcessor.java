@@ -113,8 +113,9 @@ public class AppUsageDataProcessor {
 
     private List<MetaEntry> buildMetaEntries(List<AppUsageDataEntry> allEntries, boolean backwards, int startPos) {
         LinkedList<String> activities = new LinkedList<>();
-
-        
+        activities.add(allEntries.get(startPos).getShortenedActivity());
+        //if ()
+        return null;
     }
 
     private int findPreviousActivityEntry(List<AppUsageDataEntry> allEntries, int startPos) {
