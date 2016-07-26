@@ -97,19 +97,45 @@ public class AppUsageDataProcessor {
     private void initMetaEntries() {
         this.metaEntries = new LinkedList<>();
 
-        List<AppUsageDataEntry> dataEntries = new ArrayList<>(this.appUsageData.getDataEntries());
+        List<AppUsageDataEntry> allEntries = new ArrayList<>(this.appUsageData.getDataEntries());
         int firstMainActivityPos = 0;
-        for (int i = 0; i < dataEntries.size(); ++i) {
-            AppUsageDataEntry entry = dataEntries.get(i);
-            if (entry instanceof ActivityDataEntry &&
-                    this.appMetaInformation.isMainActivity(entry.getShortenedActivity())) {
-                firstMainActivityPos = i;
+        while (!this.appMetaInformation.isMainActivity(allEntries.get(firstMainActivityPos))) {
+            firstMainActivityPos = findNextActivityEntry(allEntries, firstMainActivityPos);
+            if (firstMainActivityPos >= allEntries.size()) {
+                firstMainActivityPos = 0;
                 break;
             }
         }
 
 
+
     }
 
-    private MetaEntry buildMetaEntry()
+    private List<MetaEntry> buildMetaEntries(List<AppUsageDataEntry> allEntries, boolean backwards, int startPos) {
+        LinkedList<String> activities = new LinkedList<>();
+
+        
+    }
+
+    private int findPreviousActivityEntry(List<AppUsageDataEntry> allEntries, int startPos) {
+        int endPos = startPos - 1;
+        while (endPos > 0) {
+            AppUsageDataEntry entry = allEntries.get(endPos);
+            if (entry instanceof ActivityDataEntry)
+                break;
+            --endPos;
+        }
+        return endPos;
+    }
+
+    private int findNextActivityEntry(List<AppUsageDataEntry> allEntries, int startPos) {
+        int endPos = startPos + 1;
+        while (endPos < allEntries.size()) {
+            AppUsageDataEntry entry = allEntries.get(endPos);
+            if (entry instanceof ActivityDataEntry)
+                break;
+            ++endPos;
+        }
+        return endPos;
+    }
 }

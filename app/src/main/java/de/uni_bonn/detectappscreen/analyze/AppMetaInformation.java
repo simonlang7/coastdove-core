@@ -27,6 +27,8 @@ import org.json.JSONObject;
 import java.util.LinkedList;
 import java.util.List;
 
+import de.uni_bonn.detectappscreen.app_usage.AppUsageDataEntry;
+
 /**
  * Contains meta information regarding a detectable app, such as entry activities
  */
@@ -60,10 +62,14 @@ public class AppMetaInformation {
 
     public boolean isMainActivity(String activity) {
         for (String mainActivity : this.mainActivities) {
-            if (mainActivity.replaceAll("/", "").replaceAll("\\", "").contains(activity))
+            if (mainActivity.replaceAll("/", "").contains(activity))
                 return true;
         }
         return false;
+    }
+
+    public boolean isMainActivity(AppUsageDataEntry entry) {
+        return isMainActivity(entry.getShortenedActivity());
     }
 
     /** Package name of the app */

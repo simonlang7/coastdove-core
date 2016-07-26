@@ -30,6 +30,7 @@ import de.uni_bonn.detectappscreen.app_usage.AppUsageDataEntry;
 public class MetaEntry {
     private List<AppUsageDataEntry> dataEntries;
     private int level;
+
     public MetaEntry() {
         this.dataEntries = new LinkedList<>();
         this.level = 0;
@@ -41,6 +42,10 @@ public class MetaEntry {
     public MetaEntry(List<AppUsageDataEntry> entries, int level) {
         this.dataEntries = entries;
         this.level = level;
+    }
+    public MetaEntry(List<AppUsageDataEntry> allEntries, int level, int from, int to) {
+        this.dataEntries = new LinkedList<>();
+        this.dataEntries.addAll(allEntries.subList(from, to));
     }
 
     public List<AppUsageDataEntry> getDataEntries() {

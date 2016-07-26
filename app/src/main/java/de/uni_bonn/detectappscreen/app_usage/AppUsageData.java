@@ -64,7 +64,7 @@ public class AppUsageData {
             for (int i = 0; i < dataEntriesJSON.length(); ++i) {
                 JSONObject dataEntryJSON = dataEntriesJSON.getJSONObject(i);
 
-                AppUsageDataEntry dataEntry = null;
+                AppUsageDataEntry dataEntry;
                 if (dataEntryJSON.has("detectedLayouts"))
                     dataEntry = new LayoutDataEntry(dataEntryJSON);
                 else if (dataEntryJSON.has("detectedClick"))
@@ -74,8 +74,7 @@ public class AppUsageData {
                 else
                     dataEntry = new ActivityDataEntry(dataEntryJSON);
 
-                if (dataEntry != null)
-                    this.dataEntries.add(dataEntry);
+                this.dataEntries.add(dataEntry);
             }
         } catch (JSONException e) {
             Log.e("AppUsageData", "Unable to read from JSONObject: " + e.getMessage());
