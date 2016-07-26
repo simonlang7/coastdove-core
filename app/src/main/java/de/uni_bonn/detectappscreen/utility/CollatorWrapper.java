@@ -1,39 +1,46 @@
+/*  DetectAppScreen
+    Copyright (C) 2016  Simon Lang
+    Contact: simon.lang7 at gmail dot com
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package de.uni_bonn.detectappscreen.utility;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.text.Collator;
 import java.util.Comparator;
 
-/**
- * Source: http://stackoverflow.com/questions/8346036/serializing-collator-instance
- * Wrapper for Collator which isn't serializable. Thanks, Java.
- */
-public class CollatorWrapper implements Comparator<String>, Serializable {
-    private static final long serialVersionUID = 355565414282682127L;
+public class CollatorWrapper implements Serializable, Comparator<String> {
+    private static final long serialVersionUID = -145942738329137228L;
 
-    private transient Collator collatorInstance;
-
-    public CollatorWrapper() {
-        super();
-        initCollatorInstance();
-    }
+    private transient Collator collator = Collator.getInstance();
 
     @Override
-    public int compare(final String o1, final String o2) {
-        return collatorInstance.compare(o1, o2);
+    public int compare(String lhs, String rhs) {
+        return collator.compare(lhs, rhs);
     }
 
-    private void initCollatorInstance() {
-        collatorInstance = Collator.getInstance();
+    private void writeObject(final ObjectOutputStream oos) throws IOException {
+        oos.defaultWriteObject();
     }
 
-    private void writeObject(final java.io.ObjectOutputStream out) throws IOException {
-        out.defaultWriteObject();
-    }
-
-    private void readObject(final java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
-        in.defaultReadObject();
-        initCollatorInstance();
+    private void readObject(final ObjectInputStream ois) throws IOException, ClassNotFoundException {
+        ois.defaultReadObject();
     }
 }
+
