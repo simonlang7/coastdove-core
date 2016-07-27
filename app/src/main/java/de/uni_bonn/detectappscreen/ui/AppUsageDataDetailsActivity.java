@@ -25,6 +25,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
+import de.uni_bonn.detectappscreen.analyze.AppUsageDataProcessor;
 import de.uni_bonn.detectappscreen.app_usage.AppUsageData;
 import de.uni_bonn.detectappscreen.utility.FileHelper;
 import de.uni_bonn.detectappscreen.R;
@@ -63,6 +64,9 @@ public class AppUsageDataDetailsActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar)findViewById(R.id.detectable_app_toolbar);
         toolbar.setTitle(this.filename);
         setSupportActionBar(toolbar);
+
+        // TODO: test / debug / remove
+        AppUsageDataProcessor processor = new AppUsageDataProcessor(this, this.appPackageName, appUsageData);
     }
 
     @Override
