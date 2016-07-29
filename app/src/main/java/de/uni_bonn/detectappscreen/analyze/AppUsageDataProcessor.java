@@ -19,6 +19,7 @@
 package de.uni_bonn.detectappscreen.analyze;
 
 import android.content.Context;
+import android.util.Log;
 
 import org.json.JSONObject;
 
@@ -117,7 +118,7 @@ public class AppUsageDataProcessor {
             }
         }
 
-        buildMetaEntries(allEntries, firstMainActivityPos);
+        this.metaEntries = buildMetaEntries(allEntries, firstMainActivityPos);
     }
 
     /**
@@ -153,7 +154,7 @@ public class AppUsageDataProcessor {
             localEndPos = findNextActivityEntry(allEntries, localStartPos);
         }
 
-        return null;
+        return result;
     }
 
     /**

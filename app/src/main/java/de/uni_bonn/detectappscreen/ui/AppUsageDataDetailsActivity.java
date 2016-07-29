@@ -21,11 +21,16 @@ package de.uni_bonn.detectappscreen.ui;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
+import java.util.Iterator;
+import java.util.List;
+
 import de.uni_bonn.detectappscreen.analyze.AppUsageDataProcessor;
+import de.uni_bonn.detectappscreen.analyze.MetaEntry;
 import de.uni_bonn.detectappscreen.app_usage.AppUsageData;
 import de.uni_bonn.detectappscreen.utility.FileHelper;
 import de.uni_bonn.detectappscreen.R;
@@ -66,7 +71,14 @@ public class AppUsageDataDetailsActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         // TODO: test / debug / remove
-        AppUsageDataProcessor processor = new AppUsageDataProcessor(this, this.appPackageName, appUsageData);
+        AppUsageDataProcessor processor = new AppUsageDataProcessor(this, this.appPackageName, this.filename);
+        List<MetaEntry> metaData = processor.getAppUsageMetaData();
+        Log.i("Meta data", "size: " + metaData.size());
+        for (Iterator<MetaEntry> it = metaData.iterator(); it.hasNext(); ) {
+            MetaEntry metaEntry = it.next();
+
+            Log.i("Meta data", "Level: " + metaEntry.getLevel());
+        }
     }
 
     @Override

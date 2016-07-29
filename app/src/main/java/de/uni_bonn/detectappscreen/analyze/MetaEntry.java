@@ -46,6 +46,7 @@ public class MetaEntry {
     public MetaEntry(List<AppUsageDataEntry> allEntries, int level, int from, int to) {
         this.dataEntries = new LinkedList<>();
         this.dataEntries.addAll(allEntries.subList(from, to));
+        this.level = level;
     }
 
     public List<AppUsageDataEntry> getDataEntries() {
