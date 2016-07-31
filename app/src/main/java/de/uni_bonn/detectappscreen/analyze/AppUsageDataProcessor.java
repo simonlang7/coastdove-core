@@ -19,7 +19,6 @@
 package de.uni_bonn.detectappscreen.analyze;
 
 import android.content.Context;
-import android.util.Log;
 
 import org.json.JSONObject;
 
@@ -28,9 +27,8 @@ import java.util.LinkedList;
 import java.util.List;
 
 import de.uni_bonn.detectappscreen.R;
-import de.uni_bonn.detectappscreen.app_usage.ActivityDataEntry;
+import de.uni_bonn.detectappscreen.app_usage.ActivityData;
 import de.uni_bonn.detectappscreen.app_usage.AppUsageData;
-import de.uni_bonn.detectappscreen.app_usage.AppUsageDataEntry;
 import de.uni_bonn.detectappscreen.utility.FileHelper;
 
 /**
@@ -108,113 +106,71 @@ public class AppUsageDataProcessor {
     private void initMetaEntries() {
         this.metaEntries = new LinkedList<>();
 
-        List<AppUsageDataEntry> allEntries = new ArrayList<>(this.appUsageData.getDataEntries());
-        int firstMainActivityPos = 0;
-        while (!this.appMetaInformation.isMainActivity(allEntries.get(firstMainActivityPos))) {
-            firstMainActivityPos = findNextActivityEntry(allEntries, firstMainActivityPos);
-            if (firstMainActivityPos >= allEntries.size()) {
-                firstMainActivityPos = 0;
+        List<ActivityData> activityDataList = new ArrayList<>(this.appUsageData.getActivityDataList());
+        int firstMainActivityIndex = 0;
+        for (int i = 0; i < activityDataList.size(); ++i) {
+            if (this.appMetaInformation.isMainActivity(activityDataList.get(i))) {
+                firstMainActivityIndex = i;
                 break;
             }
         }
 
-        this.metaEntries = buildMetaEntries(allEntries, firstMainActivityPos);
+        this.metaEntries = buildMetaEntries(activityDataList, firstMainActivityIndex);
     }
 
     /**
-     * Builds a list of meta entries from a list of available entries
-     * @param allEntries              All entries available
-     * @param firstMainActivityPos    Index of the first ActivityDataEntry that contains a MainActivity
+     * Builds a list of meta entries from a list of activity data objects
+     * @param activityDataList              All activity data objects
+     * @param firstMainActivityIndex        Index of the first ActivityData that contains a MainActivity
      * @return List of meta entries
      */
-    private List<MetaEntry> buildMetaEntries(List<AppUsageDataEntry> allEntries, int firstMainActivityPos) {
+    private List<MetaEntry> buildMetaEntries(List<ActivityData> activityDataList, int firstMainActivityIndex) {
         List<MetaEntry> result = new LinkedList<>();
         LinkedList<String> activities = new LinkedList<>();
-        String mainActivity = allEntries.get(firstMainActivityPos).getShortenedActivity();
+        String mainActivity = activityDataList.get(firstMainActivityIndex).getShortenedActivity();
         activities.push(mainActivity);
 
         // go backwards
-        int localEndPos = firstMainActivityPos;
-        int localStartPos = findPreviousActivityEntry(allEntries, localEndPos);
-        while (localStartPos >= 0) {
-            addMetaEntry(result, allEntries, activities, localStartPos, localEndPos);
-
-            localEndPos = localStartPos;
-            localStartPos = findPreviousActivityEntry(allEntries, localEndPos);
+        for (int i = firstMainActivityIndex - 1; i >= 0; ++i) {
+            addMetaEntry(result, activityDataList, i, activities, true);
         }
 
         // go forward
         activities.clear();
-        localStartPos = firstMainActivityPos;
-        localEndPos = findNextActivityEntry(allEntries, localStartPos);
-        while (localEndPos < allEntries.size()) {
-            addMetaEntry(result, allEntries, activities, localStartPos, localEndPos);
-
-            localStartPos = localEndPos;
-            localEndPos = findNextActivityEntry(allEntries, localStartPos);
+        for (int i = firstMainActivityIndex; i < activityDataList.size(); ++i) {
+            addMetaEntry(result, activityDataList, i, activities, false);
         }
 
         return result;
     }
 
     /**
-     * Creates a MetaEntry and adds it to a given list of meta entries.
-     * @param metaEntryList    List to add the meta entry to
-     * @param allEntries       All data entries available
-     * @param activityStack    Stack of activities found while traversing allEntries
-     * @param startPos         Index of the first entry to add to the meta entry
-     * @param endPos           Index of the last entry to add to the meta entry
+     * Create a MetaEntry and adds it to the given list of meta entries
+     * @param metaEntryList       List to add the meta entry to
+     * @param activityDataList    Source list to take the activity data from
+     * @param index               Index of the activity data to use
+     * @param activityStack       Stack of activities found while traversing activityDataList
+     * @param putFront            The MetaEntry is added to the front of the list if true,
+     *                            or to the back if false
      */
-    private void addMetaEntry(List<MetaEntry> metaEntryList, List<AppUsageDataEntry> allEntries, LinkedList<String> activityStack,
-                              int startPos, int endPos) {
-        AppUsageDataEntry entry = allEntries.get(startPos);
-        String activity = entry.getShortenedActivity();
+    private void addMetaEntry(List<MetaEntry> metaEntryList, List<ActivityData> activityDataList,
+                              int index, LinkedList<String> activityStack, boolean putFront) {
+        ActivityData data = activityDataList.get(index);
+        String activity = data.getShortenedActivity();
         boolean containsActivity = activityStack.contains(activity);
         if (containsActivity) {
             // Pop until activity removed
             while (!activityStack.pop().equals(activity));
         }
-        MetaEntry metaEntry = new MetaEntry(allEntries, activityStack.size(), startPos, endPos);
-        metaEntryList.add(metaEntry);
+
+        MetaEntry metaEntry = new MetaEntry(data, activityStack.size());
+        if (putFront)
+            metaEntryList.add(0, metaEntry);
+        else
+            metaEntryList.add(metaEntry);
+
         if (!containsActivity)
             activityStack.push(activity);
     }
 
-    /**
-     * Given a list of data entries, this function finds the previous ActivityDataEntry from a given index,
-     * and returns the index of the entry found. If there is an ActivityDataEntry at the given position,
-     * it is not regarded.
-     * @param allEntries      List to search
-     * @param fromEntryPos    Position of the entry from which to start.
-     * @return Index of the previous ActivityDataEntry, or -1 if none exists
-     */
-    private int findPreviousActivityEntry(List<AppUsageDataEntry> allEntries, int fromEntryPos) {
-        int previousEntryPos = fromEntryPos - 1;
-        while (previousEntryPos > 0) {
-            AppUsageDataEntry entry = allEntries.get(previousEntryPos);
-            if (entry instanceof ActivityDataEntry)
-                break;
-            --previousEntryPos;
-        }
-        return previousEntryPos;
-    }
-
-    /**
-     * Given a list of data entries, this function finds the next ActivityDataEntry from a given index,
-     * and returns the index of the entry found. If there is an ActivityDataEntry at the given position,
-     * it is not regarded.
-     * @param allEntries      List to search
-     * @param fromEntryPos    Position of the entry from which to start.
-     * @return Index of the next ActivityDataEntry, or allEntries.size() if none exists
-     */
-    private int findNextActivityEntry(List<AppUsageDataEntry> allEntries, int fromEntryPos) {
-        int nextEntryPos = fromEntryPos + 1;
-        while (nextEntryPos < allEntries.size()) {
-            AppUsageDataEntry entry = allEntries.get(nextEntryPos);
-            if (entry instanceof ActivityDataEntry)
-                break;
-            ++nextEntryPos;
-        }
-        return nextEntryPos;
-    }
 }

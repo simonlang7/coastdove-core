@@ -62,7 +62,7 @@ public class AppUsageDataWriter implements Runnable {
     @Override
     public void run() {
         // todo: outsource "DetectAppScreen"
-        File directory = new File(Environment.getExternalStoragePublicDirectory("DetectAppScreen"), data.getPackageName() + "/" + subDirectory + "/");
+        File directory = new File(Environment.getExternalStoragePublicDirectory("DetectAppScreen"), data.getAppPackageName() + "/" + subDirectory + "/");
         directory.mkdirs();
         File file = new File(directory, data.getFilename());
         try (FileWriter fw = new FileWriter(file, false);
@@ -72,9 +72,9 @@ public class AppUsageDataWriter implements Runnable {
             out.println(data.toJSON().toString(4));
             FileHelper.scanFile(this.context, file.getAbsolutePath());
         } catch (JSONException e) {
-            Log.e("AppUsageDataWriter", "Error writing JSONObject for " + data.getPackageName() + ": " + e.getMessage());
+            Log.e("AppUsageDataWriter", "Error writing JSONObject for " + data.getAppPackageName() + ": " + e.getMessage());
         } catch (IOException e) {
-            Log.e("AppUsageDataWriter", "Input/Output error for " + data.getPackageName() + ": " + e.getMessage());
+            Log.e("AppUsageDataWriter", "Input/Output error for " + data.getAppPackageName() + ": " + e.getMessage());
         }
     }
 }

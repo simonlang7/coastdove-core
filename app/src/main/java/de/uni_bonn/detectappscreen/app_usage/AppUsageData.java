@@ -26,7 +26,6 @@ import org.json.JSONObject;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Set;
 
@@ -36,18 +35,18 @@ import java.util.Set;
  */
 public class AppUsageData {
     /** Name of the package associated with these app usage data */
-    private String packageName;
-    /** Data entries, each containing detailed information */
-    private LinkedList<AppUsageDataEntry> dataEntries;
+    private String appPackageName;
+    /** Activity data, each object containing data entries with detailed information */
+    private LinkedList<ActivityData> activityDataList;
 
     /**
      * Constructs an AppUsageData object with the given package name and an empty list
      * of data entries
-     * @param packageName    Name of the app / package associated
+     * @param appPackageName    Name of the app / package associated
      */
-    public AppUsageData(String packageName) {
-        this.packageName = packageName;
-        this.dataEntries = new LinkedList<>();
+    public AppUsageData(String appPackageName) {
+        this.appPackageName = appPackageName;
+        this.activityDataList = new LinkedList<>();
     }
 
     /**
@@ -56,25 +55,15 @@ public class AppUsageData {
      * @param dataJSON    JSONObject containing the data
      */
     public AppUsageData(JSONObject dataJSON) {
-        this.packageName = "";
-        this.dataEntries = new LinkedList<>();
+        this.appPackageName = "";
+        this.activityDataList = new LinkedList<>();
         try {
-            this.packageName = dataJSON.getString("package");
-            JSONArray dataEntriesJSON = dataJSON.getJSONArray("dataEntries");
-            for (int i = 0; i < dataEntriesJSON.length(); ++i) {
-                JSONObject dataEntryJSON = dataEntriesJSON.getJSONObject(i);
-
-                AppUsageDataEntry dataEntry;
-                if (dataEntryJSON.has("detectedLayouts"))
-                    dataEntry = new LayoutDataEntry(dataEntryJSON);
-                else if (dataEntryJSON.has("detectedClick"))
-                    dataEntry = new ClickDataEntry(dataEntryJSON);
-                else if (dataEntryJSON.has("scrolledElement"))
-                    dataEntry = new ScrollDataEntry(dataEntryJSON);
-                else
-                    dataEntry = new ActivityDataEntry(dataEntryJSON);
-
-                this.dataEntries.add(dataEntry);
+            this.appPackageName = dataJSON.getString("package");
+            JSONArray activityDataListJSON = dataJSON.getJSONArray("activityDataList");
+            for (int i = 0; i < activityDataListJSON.length(); ++i) {
+                JSONObject activityDataJSON = activityDataListJSON.getJSONObject(i);
+                ActivityData activityData = new ActivityData(activityDataJSON);
+                this.activityDataList.add(activityData);
             }
         } catch (JSONException e) {
             Log.e("AppUsageData", "Unable to read from JSONObject: " + e.getMessage());
@@ -82,30 +71,30 @@ public class AppUsageData {
     }
 
     /**
-     * Adds an activity data entry
+     * Adds an activity data object
      * @param timestamp    Time at which the data were collected
      * @param activity     Activity detected
-     * @return True if a new data entry was added, false if the previous data entry equals these data
+     * @return True if a new activity data object was added, false otherwise
      */
-    public boolean addActivityDataEntry(Date timestamp, String activity) {
-        boolean lastEntryEqual = increasePreviousEntryCountIfEqual(new ActivityDataEntry(null, activity));
-        if (!lastEntryEqual) {
-            AppUsageDataEntry entry = new ActivityDataEntry(timestamp, activity);
-            this.dataEntries.add(entry);
-            return true;
+    public boolean addActivityData(Date timestamp, String activity) {
+        if (!activityDataList.isEmpty()) {
+            ActivityData previousData = activityDataList.peekLast();
+            if (previousData.getActivity().contains(activity))
+                return false;
         }
-        else
-            return false;
+        ActivityData data = new ActivityData(this.appPackageName, timestamp, activity);
+        this.activityDataList.add(data);
+        return true;
     }
 
     /**
-     * Adds an activity data entry, using the current time when creating the timestamp
+     * Adds an activity data object, using the current time when creating the timestamp
      * @param activity           Activity detected
-     * @return True if a new data entry was added, false if the previous data entry equals these data
+     * @return True if a new activity data object was added, false otherwise
      */
-    public boolean addActivityDataEntry(String activity) {
+    public boolean addActivityData(String activity) {
         Date timestamp = new Date();
-        return addActivityDataEntry(timestamp, activity);
+        return addActivityData(timestamp, activity);
     }
 
     /**
@@ -114,16 +103,12 @@ public class AppUsageData {
      * @param activity           Activity detected
      * @param detectedLayouts    Layouts detected
      * @return True if a new data entry was added, false if the previous data entry equals these data
+     *         or there was no activity data object to add the data to
      */
     public boolean addLayoutDataEntry(Date timestamp, String activity, Set<String> detectedLayouts) {
-        boolean lastEntryEqual = increasePreviousEntryCountIfEqual(new LayoutDataEntry(null, activity, detectedLayouts));
-        if (!lastEntryEqual) {
-            AppUsageDataEntry entry = new LayoutDataEntry(timestamp, activity, detectedLayouts);
-            this.dataEntries.add(entry);
-            return true;
-        }
-        else
+        if (activityDataList.isEmpty())
             return false;
+        return activityDataList.peekLast().addLayoutDataEntry(timestamp, activity, detectedLayouts);
     }
 
     /**
@@ -131,6 +116,7 @@ public class AppUsageData {
      * @param activity           Activity detected
      * @param detectedLayouts    Layouts detected
      * @return True if a new data entry was added, false if the previous data entry equals these data
+     *         or there was no activity data object to add the data to
      */
     public boolean addLayoutDataEntry(String activity, Set<String> detectedLayouts) {
         Date timestamp = new Date();
@@ -143,16 +129,12 @@ public class AppUsageData {
      * @param activity         Activity detected
      * @param detectedClick    Click detected
      * @return True if a new data entry was added, false if the previous data entry equals these data
+     *         or there was no activity data object to add the data to
      */
     public boolean addClickDataEntry(Date timestamp, String activity, Set<ClickedEventData> detectedClick) {
-        boolean lastEntryEqual = increasePreviousEntryCountIfEqual(new ClickDataEntry(null, activity, detectedClick));
-        if (!lastEntryEqual) {
-            AppUsageDataEntry entry = new ClickDataEntry(timestamp, activity, detectedClick);
-            this.dataEntries.add(entry);
-            return true;
-        }
-        else
+        if (activityDataList.isEmpty())
             return false;
+        return activityDataList.peekLast().addClickDataEntry(timestamp, activity, detectedClick);
     }
 
     /**
@@ -160,6 +142,7 @@ public class AppUsageData {
      * @param activity         Activity detected
      * @param detectedClick    Click detected
      * @return True if a new data entry was added, false if the previous data entry equals these data
+     *         or there was no activity data object to add the data to
      */
     public boolean addClickDataEntry(String activity, Set<ClickedEventData> detectedClick) {
         Date timestamp = new Date();
@@ -170,24 +153,21 @@ public class AppUsageData {
      * Adds a scroll data entry
      * @param timestamp        Time at which the data were collected
      * @param activity         Activity detected
-     * @return True if there was a previous scroll data entry, false otherwise
+     * @return True if a new data entry was added, false if the previous data entry equals these data
+     *         or there was no activity data object to add the data to
      */
     public boolean addScrollDataEntry(Date timestamp, String activity, String scrolledElement) {
-        boolean lastEntryEqual = increasePreviousEntryCountIfEqual(new ScrollDataEntry(null, activity, scrolledElement));
-        if (!lastEntryEqual) {
-            AppUsageDataEntry entry = new ScrollDataEntry(timestamp, activity, scrolledElement);
-            this.dataEntries.add(entry);
-            return true;
-        }
-        else
+        if (activityDataList.isEmpty())
             return false;
+        return activityDataList.peekLast().addScrollDataEntry(timestamp, activity, scrolledElement);
     }
 
     /**
      * Adds a scroll data entry, using the current time when creating the timestamp
      * @param activity         Activity detected
      * @param scrolledElement  Element scrolled
-     * @return True if there was a previous scroll data entry, false otherwise
+     * @return True if a new data entry was added, false if the previous data entry equals these data
+     *         or there was no activity data object to add the data to
      */
     public boolean addScrollDataEntry(String activity, String scrolledElement) {
         Date timestamp = new Date();
@@ -201,29 +181,37 @@ public class AppUsageData {
         JSONObject result = new JSONObject();
         try {
             result.put("_type", "AppUsageData");
-            result.put("package", this.packageName);
+            result.put("package", this.appPackageName);
 
-            JSONArray dataEntriesJSON = new JSONArray();
-            for (AppUsageDataEntry entry : dataEntries)
-                dataEntriesJSON.put(entry.toJSON());
+            JSONArray activityDataJSON = new JSONArray();
+            for (ActivityData data : activityDataList)
+                activityDataJSON.put(data.toJSON());
 
-            result.put("dataEntries", dataEntriesJSON);
+            result.put("activityDataList", activityDataJSON);
         } catch (JSONException e) {
-            Log.e("AppUsageData", "Unable to create JSONObject for " + this.packageName + ": " + e.getMessage());
+            Log.e("AppUsageData", "Unable to create JSONObject for " + this.appPackageName + ": " + e.getMessage());
         }
 
         return result;
     }
 
     /**
-     * Returns an array with each data entry converted to a String
+     * Returns an array with each data entry of each activity data converted to a String
      * @return An array of all data entries converted to Strings
      */
     public String[] toStrings() {
-        String[] result = new String[this.dataEntries.size()];
+        int size = activityDataList.size();
+        for (ActivityData data : this.activityDataList)
+            size += data.getDataEntries().size();
+
+        String[] result = new String[size];
         int i = 0;
-        for (AppUsageDataEntry entry : this.dataEntries) {
-            result[i++] = entry.toString();
+        for (ActivityData data : this.activityDataList) {
+            result[i++] = data.toString();
+            String[] entryStrings = data.toStrings(2);
+            for (String entryString : entryStrings) {
+                result[i++] = entryString;
+            }
         }
         return result;
     }
@@ -232,9 +220,9 @@ public class AppUsageData {
      * Returns the filename for saving this object
      */
     public String getFilename() {
-        if (this.dataEntries.size() == 0)
+        if (this.activityDataList.size() == 0)
             return "empty.json";
-        Date first = this.dataEntries.get(0).getTimestamp();
+        Date first = this.activityDataList.get(0).getTimestamp();
         String format = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(first);
         return format + ".json";
     }
@@ -242,62 +230,14 @@ public class AppUsageData {
     /**
      * Returns the name of the package associated with these data
      */
-    public String getPackageName() {
-        return packageName;
+    public String getAppPackageName() {
+        return appPackageName;
     }
 
     /**
      * Returns the data entries, each containing detailed information
      */
-    public LinkedList<AppUsageDataEntry> getDataEntries() {
-        return dataEntries;
-    }
-
-    /**
-     * If the previous layout entry of the is equal to the given one, that entry's
-     * count is increased. If the given entry and the last processed entry are both
-     * click entries, and they're equal, the last processed entry's count is increased.
-     * @param other    Entry to compare the previous same-type entry with
-     * @return True if the entries are equal, false otherwise
-     */
-    private boolean increasePreviousEntryCountIfEqual(AppUsageDataEntry other) {
-        AppUsageDataEntry previousEntry = null;
-        if (other instanceof ScrollDataEntry) {
-            AppUsageDataEntry last = this.dataEntries.peekLast();
-            if (last != null && last instanceof ScrollDataEntry)
-                previousEntry = last;
-        }
-        else if (other instanceof ClickDataEntry) {
-            AppUsageDataEntry last = this.dataEntries.peekLast();
-            if (last != null && last instanceof ClickDataEntry)
-                previousEntry = last;
-        }
-        else if (other instanceof LayoutDataEntry) {
-            previousEntry = findLastEntryOfType(LayoutDataEntry.class);
-        }
-        else if (other instanceof ActivityDataEntry) {
-            previousEntry = findLastEntryOfType(ActivityDataEntry.class);
-        }
-
-        if (previousEntry != null && previousEntry.equals(other)) {
-            previousEntry.increaseCount();
-            return true;
-        }
-        else
-            return false;
-    }
-
-    /**
-     * Returns the last layout entry found, or null if none is found
-     */
-    private AppUsageDataEntry findLastEntryOfType(Class<?> classType) {
-        Iterator<AppUsageDataEntry> it = this.dataEntries.descendingIterator();
-        while (it.hasNext()) {
-            AppUsageDataEntry entry = it.next();
-            if (entry.getClass().equals(classType)) {
-                return entry;
-            }
-        }
-        return null;
+    public LinkedList<ActivityData> getActivityDataList() {
+        return activityDataList;
     }
 }

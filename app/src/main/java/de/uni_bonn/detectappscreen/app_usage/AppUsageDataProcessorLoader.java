@@ -24,12 +24,13 @@ import android.support.v4.content.Loader;
 import org.json.JSONObject;
 
 import de.uni_bonn.detectappscreen.R;
+import de.uni_bonn.detectappscreen.analyze.AppUsageDataProcessor;
 import de.uni_bonn.detectappscreen.utility.FileHelper;
 
 /**
- * Loader for app usage data
+ * Loader for app usage data and an according processor
  */
-public class AppUsageDataLoader extends Loader<AppUsageData> {
+public class AppUsageDataProcessorLoader extends Loader<AppUsageDataProcessor> {
 
     /** Package name of the app */
     private String appPackageName;
@@ -37,26 +38,24 @@ public class AppUsageDataLoader extends Loader<AppUsageData> {
     private String filename;
 
     /**
-     * Creates a new AppUsageDataLoader using the given data
+     * Creates a new AppUsageDataProcessorLoader using the given data
      * @param context           Application context
      * @param filename          Filename of the AppUsageData JSON file
      */
-    public AppUsageDataLoader(Context context, String appPackageName, String filename) {
+    public AppUsageDataProcessorLoader(Context context, String appPackageName, String filename) {
         super(context);
         this.appPackageName = appPackageName;
         this.filename = filename;
     }
 
     /**
-     * Loads the list of files in the external storage public directory of the given app name, usually
-     * /sdcard/{packageName}/{subDirectory}/, and delivers the result
+     * Loads the app usage data + processor from the given filename
      */
     @Override
     public void onStartLoading() {
-        JSONObject appUsageDataJSON = FileHelper.readJSONFile(this.appPackageName + "/"
-                + getContext().getString(R.string.app_usage_data_folder_name), this.filename);
-        AppUsageData appUsageData = new AppUsageData(appUsageDataJSON);
+        AppUsageDataProcessor processor = new AppUsageDataProcessor(getContext(), this.appPackageName,
+                this.filename);
 
-        deliverResult(appUsageData);
+        deliverResult(processor);
     }
 }

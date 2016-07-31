@@ -139,7 +139,7 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
     }
 
 
-    /** Name of the currenty activity, as acquired during the last window state change event */
+    /** Name of the current activity, as acquired during the last window state change event */
     private String currentActivity;
     /** Name of the previous app, as extracted from the last activity of the previous app */
     private String previousPackageName;
@@ -174,8 +174,9 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
 
             ActivityInfo activityInfo = tryGetActivity(componentName);
             if (activityInfo != null) {
-                this.currentActivity = componentName.flattenToShortString();
-                Log.i("CurrentActivity", componentName.flattenToShortString());
+                String newActivity = componentName.flattenToShortString();
+                this.currentActivity = newActivity;
+                Log.i("CurrentActivity", newActivity);
             }
         }
     }

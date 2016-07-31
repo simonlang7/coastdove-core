@@ -4,56 +4,54 @@
     android:layout_width="match_parent" android:layout_height="wrap_content">
 
     <LinearLayout
+        android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginLeft="8dp"
-        android:layout_marginTop="4dp"
-        android:layout_marginBottom="2dp">
+        android:layout_height="match_parent"
+        android:id="@+id/dataEntryInnerContainer">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginLeft="8dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="2dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/entryType"
+                android:layout_gravity="left|center_vertical"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:textColor="@color/abc_primary_text_material_light"
+                android:layout_marginRight="4dp"
+                android:text="Type" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/entryCount"
+                android:layout_gravity="center_vertical"
+                android:layout_marginLeft="4dp"
+                android:layout_marginRight="4dp"
+                android:textColor="@android:color/tertiary_text_light"
+                android:textSize="14sp"
+                android:text="(Count)" />
+
+        </LinearLayout>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/entryType"
-            android:layout_gravity="left|center_vertical"
-            android:textStyle="bold"
-            android:textSize="16sp"
-            android:textColor="@color/abc_primary_text_material_light"
-            android:layout_marginRight="4dp"
-            android:text="Type" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/entryCount"
-            android:layout_gravity="center_vertical"
-            android:layout_marginLeft="4dp"
-            android:layout_marginRight="4dp"
-            android:textColor="@android:color/tertiary_text_light"
+            android:id="@+id/entryContent"
+            android:layout_marginLeft="8dp"
+            android:layout_marginTop="2dp"
+            android:layout_marginBottom="4dp"
             android:textSize="14sp"
-            android:text="(Count)" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/entryActivity"
-            android:layout_marginLeft="4dp"
-            android:textColor="@color/abc_secondary_text_material_light"
-            android:layout_gravity="center_vertical"
-            android:text="Activity" />
-
+            android:textStyle="normal"
+            android:textColor="@color/abc_primary_text_material_light"
+            android:text="Content" />
     </LinearLayout>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/entryContent"
-        android:layout_marginLeft="8dp"
-        android:layout_marginTop="2dp"
-        android:layout_marginBottom="4dp"
-        android:textSize="14sp"
-        android:textStyle="normal"
-        android:textColor="@color/abc_primary_text_material_light"
-        android:text="Content" />
 
 </LinearLayout>

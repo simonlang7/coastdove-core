@@ -19,4 +19,10 @@
     <string name="toast_saved_to_txt">Saved</string>
     <string name="toast_file_exists">File exists</string>
     <string name="toast_file_deleted">File deleted</string>
+
+    <string name="meta_entry_activity">Activity</string>
+    <string name="data_entry_layout">Layout</string>
+    <string name="data_entry_click">Click</string>
+    <string name="data_entry_scroll">Scrolling</string>
+
 </resources>

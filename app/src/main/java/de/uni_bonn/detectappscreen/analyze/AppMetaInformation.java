@@ -27,6 +27,7 @@ import org.json.JSONObject;
 import java.util.LinkedList;
 import java.util.List;
 
+import de.uni_bonn.detectappscreen.app_usage.ActivityData;
 import de.uni_bonn.detectappscreen.app_usage.AppUsageDataEntry;
 
 /**
@@ -68,8 +69,8 @@ public class AppMetaInformation {
         return false;
     }
 
-    public boolean isMainActivity(AppUsageDataEntry entry) {
-        return isMainActivity(entry.getShortenedActivity());
+    public boolean isMainActivity(ActivityData data) {
+        return isMainActivity(data.getShortenedActivity());
     }
 
     /** Package name of the app */

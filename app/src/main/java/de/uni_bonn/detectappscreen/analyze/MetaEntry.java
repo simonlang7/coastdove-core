@@ -18,39 +18,29 @@
 
 package de.uni_bonn.detectappscreen.analyze;
 
-import java.util.LinkedList;
-import java.util.List;
+import android.support.annotation.NonNull;
 
-import de.uni_bonn.detectappscreen.app_usage.AppUsageDataEntry;
+import de.uni_bonn.detectappscreen.app_usage.ActivityData;
 
 /**
- * Meta data for app usage data entries, containing additional information needed
+ * Meta data for activity data objects, containing additional information needed
  * for formatting, todo: among other things
  */
 public class MetaEntry {
-    private List<AppUsageDataEntry> dataEntries;
+    private ActivityData activityData;
     private int level;
 
-    public MetaEntry() {
-        this.dataEntries = new LinkedList<>();
+    public MetaEntry(@NonNull ActivityData activityData) {
+        this.activityData = activityData;
         this.level = 0;
     }
-    public MetaEntry(List<AppUsageDataEntry> entries) {
-        this.dataEntries = entries;
-        this.level = 0;
-    }
-    public MetaEntry(List<AppUsageDataEntry> entries, int level) {
-        this.dataEntries = entries;
-        this.level = level;
-    }
-    public MetaEntry(List<AppUsageDataEntry> allEntries, int level, int from, int to) {
-        this.dataEntries = new LinkedList<>();
-        this.dataEntries.addAll(allEntries.subList(from, to));
+    public MetaEntry(@NonNull ActivityData activityData, int level) {
+        this.activityData = activityData;
         this.level = level;
     }
 
-    public List<AppUsageDataEntry> getDataEntries() {
-        return dataEntries;
+    public ActivityData getActivityData() {
+        return this.activityData;
     }
 
     public int getLevel() {

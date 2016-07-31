@@ -171,7 +171,7 @@ public class AppDetectionData {
             return;
 
         if (shallPerformActivityChecks(event)) {
-            boolean shallLog = currentAppUsageData.addActivityDataEntry(activity);
+            boolean shallLog = currentAppUsageData.addActivityData(activity);
             if (shallLog)
                 Log.i("Activity", activity);
         }

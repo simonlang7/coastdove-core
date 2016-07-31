@@ -28,10 +28,20 @@ import java.util.Comparator;
 public class CollatorWrapper implements Serializable, Comparator<String> {
     private static final long serialVersionUID = -145942738329137228L;
 
-    private transient Collator collator = Collator.getInstance();
+    private transient Collator collator;
+
+    public CollatorWrapper() {
+        initCollator();
+    }
+
+    private void initCollator() {
+        if (collator == null)
+            this.collator = Collator.getInstance();
+    }
 
     @Override
     public int compare(String lhs, String rhs) {
+        initCollator();
         return collator.compare(lhs, rhs);
     }
 

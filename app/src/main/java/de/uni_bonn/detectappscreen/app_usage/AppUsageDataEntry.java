@@ -105,10 +105,18 @@ public abstract class AppUsageDataEntry {
         return result;
     }
 
+
     @Override
     public String toString() {
+        return toString(0);
+    }
+
+    public String toString(int padding) {
         String timestamp = new SimpleDateFormat("yyyy-MM-dd HH-mm-ss").format(getTimestamp());
-        return timestamp + " " + getShortenedActivity() + ": " + getType() + " (" + getCount() + "): " + getContent();
+        String paddingString = " ";
+        for (int i = 0; i < padding; ++i)
+            paddingString += " ";
+        return timestamp + paddingString + getType() + " (" + getCount() + "x): " + getContent();
     }
 
     /** Type of data entry */
@@ -135,5 +143,10 @@ public abstract class AppUsageDataEntry {
     /** Number of consecutive occurrences of this data entry, disregarding the timestamp */
     public int getCount() {
         return count;
+    }
+
+    /** Returns a unique ID for this data entry */
+    public long id() {
+        return timestamp.getTime();
     }
 }

@@ -41,7 +41,7 @@ import de.uni_bonn.detectappscreen.R;
 public class AppUsageDataDetailsActivity extends AppCompatActivity {
     private String appPackageName;
     private String filename;
-    private AppUsageData appUsageData;
+    private AppUsageDataProcessor appUsageDataProcessor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,16 +69,6 @@ public class AppUsageDataDetailsActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar)findViewById(R.id.detectable_app_toolbar);
         toolbar.setTitle(this.filename);
         setSupportActionBar(toolbar);
-
-        // TODO: test / debug / remove
-        AppUsageDataProcessor processor = new AppUsageDataProcessor(this, this.appPackageName, this.filename);
-        List<MetaEntry> metaData = processor.getAppUsageMetaData();
-        Log.i("Meta data", "size: " + metaData.size());
-        for (Iterator<MetaEntry> it = metaData.iterator(); it.hasNext(); ) {
-            MetaEntry metaEntry = it.next();
-
-            Log.i("Meta data", "Level: " + metaEntry.getLevel());
-        }
     }
 
     @Override
@@ -94,8 +84,8 @@ public class AppUsageDataDetailsActivity extends AppCompatActivity {
             case R.id.item_export_to_txt:
                 String txtFilename = this.filename.replace(".json", ".txt");
                 if (//!FileHelper.fileExists(appPackageName + "/" + getString(R.string.app_usage_data_export_folder_name), txtFilename) &&
-                        this.appUsageData != null) {
-                    FileHelper.writeTxtFile(this, this.appUsageData.toStrings(), appPackageName + "/" + getString(R.string.app_usage_data_export_folder_name), txtFilename);
+                        this.appUsageDataProcessor != null) {
+//                    FileHelper.writeTxtFile(this, this.appUsageDataProcessor., appPackageName + "/" + getString(R.string.app_usage_data_export_folder_name), txtFilename);
                     Toast toast = Toast.makeText(this, getString(R.string.toast_saved_to_txt), Toast.LENGTH_SHORT);
                     toast.show();
                 }
@@ -105,7 +95,7 @@ public class AppUsageDataDetailsActivity extends AppCompatActivity {
                 }
                 return true;
             case R.id.item_delete:
-                FileHelper.deleteFile(appPackageName + "/" + getString(R.string.app_usage_data_folder_name), this.filename);
+//                FileHelper.deleteFile(appPackageName + "/" + getString(R.string.app_usage_data_folder_name), this.filename);
                 Toast toast = Toast.makeText(this, getString(R.string.toast_file_deleted), Toast.LENGTH_SHORT);
                 toast.show();
                 finish();
@@ -132,7 +122,7 @@ public class AppUsageDataDetailsActivity extends AppCompatActivity {
     /**
      * Sets the app usage data for this activity
      */
-    public void setAppUsageData(AppUsageData appUsageData) {
-        this.appUsageData = appUsageData;
+    public void setAppUsageDataProcessor(AppUsageDataProcessor appUsageDataProcessor) {
+        this.appUsageDataProcessor = appUsageDataProcessor;
     }
 }
