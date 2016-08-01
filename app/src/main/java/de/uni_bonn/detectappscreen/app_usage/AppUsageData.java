@@ -196,27 +196,6 @@ public class AppUsageData {
     }
 
     /**
-     * Returns an array with each data entry of each activity data converted to a String
-     * @return An array of all data entries converted to Strings
-     */
-    public String[] toStrings() {
-        int size = activityDataList.size();
-        for (ActivityData data : this.activityDataList)
-            size += data.getDataEntries().size();
-
-        String[] result = new String[size];
-        int i = 0;
-        for (ActivityData data : this.activityDataList) {
-            result[i++] = data.toString();
-            String[] entryStrings = data.toStrings(2);
-            for (String entryString : entryStrings) {
-                result[i++] = entryString;
-            }
-        }
-        return result;
-    }
-
-    /**
      * Returns the filename for saving this object
      */
     public String getFilename() {

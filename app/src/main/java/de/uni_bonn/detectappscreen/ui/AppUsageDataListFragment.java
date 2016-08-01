@@ -19,11 +19,18 @@
 package de.uni_bonn.detectappscreen.ui;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.content.Loader;
+import android.view.ActionMode;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
+import android.widget.Adapter;
 import android.widget.ListView;
 
 import java.util.ArrayList;
@@ -39,7 +46,48 @@ public class AppUsageDataListFragment extends FileListFragment {
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        //getListView().setChoiceMode(AbsListView.CHOICE_MODE_MULTIPLE_MODAL);
+
+        ListView listView = getListView();
+        listView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE_MODAL);
+        listView.setMultiChoiceModeListener(new AbsListView.MultiChoiceModeListener() {
+            @Override
+            public void onItemCheckedStateChanged(ActionMode mode, int position, long id, boolean checked) {
+                listAdapter().toggleSelected(position);
+                mode.setTitle(listAdapter().selectedCount()+"");
+                listAdapter().notifyDataSetChanged();
+            }
+
+            @Override
+            public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+                MenuInflater inflater = mode.getMenuInflater();
+                inflater.inflate(R.menu.app_usage_data_context_menu, menu);
+                return true;
+            }
+
+            @Override
+            public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+                return false;
+            }
+
+            @Override
+            public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+                switch (item.getItemId()) {
+                    case R.id.item_context_delete:
+                        mode.finish();
+                        return true;
+                    case R.id.item_context_export_to_txt:
+                        mode.finish();
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+
+            @Override
+            public void onDestroyActionMode(ActionMode mode) {
+                listAdapter().resetSelected();
+            }
+        });
     }
 
     @Override
@@ -66,6 +114,17 @@ public class AppUsageDataListFragment extends FileListFragment {
         intent.putExtra(getString(R.string.extras_filename), item);
         startActivity(intent);
     }
+
+    private AppUsageDataListAdapter listAdapter() {
+        return (AppUsageDataListAdapter)this.adapter;
+    }
+
+    @Override
+    protected void setUpListAdapter() {
+        this.adapter = new AppUsageDataListAdapter(getActivity(), android.R.layout.simple_list_item_1);
+        setListAdapter(this.adapter);
+    }
+
     @Override
     protected void addProgressBarToViewGroup() {
         ViewGroup root = (ViewGroup)getActivity().findViewById(R.id.fragment_app_usage_data_file_list);

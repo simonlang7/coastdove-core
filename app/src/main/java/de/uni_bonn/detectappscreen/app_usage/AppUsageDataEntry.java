@@ -112,7 +112,7 @@ public abstract class AppUsageDataEntry {
     }
 
     public String toString(int padding) {
-        String timestamp = new SimpleDateFormat("yyyy-MM-dd HH-mm-ss").format(getTimestamp());
+        String timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(getTimestamp());
         String paddingString = " ";
         for (int i = 0; i < padding; ++i)
             paddingString += " ";

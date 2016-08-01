@@ -60,11 +60,10 @@ public abstract class FileListFragment extends ListFragment
         this.progressBar.setLayoutParams(layoutParams);
         this.progressBar.setIndeterminate(true);
 
+        setUpListAdapter();
+
         getListView().setEmptyView(this.progressBar);
         addProgressBarToViewGroup();
-
-        this.adapter = new ArrayAdapter<>(getActivity(), android.R.layout.simple_list_item_1);
-        setListAdapter(this.adapter);
 
         getLoaderManager().initLoader(0, null, this);
     }
@@ -83,6 +82,11 @@ public abstract class FileListFragment extends ListFragment
 
     @Override
     public void onLoaderReset(Loader<ArrayList<String>> loader) {
+    }
+
+    protected void setUpListAdapter() {
+        this.adapter = new ArrayAdapter<>(getActivity(), android.R.layout.simple_list_item_1);
+        setListAdapter(this.adapter);
     }
 
     protected abstract void addProgressBarToViewGroup();

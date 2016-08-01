@@ -179,8 +179,9 @@ public class ActivityData {
      * @return An array of all data entries converted to Strings
      */
     public String[] toStrings(int padding) {
-        String[] result = new String[this.dataEntries.size()];
-        int i = 0;
+        String[] result = new String[this.dataEntries.size() + 1];
+        result[0] = toString(padding);
+        int i = 1;
         for (AppUsageDataEntry entry : this.dataEntries) {
             result[i++] = entry.toString(padding);
         }
@@ -193,11 +194,11 @@ public class ActivityData {
     }
 
     public String toString(int padding) {
-        String timestamp = new SimpleDateFormat("yyyy-MM-dd HH-mm-ss").format(getTimestamp());
+        String timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(getTimestamp());
         String paddingString = " ";
         for (int i = 0; i < padding; ++i)
             paddingString += " ";
-        return timestamp + paddingString + "Activity: " + this.activity;
+        return timestamp + paddingString + "Activity: " + getShortenedActivity();
     }
 
     /** Returns a unique ID for this data entry */

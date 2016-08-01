@@ -51,7 +51,7 @@ public class AppUsageDataProcessor {
      * Creates an AppUsageDataProcessor with the given parameters
      * @param context             Context that created this object
      * @param appPackageName      The associated app's package name
-     * @param appUsageData    AppUsageData object to process
+     * @param appUsageData        AppUsageData object to process
      */
     public AppUsageDataProcessor(Context context, String appPackageName, AppUsageData appUsageData) {
         this.context = context;
@@ -85,6 +85,22 @@ public class AppUsageDataProcessor {
             initMetaEntries();
 
         return this.metaEntries;
+    }
+
+    /**
+     * Converts all data contained to strings with appropriate padding
+     * @return All ActivityData of the metaEntries as strings
+     */
+    public String[] toStrings() {
+        List<String> strings = new LinkedList<>();
+        for (MetaEntry metaEntry : this.metaEntries) {
+            int level = metaEntry.getLevel();
+            String[] activityData = metaEntry.getActivityData().toStrings(2*level);
+            for (String string : activityData) {
+                strings.add(string);
+            }
+        }
+        return strings.toArray(new String[strings.size()]);
     }
 
     /**
