@@ -49,6 +49,14 @@ import de.uni_bonn.detectappscreen.R;
  * Functions to help with reading from and writing to files
  */
 public class FileHelper {
+    public enum Directory {
+        PUBLIC,
+        PACKAGE,
+        APP_USAGE_DATA,
+        APP_USAGE_DATA_EXPORT
+    }
+
+
     /**
      * Reads a JSON file from the external storage public directory with the given sub-directory and filename
      * @param subDirectory    Sub-directory to use
@@ -166,5 +174,28 @@ public class FileHelper {
     public static boolean fileExists(String subDirectory, String filename) {
         File file = new File(Environment.getExternalStoragePublicDirectory("DetectAppScreen"), subDirectory + "/" + filename);
         return file.exists();
+    }
+
+    private static File getFile(Context context, Directory directory, String appPackageName, String filename) {
+        String subDirectory;
+        switch (directory) {
+            case PUBLIC:
+                subDirectory = "";
+                break;
+            case PACKAGE:
+                subDirectory = appPackageName + "/";
+                break;
+            case APP_USAGE_DATA:
+                subDirectory = appPackageName + "/" + context.getString(R.string.app_usage_data_folder_name) + "/";
+                break;
+            case APP_USAGE_DATA_EXPORT:
+                subDirectory = appPackageName + "/" + context.getString(R.string.app_usage_data_export_folder_name) + "/";
+                break;
+            default:
+                subDirectory = "";
+        }
+        String publicDirectory = context.getString(R.string.external_folder_name);
+        File file = new File(Environment.getExternalStoragePublicDirectory(publicDirectory), subDirectory + filename);
+        return file;
     }
 }
