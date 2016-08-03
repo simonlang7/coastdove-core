@@ -150,10 +150,10 @@ public class AppDetectionData {
                 this.hashMapsLoaded = buildHashMapsFromJSON(this.layoutsToLoad, this.reverseMapToLoad);
 
                 // And save them as binaries
-                if (this.hashMapsLoaded && !FileHelper.fileExists(getAppPackageName(), "layoutsMap.bin"))
-                    FileHelper.writeHashMap(this.context, (HashMap)this.layoutIdentificationMap, getAppPackageName(), "layoutsMap.bin");
-                if (this.hashMapsLoaded && !FileHelper.fileExists(getAppPackageName(), "reverseMap.bin"))
-                    FileHelper.writeHashMap(this.context, (HashMap)this.reverseMap, getAppPackageName(), "reverseMap.bin");
+                if (this.hashMapsLoaded && !FileHelper.fileExists(this.context, FileHelper.Directory.PACKAGE, getAppPackageName(), "layouts.bin"))
+                    FileHelper.writeHashMap(this.context, (HashMap)this.layoutIdentificationMap, FileHelper.Directory.PACKAGE, getAppPackageName(), "layouts.bin");
+                if (this.hashMapsLoaded && !FileHelper.fileExists(this.context, FileHelper.Directory.PACKAGE, getAppPackageName(), "reverseMap.bin"))
+                    FileHelper.writeHashMap(this.context, (HashMap)this.reverseMap, FileHelper.Directory.PACKAGE, getAppPackageName(), "reverseMap.bin");
             }
 
             finishedLoading = hashMapsLoaded;
@@ -416,8 +416,8 @@ public class AppDetectionData {
                         + " " + context.getString(R.string.notification_loading_2))
                 .setSmallIcon(R.drawable.notification_template_icon_bg)
                 .setProgress(0, 0, true);
-        if (FileHelper.fileExists(getAppPackageName(), "layoutsMap.bin") &&
-                FileHelper.fileExists(getAppPackageName(), "reverseMap.bin")) {
+        if (FileHelper.fileExists(this.context, FileHelper.Directory.PACKAGE, getAppPackageName(), "layouts.bin") &&
+                FileHelper.fileExists(this.context, FileHelper.Directory.PACKAGE, getAppPackageName(), "reverseMap.bin")) {
             if (Thread.currentThread().isInterrupted()) {
                 notifyManager.cancel(this.uid);
                 return false;
@@ -427,14 +427,14 @@ public class AppDetectionData {
 
             Log.v("AppDetectionData", "Building hash maps from binary...");
             this.layoutIdentificationMap =
-                    (Map<String, LayoutIdentification>)FileHelper.readHashMap(getAppPackageName(), "layoutsMap.bin");
+                    (Map<String, LayoutIdentification>)FileHelper.readHashMap(this.context, FileHelper.Directory.PACKAGE, getAppPackageName(), "layouts.bin");
 
             if (Thread.currentThread().isInterrupted()) {
                 notifyManager.cancel(this.uid);
                 return false;
             }
 
-            this.reverseMap = (Map<String, Set<String>>)FileHelper.readHashMap(getAppPackageName(), "reverseMap.bin");
+            this.reverseMap = (Map<String, Set<String>>)FileHelper.readHashMap(this.context, FileHelper.Directory.PACKAGE, getAppPackageName(), "reverseMap.bin");
             Log.v("AppDetectionData", "Finished building hash maps from binary");
 
             if (Thread.currentThread().isInterrupted()) {

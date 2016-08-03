@@ -108,7 +108,7 @@ public class AppUsageDataProcessor {
      * one if not
      */
     private void initAppMetaInformation() {
-        if (FileHelper.fileExists(appPackageName, "appInformation.json")) {
+        if (FileHelper.fileExists(this.context, FileHelper.Directory.PACKAGE, appPackageName, "appInformation.json")) {
             JSONObject appMetaInformationJSON = FileHelper.readJSONFile(
                     this.context, FileHelper.Directory.PACKAGE, this.appPackageName, "appInformation.json");
             this.appMetaInformation = new AppMetaInformation(appMetaInformationJSON);
@@ -148,7 +148,7 @@ public class AppUsageDataProcessor {
         activities.push(mainActivity);
 
         // go backwards
-        for (int i = firstMainActivityIndex - 1; i >= 0; ++i) {
+        for (int i = firstMainActivityIndex - 1; i >= 0; --i) {
             addMetaEntry(result, activityDataList, i, activities, true);
         }
 

@@ -25,8 +25,11 @@ import android.os.Environment;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+
+import de.uni_bonn.detectappscreen.utility.CollatorWrapper;
 
 /**
  * Loader for a list of files in a directory
@@ -95,6 +98,7 @@ public class FileListLoader extends Loader<ArrayList<String>> {
                 data.add(files[i]);
         }
 
+        Collections.sort(data, new CollatorWrapper());
         deliverResult(data);
     }
 }

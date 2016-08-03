@@ -83,9 +83,9 @@ public class AppUsageDataDetailsActivity extends AppCompatActivity {
         switch (item.getItemId()) {
             case R.id.item_export_to_txt:
                 String txtFilename = this.filename.replace(".json", ".txt");
-                if (!FileHelper.fileExists(appPackageName + "/" + getString(R.string.app_usage_data_export_folder_name), txtFilename) &&
+                if (!FileHelper.fileExists(this, FileHelper.Directory.APP_USAGE_DATA_EXPORT, this.appPackageName, txtFilename) &&
                         this.appUsageDataProcessor != null) {
-                    FileHelper.writeTxtFile(this, this.appUsageDataProcessor.toStrings(), appPackageName + "/" + getString(R.string.app_usage_data_export_folder_name), txtFilename);
+                    FileHelper.writeTxtFile(this, this.appUsageDataProcessor.toStrings(), FileHelper.Directory.APP_USAGE_DATA_EXPORT, this.appPackageName, txtFilename);
                     Toast toast = Toast.makeText(this, getString(R.string.toast_saved_to_txt), Toast.LENGTH_SHORT);
                     toast.show();
                 }
@@ -95,7 +95,7 @@ public class AppUsageDataDetailsActivity extends AppCompatActivity {
                 }
                 return true;
             case R.id.item_delete:
-                FileHelper.deleteFile(appPackageName + "/" + getString(R.string.app_usage_data_folder_name), this.filename);
+                FileHelper.deleteFile(this, FileHelper.Directory.APP_USAGE_DATA, this.appPackageName, this.filename);
                 Toast toast = Toast.makeText(this, getString(R.string.toast_file_deleted), Toast.LENGTH_SHORT);
                 toast.show();
                 finish();

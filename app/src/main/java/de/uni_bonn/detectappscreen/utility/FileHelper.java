@@ -92,9 +92,7 @@ public class FileHelper {
         } catch (FileNotFoundException e) {
             Log.e("FileHelper", "File not found: " + file.getAbsolutePath());
             Log.e("FileHelper", e.getMessage());
-        } catch (JSONException e) {
-            Log.e("FileHelper", "Unable to create JSONObject from file (" + file.getAbsolutePath() + "): " + e.getMessage());
-        } catch (IOException e) {
+        } catch (JSONException | IOException e) {
             Log.e("FileHelper", "Unable to create JSONObject from file (" + file.getAbsolutePath() + "): " + e.getMessage());
         }
 
@@ -103,14 +101,19 @@ public class FileHelper {
 
     /**
      * Writes a String array to a text file
-     * @param lines           Array to write
-     * @param subDirectory    Sub-directory to create the file in
+     * @param context         App context
+     * @param lines           Lines to write to the text file
+     * @param directory       Directory to use - if PUBLIC, appPackageName is ignored and can be null
+     * @param appPackageName  Package name of the app to whose directory the JSON file belongs
      * @param filename        Filename to write to
      */
-    public static void writeTxtFile(Context context, String[] lines, String subDirectory, String filename) {
-        File file = new File(Environment.getExternalStoragePublicDirectory("DetectAppScreen"), subDirectory + "/" + filename);
-        File directory = file.getParentFile();
-        directory.mkdirs();
+    public static void writeTxtFile(Context context, String[] lines, Directory directory, String appPackageName, String filename) {
+        File file = getFile(context, directory, appPackageName, filename);
+        if (file == null)
+            return;
+
+        makeParentDir(file);
+
         try (OutputStream os = new FileOutputStream(file);
              OutputStreamWriter osw = new OutputStreamWriter(os);
              BufferedWriter br = new BufferedWriter(osw)) {
@@ -133,7 +136,6 @@ public class FileHelper {
         MediaScannerConnection.scanFile(context, paths, null, new MediaScannerConnection.MediaScannerConnectionClient() {
             @Override
             public void onMediaScannerConnected() {
-
             }
 
             @Override
@@ -143,8 +145,13 @@ public class FileHelper {
         });
     }
 
-    public static void writeHashMap(Context context, HashMap hashMap, String subDirectory, String filename) {
-        File file = new File(Environment.getExternalStoragePublicDirectory(context.getString(R.string.external_folder_name)), subDirectory + "/" + filename);
+    public static void writeHashMap(Context context, HashMap hashMap, Directory directory, String appPackageName, String filename) {
+        File file = getFile(context, directory, appPackageName, filename);
+        if (file == null)
+            return;
+
+        makeParentDir(file);
+
         try (FileOutputStream fos = new FileOutputStream(file);
              ObjectOutputStream oos = new ObjectOutputStream(fos)) {
             oos.writeObject(hashMap);
@@ -157,8 +164,11 @@ public class FileHelper {
         scanFile(context, file.getAbsolutePath());
     }
 
-    public static HashMap readHashMap(String subDirectory, String filename) {
-        File file = new File(Environment.getExternalStoragePublicDirectory("DetectAppScreen"), subDirectory + "/" + filename);
+    public static HashMap readHashMap(Context context, Directory directory, String appPackageName, String filename) {
+        File file = getFile(context, directory, appPackageName, filename);
+        if (file == null)
+            return null;
+
         HashMap result = null;
         try (FileInputStream fis = new FileInputStream(file);
              ObjectInputStream ois = new ObjectInputStream(fis)) {
@@ -178,20 +188,22 @@ public class FileHelper {
         return result;
     }
 
-    public static boolean deleteFile(String subDirectory, String filename) {
-        File file = new File(Environment.getExternalStoragePublicDirectory("DetectAppScreen"), subDirectory + "/" + filename);
-        return file.delete();
+    public static boolean deleteFile(Context context, Directory directory, String appPackageName, String filename) {
+        File file = getFile(context, directory, appPackageName, filename);
+        return file != null && file.delete();
     }
 
-    public static boolean fileExists(String subDirectory, String filename) {
-        File file = new File(Environment.getExternalStoragePublicDirectory("DetectAppScreen"), subDirectory + "/" + filename);
-        return file.exists();
+    public static boolean fileExists(Context context, Directory directory, String appPackageName, String filename) {
+        File file = getFile(context, directory, appPackageName, filename);
+        return file != null && file.exists();
     }
 
     private static File getFile(Context context, Directory directory, String appPackageName, String filename) {
         String state = Environment.getExternalStorageState();
-        if (!Environment.MEDIA_MOUNTED.equals(state))
+        if (!Environment.MEDIA_MOUNTED.equals(state)) {
+            Log.e("FileHelper", "External storage is not mounted, failing.");
             return null;
+        }
 
         String subDirectory;
         switch (directory) {
@@ -219,5 +231,10 @@ public class FileHelper {
         String publicDirectory = context.getString(R.string.external_folder_name);
         File file = new File(Environment.getExternalStoragePublicDirectory(publicDirectory), subDirectory + filename);
         return file;
+    }
+
+    private static void makeParentDir(File file) {
+        File path = file.getParentFile();
+        path.mkdirs();
     }
 }
