@@ -71,7 +71,7 @@ public class AppUsageDataProcessor {
         this.context = context;
         this.appPackageName = appPackageName;
         JSONObject appUsageDataJSON = FileHelper.readJSONFile(
-                this.appPackageName + "/" + this.context.getString(R.string.app_usage_data_folder_name), filename);
+                context, FileHelper.Directory.APP_USAGE_DATA, appPackageName, filename);
         this.appUsageData = new AppUsageData(appUsageDataJSON);
         this.metaEntries = null;
         initAppMetaInformation();
@@ -109,11 +109,12 @@ public class AppUsageDataProcessor {
      */
     private void initAppMetaInformation() {
         if (FileHelper.fileExists(appPackageName, "appInformation.json")) {
-            JSONObject appMetaInformationJSON = FileHelper.readJSONFile(appPackageName, "appInformation.json");
+            JSONObject appMetaInformationJSON = FileHelper.readJSONFile(
+                    this.context, FileHelper.Directory.PACKAGE, this.appPackageName, "appInformation.json");
             this.appMetaInformation = new AppMetaInformation(appMetaInformationJSON);
         }
         else
-            this.appMetaInformation = new AppMetaInformation(appPackageName, new LinkedList<String>());
+            this.appMetaInformation = new AppMetaInformation(this.appPackageName, new LinkedList<String>());
     }
 
     /**
@@ -176,7 +177,9 @@ public class AppUsageDataProcessor {
         boolean containsActivity = activityStack.contains(activity);
         if (containsActivity) {
             // Pop until activity removed
-            while (!activityStack.pop().equals(activity));
+            String topActivity = activityStack.pop();
+            while (!topActivity.equals(activity))
+                topActivity = activityStack.pop();
         }
 
         MetaEntry metaEntry = new MetaEntry(data, activityStack.size());
@@ -185,8 +188,7 @@ public class AppUsageDataProcessor {
         else
             metaEntryList.add(metaEntry);
 
-        if (!containsActivity)
-            activityStack.push(activity);
+        activityStack.push(activity);
     }
 
 }

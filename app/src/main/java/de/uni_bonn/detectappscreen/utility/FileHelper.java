@@ -49,24 +49,36 @@ import de.uni_bonn.detectappscreen.R;
  * Functions to help with reading from and writing to files
  */
 public class FileHelper {
+    /**
+     * Type of directory, to be used when referring to a file
+     */
     public enum Directory {
+        /** The external storage public directory of this app */
         PUBLIC,
+        /** The detectable app's package name as a sub-directory of the public directory */
         PACKAGE,
+        /** The package's sub-directory for app usage data (JSON files) */
         APP_USAGE_DATA,
+        /** The package's sub-directory for exported app usage data (usually plain text files) */
         APP_USAGE_DATA_EXPORT
     }
 
 
     /**
-     * Reads a JSON file from the external storage public directory with the given sub-directory and filename
-     * @param subDirectory    Sub-directory to use
+     * Reads a JSON file from the external storage public directory with the given directory and filename
+     * @param context         App context
+     * @param directory       Directory to use - if PUBLIC, appPackageName is ignored and can be null
+     * @param appPackageName  Package name of the app to whose directory the JSON file belongs
      * @param filename        Filename of the file to read
      * @return A JSONObject with the file's contents
      */
-    public static JSONObject readJSONFile(String subDirectory, String filename) {
+    public static JSONObject readJSONFile(Context context, Directory directory, String appPackageName, String filename) {
         JSONObject result = null;
 
-        File file = new File(Environment.getExternalStoragePublicDirectory("DetectAppScreen"), subDirectory + "/" + filename);
+        File file = getFile(context, directory, appPackageName, filename);
+        if (file == null)
+            return null;
+
         try (InputStream is = new FileInputStream(file);
              InputStreamReader isr = new InputStreamReader(is);
              BufferedReader br = new BufferedReader(isr)) {
@@ -177,18 +189,28 @@ public class FileHelper {
     }
 
     private static File getFile(Context context, Directory directory, String appPackageName, String filename) {
+        String state = Environment.getExternalStorageState();
+        if (!Environment.MEDIA_MOUNTED.equals(state))
+            return null;
+
         String subDirectory;
         switch (directory) {
             case PUBLIC:
                 subDirectory = "";
                 break;
             case PACKAGE:
+                if (appPackageName == null)
+                    throw new IllegalArgumentException("appPackageName must not be null");
                 subDirectory = appPackageName + "/";
                 break;
             case APP_USAGE_DATA:
+                if (appPackageName == null)
+                    throw new IllegalArgumentException("appPackageName must not be null");
                 subDirectory = appPackageName + "/" + context.getString(R.string.app_usage_data_folder_name) + "/";
                 break;
             case APP_USAGE_DATA_EXPORT:
+                if (appPackageName == null)
+                    throw new IllegalArgumentException("appPackageName must not be null");
                 subDirectory = appPackageName + "/" + context.getString(R.string.app_usage_data_export_folder_name) + "/";
                 break;
             default:

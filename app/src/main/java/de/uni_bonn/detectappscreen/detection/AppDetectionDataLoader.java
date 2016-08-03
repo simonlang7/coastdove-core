@@ -32,7 +32,7 @@ import de.uni_bonn.detectappscreen.utility.FileHelper;
 public class AppDetectionDataLoader implements Runnable {
 
     /** Package name associated with the app detection data */
-    private String packageName;
+    private String appPackageName;
     /** List to add the loaded object to */
     private List<AppDetectionData> detectableAppsLoaded;
     /** Whether to compare current layouts with layout definitions */
@@ -45,14 +45,14 @@ public class AppDetectionDataLoader implements Runnable {
 
     /**
      * Constructs a loader using the given data
-     * @param packageName             Name of the package associated
+     * @param appPackageName             Name of the package associated
      * @param detectableAppsLoaded    List to add the loaded object to
      */
-    public AppDetectionDataLoader(String packageName, List<AppDetectionData> detectableAppsLoaded,
+    public AppDetectionDataLoader(String appPackageName, List<AppDetectionData> detectableAppsLoaded,
                                   boolean performLayoutChecks, boolean performOnClickChecks,
                                   Context context) {
         super();
-        this.packageName = packageName;
+        this.appPackageName = appPackageName;
         this.detectableAppsLoaded = detectableAppsLoaded;
         this.performLayoutChecks = performLayoutChecks;
         this.performOnClickChecks = performOnClickChecks;
@@ -67,16 +67,18 @@ public class AppDetectionDataLoader implements Runnable {
         JSONObject layouts;
         JSONObject reverseMap;
         synchronized (DetectAppScreenAccessibilityService.detectableAppsLoadedLock) {
-            layouts = FileHelper.readJSONFile(packageName, "layouts.json");
-            reverseMap = FileHelper.readJSONFile(packageName, "reverseMap.json");
+            layouts = FileHelper.readJSONFile(
+                    this.context, FileHelper.Directory.PACKAGE, this.appPackageName, "layouts.json");
+            reverseMap = FileHelper.readJSONFile(
+                    this.context, FileHelper.Directory.PACKAGE, this.appPackageName, "reverseMap.json");
         }
-        AppDetectionData detectableApp = new AppDetectionData(this.packageName, layouts, reverseMap, context);
+        AppDetectionData detectableApp = new AppDetectionData(this.appPackageName, layouts, reverseMap, context);
 
         detectableApp.load(this.performLayoutChecks, this.performOnClickChecks);
         synchronized (DetectAppScreenAccessibilityService.detectableAppsLoadedLock) {
             if (detectableApp.isFinishedLoading())
                 detectableAppsLoaded.add(detectableApp);
         }
-        DetectAppScreenAccessibilityService.onDetectionDataLoadFinished(this.packageName);
+        DetectAppScreenAccessibilityService.onDetectionDataLoadFinished(this.appPackageName);
     }
 }

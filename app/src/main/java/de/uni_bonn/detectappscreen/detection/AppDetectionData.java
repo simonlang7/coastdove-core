@@ -59,7 +59,7 @@ public class AppDetectionData {
     private JSONObject reverseMapToLoad;
 
     /** Name of the package associated, i.e. the app that can be detected */
-    private String packageName;
+    private String appPackageName;
     /** Indicates whether the hash maps (layoutIdentificationMap and reverseMap) have been loaded or not */
     private boolean hashMapsLoaded;
     /** Hash map mapping from each layout to a set of android IDs that identify the layout*/
@@ -82,43 +82,45 @@ public class AppDetectionData {
 
     /**
      * Creates an AppDetectionData object using the given parameters
-     * @param packageName    Name of the package for app detection
-     * @param layouts        Layouts in JSON format
-     * @param reverseMap     Reverse map in JSON format
+     * @param appPackageName    Name of the package for app detection
+     * @param layouts           Layouts in JSON format
+     * @param reverseMap        Reverse map in JSON format
      */
-    public AppDetectionData(String packageName, JSONObject layouts, JSONObject reverseMap, Context context) {
+    public AppDetectionData(String appPackageName, JSONObject layouts, JSONObject reverseMap, Context context) {
         this.finishedLoading = false;
         this.performLayoutChecks = false;
         this.performOnClickChecks = false;
-        this.packageName = packageName;
+        this.appPackageName = appPackageName;
         this.hashMapsLoaded = false;
         this.layoutsToLoad = layouts;
         this.reverseMapToLoad = reverseMap;
         this.layoutIdentificationMap = null;
         this.reverseMap = null;
-        this.currentAppUsageData = new AppUsageData(packageName);
+        this.currentAppUsageData = new AppUsageData(appPackageName);
         this.context = context;
-        this.uid = packageName.hashCode();
+        this.uid = appPackageName.hashCode();
     }
 
     /**
      * Creates an AppDetectionData object using the given parameters, automatically loads
      * the layouts and reverse map files from the according directory
-     * @param packageName    Name of the package for app detection
+     * @param appPackageName    Name of the package for app detection
      */
-    public AppDetectionData(String packageName, Context context) {
+    public AppDetectionData(String appPackageName, Context context) {
         this.finishedLoading = false;
         this.performLayoutChecks = false;
         this.performOnClickChecks = false;
-        this.packageName = packageName;
+        this.appPackageName = appPackageName;
         this.hashMapsLoaded = false;
-        this.layoutsToLoad = FileHelper.readJSONFile(packageName, "layouts.json");
-        this.reverseMapToLoad = FileHelper.readJSONFile(packageName, "reverseMap.json");
+        this.layoutsToLoad = FileHelper.readJSONFile(
+                context, FileHelper.Directory.PACKAGE, appPackageName, "layouts.json");
+        this.reverseMapToLoad = FileHelper.readJSONFile(
+                context, FileHelper.Directory.PACKAGE, appPackageName, "reverseMap.json");
         this.layoutIdentificationMap = null;
         this.reverseMap = null;
-        this.currentAppUsageData = new AppUsageData(packageName);
+        this.currentAppUsageData = new AppUsageData(appPackageName);
         this.context = context;
-        this.uid = packageName.hashCode();
+        this.uid = appPackageName.hashCode();
     }
 
     /**
@@ -148,10 +150,10 @@ public class AppDetectionData {
                 this.hashMapsLoaded = buildHashMapsFromJSON(this.layoutsToLoad, this.reverseMapToLoad);
 
                 // And save them as binaries
-                if (this.hashMapsLoaded && !FileHelper.fileExists(getPackageName(), "layoutsMap.bin"))
-                    FileHelper.writeHashMap(this.context, (HashMap)this.layoutIdentificationMap, getPackageName(), "layoutsMap.bin");
-                if (this.hashMapsLoaded && !FileHelper.fileExists(getPackageName(), "reverseMap.bin"))
-                    FileHelper.writeHashMap(this.context, (HashMap)this.reverseMap, getPackageName(), "reverseMap.bin");
+                if (this.hashMapsLoaded && !FileHelper.fileExists(getAppPackageName(), "layoutsMap.bin"))
+                    FileHelper.writeHashMap(this.context, (HashMap)this.layoutIdentificationMap, getAppPackageName(), "layoutsMap.bin");
+                if (this.hashMapsLoaded && !FileHelper.fileExists(getAppPackageName(), "reverseMap.bin"))
+                    FileHelper.writeHashMap(this.context, (HashMap)this.reverseMap, getAppPackageName(), "reverseMap.bin");
             }
 
             finishedLoading = hashMapsLoaded;
@@ -208,14 +210,14 @@ public class AppDetectionData {
      */
     public void saveAppUsageData() {
         writeAppUsageData();
-        currentAppUsageData = new AppUsageData(this.packageName);
+        currentAppUsageData = new AppUsageData(this.appPackageName);
     }
 
     /**
      * Returns the package name of the app to be detected by these data
      */
-    public String getPackageName() {
-        return packageName;
+    public String getAppPackageName() {
+        return appPackageName;
     }
 
     public boolean getPerformLayoutChecks() {
@@ -410,12 +412,12 @@ public class AppDetectionData {
         NotificationManager notifyManager = (NotificationManager)this.context.getSystemService(Context.NOTIFICATION_SERVICE);
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this.context);
         builder.setContentTitle(context.getString(R.string.app_name))
-                .setContentText(context.getString(R.string.notification_loading_1) + " " + getPackageName()
+                .setContentText(context.getString(R.string.notification_loading_1) + " " + getAppPackageName()
                         + " " + context.getString(R.string.notification_loading_2))
                 .setSmallIcon(R.drawable.notification_template_icon_bg)
                 .setProgress(0, 0, true);
-        if (FileHelper.fileExists(getPackageName(), "layoutsMap.bin") &&
-                FileHelper.fileExists(getPackageName(), "reverseMap.bin")) {
+        if (FileHelper.fileExists(getAppPackageName(), "layoutsMap.bin") &&
+                FileHelper.fileExists(getAppPackageName(), "reverseMap.bin")) {
             if (Thread.currentThread().isInterrupted()) {
                 notifyManager.cancel(this.uid);
                 return false;
@@ -425,14 +427,14 @@ public class AppDetectionData {
 
             Log.v("AppDetectionData", "Building hash maps from binary...");
             this.layoutIdentificationMap =
-                    (Map<String, LayoutIdentification>)FileHelper.readHashMap(getPackageName(), "layoutsMap.bin");
+                    (Map<String, LayoutIdentification>)FileHelper.readHashMap(getAppPackageName(), "layoutsMap.bin");
 
             if (Thread.currentThread().isInterrupted()) {
                 notifyManager.cancel(this.uid);
                 return false;
             }
 
-            this.reverseMap = (Map<String, Set<String>>)FileHelper.readHashMap(getPackageName(), "reverseMap.bin");
+            this.reverseMap = (Map<String, Set<String>>)FileHelper.readHashMap(getAppPackageName(), "reverseMap.bin");
             Log.v("AppDetectionData", "Finished building hash maps from binary");
 
             if (Thread.currentThread().isInterrupted()) {
@@ -440,7 +442,7 @@ public class AppDetectionData {
                 return false;
             }
 
-            builder.setContentText(context.getString(R.string.notification_finished_loading_1) + " " + getPackageName()
+            builder.setContentText(context.getString(R.string.notification_finished_loading_1) + " " + getAppPackageName()
                     + " " + context.getString(R.string.notification_finished_loading_2));
             builder.setProgress(0, 0, false);
             notifyManager.notify(this.uid, builder.build());
@@ -465,7 +467,7 @@ public class AppDetectionData {
         NotificationManager notifyManager = (NotificationManager)this.context.getSystemService(Context.NOTIFICATION_SERVICE);
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this.context);
         builder.setContentTitle(context.getString(R.string.app_name))
-                .setContentText(context.getString(R.string.notification_loading_1) + " " + getPackageName()
+                .setContentText(context.getString(R.string.notification_loading_1) + " " + getAppPackageName()
                         + " " + context.getString(R.string.notification_loading_2))
                 .setSmallIcon(R.drawable.notification_template_icon_bg)
                 .setProgress(0, 0, true);
@@ -512,7 +514,7 @@ public class AppDetectionData {
         } catch (JSONException e) {
             Log.e("AppDetectionData", "Error reading from JSONObject: " + e.getMessage());
         }
-        builder.setContentText(context.getString(R.string.notification_finished_loading_1) + " " + getPackageName()
+        builder.setContentText(context.getString(R.string.notification_finished_loading_1) + " " + getAppPackageName()
                             + " " + context.getString(R.string.notification_finished_loading_2))
                 .setProgress(0, 0, false);
         notifyManager.notify(this.uid, builder.build());
@@ -533,7 +535,7 @@ public class AppDetectionData {
                 new NodeInfoDataExtractor<String>() {
                     @Override
                     public String extractData(AccessibilityNodeInfo nodeInfo) {
-                        return nodeInfo.getViewIdResourceName().replace(packageName + ":", "");
+                        return nodeInfo.getViewIdResourceName().replace(appPackageName + ":", "");
                     }
                 },
                 new NodeInfoFilter() {

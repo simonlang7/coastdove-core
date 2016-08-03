@@ -61,7 +61,7 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
         // Already loaded?
         synchronized (detectableAppsLoadedLock) {
             for (AppDetectionData data : detectableAppsLoaded) {
-                if (data.getPackageName().equals(packageName))
+                if (data.getAppPackageName().equals(packageName))
                     return;
             }
         }
@@ -97,7 +97,7 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
             Iterator<AppDetectionData> iterator = detectableAppsLoaded.iterator();
             while (iterator.hasNext()) {
                 AppDetectionData data = iterator.next();
-                if (data.getPackageName().equals(packageName)) {
+                if (data.getAppPackageName().equals(packageName)) {
                     iterator.remove();
                     Log.i("AppDetectionData", "Removed loaded data");
                     break;
@@ -118,7 +118,7 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
         if (detectableAppsLoaded != null) {
             synchronized (detectableAppsLoadedLock) {
                 for (AppDetectionData data : detectableAppsLoaded) {
-                    if (data.getPackageName().equals(packageName))
+                    if (data.getAppPackageName().equals(packageName))
                         return true;
                 }
             }
@@ -187,9 +187,9 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
     private void activateDetectableApps() {
         synchronized (detectableAppsLoadedLock) {
             for (AppDetectionData data : detectableAppsLoaded) {
-                if (!this.detectableApps.containsKey(data.getPackageName())) {
-                    Log.i("Loaded DetectableApp", data.getPackageName());
-                    this.detectableApps.put(data.getPackageName(), data);
+                if (!this.detectableApps.containsKey(data.getAppPackageName())) {
+                    Log.i("Loaded DetectableApp", data.getAppPackageName());
+                    this.detectableApps.put(data.getAppPackageName(), data);
                 }
             }
         }
