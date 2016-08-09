@@ -28,6 +28,14 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:text="Load Öffi"
+        android:id="@+id/loadOeffi"
+        android:layout_gravity="right"
+        android:onClick="setupOeffi" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:text="Accessibility Services"
         android:id="@+id/accessibilityServicesButton"
         android:layout_gravity="end"

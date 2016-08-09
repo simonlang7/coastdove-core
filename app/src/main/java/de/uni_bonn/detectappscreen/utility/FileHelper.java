@@ -42,11 +42,12 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.StreamCorruptedException;
 import java.util.HashMap;
+import java.util.zip.ZipFile;
 
 import de.uni_bonn.detectappscreen.R;
 
 /**
- * Functions to help with reading from and writing to files
+ * A collection of functions to help with reading from and writing to files
  */
 public class FileHelper {
     /**
@@ -198,7 +199,7 @@ public class FileHelper {
         return file != null && file.exists();
     }
 
-    private static File getFile(Context context, Directory directory, String appPackageName, String filename) {
+    public static File getFile(Context context, Directory directory, String appPackageName, String filename) {
         String state = Environment.getExternalStorageState();
         if (!Environment.MEDIA_MOUNTED.equals(state)) {
             Log.e("FileHelper", "External storage is not mounted, failing.");

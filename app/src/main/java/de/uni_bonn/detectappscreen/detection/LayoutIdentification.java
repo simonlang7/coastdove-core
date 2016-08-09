@@ -22,13 +22,16 @@ import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import de.uni_bonn.detectappscreen.utility.CollatorWrapper;
+import de.uni_bonn.detectappscreen.utility.SetSizeComparator;
 
 /**
  * Contains data needed in order to identify a certain layout of an app.
@@ -44,6 +47,11 @@ public class LayoutIdentification implements Serializable {
     protected int ambiguity;
     /** Sets of android IDs used to identify this layout. Any one set is enough to identify this layout. */
     protected Set<Set<String>> layoutIdentifiers;
+
+    public LayoutIdentification(String name) {
+        this.name = name;
+        this.layoutIdentifiers = new TreeSet<>(new SetSizeComparator());
+    }
 
     /**
      * Creates a new layout identification using the given data
@@ -96,6 +104,23 @@ public class LayoutIdentification implements Serializable {
     }
 
     /**
+     * Adds a set of androidIDs as an identifier for this layout
+     * @param identifier    set of "android:id" values to identify this layout
+     */
+    public void addLayoutIdentifier(Set<String> identifier) {
+        this.layoutIdentifiers.add(identifier);
+    }
+
+    /**
+     * Adds all sets of androidIDs in the given collection as identifiers for this layout
+     * @param identifiers    collections of sets of "android:id" values, each of which
+     *                       can identify this layout
+     */
+    public void addAllLayoutIdentifiers(Collection<Set<String>> identifiers) {
+        this.layoutIdentifiers.addAll(identifiers);
+    }
+
+    /**
      * Name of the layout to be identified, e.g. anything in res/layout/ of the according app
      */
     public String getName() {
@@ -112,5 +137,26 @@ public class LayoutIdentification implements Serializable {
 
     public void setLayoutIdentifiers(Set<Set<String>> layoutIdentifiers) {
         this.layoutIdentifiers = layoutIdentifiers;
+    }
+
+    /**
+     * Converts this object to a JSONObject
+     * @return a JSONObject with this LayoutIdentification's contents
+     */
+    public JSONObject toJSON() {
+        JSONObject result = new JSONObject();
+
+        try {
+            result.put("_type", "LayoutIdentification");
+            result.put("name", getName());
+            result.put("layoutIdentifiers", getLayoutIdentifiers());
+        } catch (JSONException e) {
+            System.err.println("Error saving LayoutIdentification (" +
+                    getName() + ") to JSON: " + e.getMessage());
+            e.printStackTrace();
+            System.exit(1);
+        }
+
+        return result;
     }
 }

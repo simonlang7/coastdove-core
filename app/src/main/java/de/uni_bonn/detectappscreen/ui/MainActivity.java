@@ -27,6 +27,7 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 
 import de.uni_bonn.detectappscreen.R;
+import de.uni_bonn.detectappscreen.setup.LayoutCollectionLoader;
 
 
 /**
@@ -50,6 +51,10 @@ public class MainActivity extends AppCompatActivity {
      */
     public void openAccessibilityServices(View view) {
         startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+    }
+
+    public void setupOeffi(View view) {
+        new Thread(new LayoutCollectionLoader(this, "com.whatsapp.apk")).start();
     }
 
 }
