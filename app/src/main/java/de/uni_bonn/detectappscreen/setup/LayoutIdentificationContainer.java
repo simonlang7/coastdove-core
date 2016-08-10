@@ -18,12 +18,6 @@
 
 package de.uni_bonn.detectappscreen.setup;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
-import java.text.Collator;
 import java.util.*;
 
 import de.uni_bonn.detectappscreen.detection.LayoutIdentification;
@@ -41,8 +35,8 @@ public class LayoutIdentificationContainer {
     private Set<String> androidIDs;
     /** The power set builder needed for the power set of android IDs */
     private PowerSet<String> powerSet;
-    /** The original XML document from which to parse */
-    private Document xmlDocument;
+//    /** The original XML document from which to parse */
+//    private Document xmlDocument;
     /** Sets of android IDs best suited for identifying the layout */
     private List<Set<String>> bestIDSets;
     /** Ambiguity level, indicates how many layouts can be identified by the
@@ -50,18 +44,16 @@ public class LayoutIdentificationContainer {
     public int ambiguity;
 
     /**
-     * Constructs a new LayoutIdentificationContainer from the given XML document
+     * Constructs a new LayoutIdentificationContainer from the given data
      * @param name           Name of the layout
-     * @param xmlDocument    XML document to parse from
+     * @param androidIDs     "android:id" values for this layout
      */
-    public LayoutIdentificationContainer(String name, Document xmlDocument) {
+    public LayoutIdentificationContainer(String name, Set<String> androidIDs) {
         this.ambiguity = 0;
         this.layoutIdentification = new LayoutIdentification(name);
-        this.androidIDs = new TreeSet<>(Collator.getInstance());
+        this.androidIDs = androidIDs;
         this.bestIDSets = new LinkedList<>();
-        this.xmlDocument = xmlDocument;
 
-        lookupAndroidIDs();
         powerSet = new PowerSet<>(this.androidIDs, String[].class, new CollatorWrapper());
     }
 
@@ -98,27 +90,5 @@ public class LayoutIdentificationContainer {
      */
     public void addBestIDSetsAsLayoutIdentifiers() {
         getLayoutIdentification().addAllLayoutIdentifiers(getBestIDSets());
-    }
-
-    /**
-     * Parses "android:id" attributes from all elements in the XML document,
-     * and collects them in this.androidIDs
-     */
-    private void lookupAndroidIDs() {
-        NodeList nodeList = xmlDocument.getElementsByTagName("*");
-        for (int i = 0; i < nodeList.getLength(); i++) {
-            Node node = nodeList.item(i);
-            NamedNodeMap attributes = node.getAttributes();
-            if (attributes == null)
-                continue;
-            Node androidIDNode = attributes.getNamedItem("android:id");
-            if (androidIDNode == null)
-                continue;
-            String androidID = androidIDNode.getTextContent().substring(1); // omit the "@"
-            // omit android ID if it's hexadecimal, which means that no matching resource string was found
-            if (androidID.matches("[0-9a-fA-F]+") && androidID.length() == 8)
-                continue;
-            this.androidIDs.add(androidID);
-        }
     }
 }

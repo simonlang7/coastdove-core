@@ -18,9 +18,11 @@
 
 package de.uni_bonn.detectappscreen.setup;
 
+import android.content.res.XmlResourceParser;
+import android.support.annotation.Nullable;
 import android.util.Log;
+import android.util.Xml;
 
-import com.hradek.androidxml.AndroidXmlParser;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -28,7 +30,10 @@ import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Node;
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
 
+import brut.androlib.res.decoder.AXmlResourceParser;
 import de.uni_bonn.detectappscreen.detection.LayoutIdentification;
 import de.uni_bonn.detectappscreen.utility.PowerSet;
 import de.uni_bonn.detectappscreen.utility.XMLHelper;
@@ -37,6 +42,7 @@ import soot.jimple.infoflow.android.resources.ARSCFileParser;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.Collator;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -75,6 +81,8 @@ public class LayoutCollection {
     }
 
     /**
+     * UNDER CONSTRUCTION. DO NOT USE.
+     * TODO: figure out whether this is needed at all
      * Constructs a new layout collection from all .xml files in the given path
      * @param fullDirectoryPath    Path of all .xml files to process
      */
@@ -100,16 +108,19 @@ public class LayoutCollection {
         List<LayoutIdentificationContainer> containers = new LinkedList<>();
         // Read them to get layout definitions
         for (int i = 0; i < xmlFilenames.length; ++i) {
-            String xmlFilename = xmlFilenames[i];
-
-            Document xmlDocument = XMLHelper.parseXMLFile(fullDirectoryPath, xmlFilename);
-            String name = xmlFilename.replace(".xml", "");
-
-            LayoutIdentificationContainer container = new LayoutIdentificationContainer(name, xmlDocument);
-            this.layoutIdentificationList.add(container.getLayoutIdentification());
-            containers.add(container);
-
-            this.allAndroidIDs.addAll(container.getAndroidIDs());
+//            String xmlFilename = xmlFilenames[i];
+//
+////            Document xmlDocument = XMLHelper.parseXMLFile(fullDirectoryPath, xmlFilename);
+//            XmlPullParser parser = Xml.newPullParser();
+//
+//            parser.setInput()
+//            String name = xmlFilename.replace(".xml", "");
+//
+//            LayoutIdentificationContainer container = new LayoutIdentificationContainer(name, xmlDocument);
+//            this.layoutIdentificationList.add(container.getLayoutIdentification());
+//            containers.add(container);
+//
+//            this.allAndroidIDs.addAll(container.getAndroidIDs());
         }
 
         // get unique IDs and reverse map
@@ -126,10 +137,10 @@ public class LayoutCollection {
         this.layoutIdentificationList = new LinkedList<>();
         this.allAndroidIDs = new TreeSet<>(Collator.getInstance());
 
-        ARSCFileParser arscParser = new ARSCFileParser();
+        ARSCFileParser resourceParser = new ARSCFileParser();
         ZipEntry arscEntry = apk.getEntry("resources.arsc");
         try {
-            arscParser.parse(apk.getInputStream(arscEntry));
+            resourceParser.parse(apk.getInputStream(arscEntry));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -141,22 +152,20 @@ public class LayoutCollection {
             try {
                 String entryName = zipEntry.getName();
                 if (entryName.contains("res/layout/") && XMLHelper.isBinaryXML(apk.getInputStream(zipEntry))) {
-                    AndroidXmlParser parser = new AndroidXmlParser(apk.getInputStream(zipEntry));
-                    parser.parse();
-                    Log.d("LayoutCollection", "Parser attribute count: " + parser.getAttributeCount());
-                    Document xmlDocument = parser.getDocument();
                     String name = entryName.replaceAll(".*/", "").replace(".xml", "");
 
-                    lookupResourceStrings(arscParser, xmlDocument);
+                    AXmlResourceParser parser = new AXmlResourceParser();
+                    parser.open(apk.getInputStream(zipEntry));
+                    Set<String> androidIDs = parseAndroidIDs(parser, resourceParser);
 
-                    LayoutIdentificationContainer container = new LayoutIdentificationContainer(name, xmlDocument);
+                    LayoutIdentificationContainer container = new LayoutIdentificationContainer(name, androidIDs);
                     this.layoutIdentificationList.add(container.getLayoutIdentification());
                     containers.add(container);
 
                     this.allAndroidIDs.addAll(container.getAndroidIDs());
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                Log.e("LayoutCollection", "Error reading APK file: " + e.getMessage());
             }
         }
 
@@ -201,31 +210,40 @@ public class LayoutCollection {
     }
 
     /**
-     * Replaces resource IDs (e.g. "@0f0100e1") found in XML documents (when converted from binary)
-     * with the actual resource strings (e.g. "action_bar")
-     * @param arscParser     ARSC parser needed to look up the resource strings
-     * @param xmlDocument    XML document to replace the IDs in
+     * Parses all "android:id" values using the given XmlResourceParser. The parser must be opened before
+     * calling this function.
+     * @param parser            Parser to parse the data from
+     * @param resourceParser    ARSC parser to parse resource strings from, in case the XML is parsed from binary.
+     *                          If null, resource strings are not replaced.
+     * @return Set of all "android:id" values occurring in the XML file
      */
-    private void lookupResourceStrings(ARSCFileParser arscParser, Document xmlDocument) {
-        // Get all nodes
-        NodeList nodeList = xmlDocument.getElementsByTagName("*");
-        for (int i = 0; i < nodeList.getLength(); ++i) {
-            NamedNodeMap attributes = nodeList.item(i).getAttributes();
-            if (attributes != null) {
-                // Process android:id only
-                Node androidID = attributes.getNamedItem("android:id");
-                if (androidID != null) {
-                    // Replace hexadecimal value by the actual resource name
-                    String id = androidID.getTextContent();
-                    String parsableHex = "7" + id.substring(2); // "@0fxxxxxx" -> "7fxxxxxx"
-                    int idInt = Integer.parseInt(parsableHex, 16);
-                    ARSCFileParser.AbstractResource resource = arscParser.findResource(idInt);
-                    if (resource != null) {
-                        androidID.setTextContent("@id/" + resource.getResourceName());
+    private Set<String> parseAndroidIDs(XmlPullParser parser, @Nullable ARSCFileParser resourceParser) {
+        Set<String> result = new TreeSet<>(Collator.getInstance());
+        try {
+            while (parser.next() != XmlPullParser.END_DOCUMENT) {
+                if (parser.getEventType() != XmlPullParser.START_TAG)
+                    continue;
+                for (int i = 0; i < parser.getAttributeCount(); ++i) {
+                    if (parser.getAttributeName(i).equals("id")) {
+                        String androidID = parser.getAttributeValue(i).substring(1);
+                        // Parse resource string if needed
+                        if (resourceParser != null) {
+                            int resourceID = Integer.parseInt(androidID);
+                            ARSCFileParser.AbstractResource resource = resourceParser.findResource(resourceID);
+                            if (resource == null)
+                                continue; // cannot be parsed, do not add
+                            androidID = "id/" + resource.getResourceName();
+                        }
+                        result.add(androidID);
                     }
                 }
             }
+        } catch (XmlPullParserException e) {
+            Log.e("LayoutCollection", "Unable to parse from XML file: " + e.getMessage());
+        } catch (IOException e) {
+            Log.e("LayoutCollection", "IO error: " + e.getMessage());
         }
+        return result;
     }
 
     /**
