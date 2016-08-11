@@ -66,11 +66,4 @@ public class MainActivity extends AppCompatActivity {
                 return super.onOptionsItemSelected(item);
         }
     }
-
-    /**
-     * Opens the system's Accessibility Services menu that can otherwise be accessed via Android Settings
-     */
-    public void openAccessibilityServices(View view) {
-        startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
-    }
 }

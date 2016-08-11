@@ -25,12 +25,4 @@
         tools:layout="@layout/fragment_simple_list"
         android:layout_weight="1" />
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Accessibility Services"
-        android:id="@+id/accessibilityServicesButton"
-        android:layout_gravity="end"
-        android:onClick="openAccessibilityServices" />
-
 </LinearLayout>
