@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context=".ui.MainActivity">
+    tools:context=".ui.main.MainActivity">
 
     <android.support.v7.widget.Toolbar
         android:id="@+id/main_toolbar"
@@ -19,19 +19,11 @@
     <fragment
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:name="de.uni_bonn.detectappscreen.ui.DetectableAppsListFragment"
+        android:name="de.uni_bonn.detectappscreen.ui.main.DetectableAppsListFragment"
         android:id="@+id/fragment_detectable_apps_file_list"
         android:layout_gravity="center_horizontal"
-        tools:layout="@layout/fragment_file_list"
+        tools:layout="@layout/fragment_simple_list"
         android:layout_weight="1" />
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Load Öffi"
-        android:id="@+id/loadOeffi"
-        android:layout_gravity="right"
-        android:onClick="setupOeffi" />
 
     <Button
         android:layout_width="wrap_content"

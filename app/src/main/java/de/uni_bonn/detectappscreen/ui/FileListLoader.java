@@ -37,7 +37,7 @@ import de.uni_bonn.detectappscreen.utility.CollatorWrapper;
 public class FileListLoader extends Loader<ArrayList<String>> {
 
     /** Name of the app, needed for the external storage public directory */
-    private String packageName;
+    private String appPackageName;
 
     /** Name of the sub-directory to use */
     private String subDirectory;
@@ -57,7 +57,7 @@ public class FileListLoader extends Loader<ArrayList<String>> {
      */
     public FileListLoader(Context context, String appName, String subDirectory, String extension, String... filesToExclude) {
         super(context);
-        this.packageName = appName;
+        this.appPackageName = appName;
         this.filesToExclude = new LinkedList<>();
         for (String file : filesToExclude)
             this.filesToExclude.add(file);
@@ -68,12 +68,12 @@ public class FileListLoader extends Loader<ArrayList<String>> {
     /**
      * Creates a new FileListLoader using the given data
      * @param context               Application context
-     * @param packageName           Name of the app, needed for the external storage public directory
+     * @param appPackageName           Name of the app, needed for the external storage public directory
      * @param extension             Extension to filter for, e.g. ".json" or ".txt"
      */
-    public FileListLoader(Context context, String packageName, String subDirectory, String extension) {
+    public FileListLoader(Context context, String appPackageName, String subDirectory, String extension) {
         super(context);
-        this.packageName = packageName;
+        this.appPackageName = appPackageName;
         this.filesToExclude = new LinkedList<>();
         this.subDirectory = subDirectory != null ? subDirectory : "";
         this.extension = extension == null ? "" : extension;
@@ -81,11 +81,11 @@ public class FileListLoader extends Loader<ArrayList<String>> {
 
     /**
      * Loads the list of files in the external storage public directory of the given app name, usually
-     * /sdcard/{packageName}/{subDirectory}/, and delivers the result
+     * /sdcard/{appPackageName}/{subDirectory}/, and delivers the result
      */
     @Override
     public void onStartLoading() {
-        File directory = new File(Environment.getExternalStoragePublicDirectory(packageName), subDirectory);
+        File directory = new File(Environment.getExternalStoragePublicDirectory(appPackageName), subDirectory);
         String[] files = directory.exists() ? directory.list(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String filename) {

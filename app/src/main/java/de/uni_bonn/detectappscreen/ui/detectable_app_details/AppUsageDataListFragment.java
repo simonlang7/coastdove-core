@@ -16,10 +16,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package de.uni_bonn.detectappscreen.ui;
+package de.uni_bonn.detectappscreen.ui.detectable_app_details;
 
 import android.content.Intent;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.content.Loader;
@@ -30,18 +29,20 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
-import android.widget.Adapter;
 import android.widget.ListView;
 
 import java.util.ArrayList;
 
 import de.uni_bonn.detectappscreen.R;
+import de.uni_bonn.detectappscreen.ui.app_usage_data_details.AppUsageDataDetailsActivity;
+import de.uni_bonn.detectappscreen.ui.LoadableListFragment;
+import de.uni_bonn.detectappscreen.ui.FileListLoader;
 
 /**
  * ListFragment displayed in the DetectableAppDetailsActivity,
  * shows a list of collected usage data for the according app
  */
-public class AppUsageDataListFragment extends FileListFragment {
+public class AppUsageDataListFragment extends LoadableListFragment<String> {
 
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {

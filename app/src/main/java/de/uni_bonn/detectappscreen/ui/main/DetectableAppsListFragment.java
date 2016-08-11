@@ -16,23 +16,27 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package de.uni_bonn.detectappscreen.ui;
+package de.uni_bonn.detectappscreen.ui.main;
 
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.content.Loader;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 import java.util.ArrayList;
 
 import de.uni_bonn.detectappscreen.R;
+import de.uni_bonn.detectappscreen.ui.detectable_app_details.DetectableAppDetailsActivity;
+import de.uni_bonn.detectappscreen.ui.LoadableListFragment;
+import de.uni_bonn.detectappscreen.ui.FileListLoader;
 
 /**
  * ListFragment containing all available apps that can be detected by the accessibility service
  */
-public class DetectableAppsListFragment extends FileListFragment {
+public class DetectableAppsListFragment extends LoadableListFragment<String> {
 
     @Override
     public Loader<ArrayList<String>> onCreateLoader(int id, Bundle args) {
@@ -44,8 +48,13 @@ public class DetectableAppsListFragment extends FileListFragment {
     }
 
     @Override
+    protected void setUpListAdapter() {
+        this.adapter = new ArrayAdapter<>(getActivity(), android.R.layout.simple_list_item_1);
+        setListAdapter(this.adapter);
+    }
+
+    @Override
     public void onListItemClick(ListView listView, View view, int position, long id) {
-        super.onListItemClick(listView, view, position, id);
         super.onListItemClick(listView, view, position, id);
         final String item = (String)listView.getItemAtPosition(position);
 

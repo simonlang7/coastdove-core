@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package de.uni_bonn.detectappscreen.ui;
+package de.uni_bonn.detectappscreen.ui.app_usage_data_details;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;

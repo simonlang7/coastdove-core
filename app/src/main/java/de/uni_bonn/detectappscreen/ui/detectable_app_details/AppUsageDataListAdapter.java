@@ -1,4 +1,4 @@
-package de.uni_bonn.detectappscreen.ui;
+package de.uni_bonn.detectappscreen.ui.detectable_app_details;
 
 import android.content.Context;
 import android.graphics.Color;

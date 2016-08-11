@@ -16,45 +16,23 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package de.uni_bonn.detectappscreen.ui;
+package de.uni_bonn.detectappscreen.ui.add_app;
 
-
-import android.content.Intent;
-import android.os.Bundle;
-import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
-import android.view.View;
 
 import de.uni_bonn.detectappscreen.R;
-import de.uni_bonn.detectappscreen.setup.LayoutCollectionLoader;
 
-
-/**
- * Main activity that is started when the app starts
- */
-public class MainActivity extends AppCompatActivity {
-
-    private static final String APP_NAME = "DetectAppScreen";
+public class AddAppActivity extends AppCompatActivity {
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_add_app);
 
-        Toolbar toolbar = (Toolbar)findViewById(R.id.main_toolbar);
+        Toolbar toolbar = (Toolbar)findViewById(R.id.add_app_toolbar);
         setSupportActionBar(toolbar);
+        toolbar.setTitle(getString(R.string.add_detectable_app));
     }
-
-    /**
-     * Opens the system's Accessibility Services menu that can otherwise be accessed via Android Settings
-     */
-    public void openAccessibilityServices(View view) {
-        startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
-    }
-
-    public void setupOeffi(View view) {
-        new Thread(new LayoutCollectionLoader(this, "com.whatsapp.apk")).start();
-    }
-
 }

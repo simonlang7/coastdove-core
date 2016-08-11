@@ -16,35 +16,36 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package de.uni_bonn.detectappscreen.ui;
+package de.uni_bonn.detectappscreen.ui.app_usage_data_details;
 
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.support.v4.app.ListFragment;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
+import android.widget.ExpandableListView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 
-import java.util.ArrayList;
-
+import de.uni_bonn.detectappscreen.analyze.AppUsageDataProcessor;
+import de.uni_bonn.detectappscreen.app_usage.AppUsageDataProcessorLoader;
 import de.uni_bonn.detectappscreen.R;
 
 /**
  * ListFragment that displays a progress bar while loading its contents
  */
-public abstract class FileListFragment extends ListFragment
-        implements LoaderManager.LoaderCallbacks<ArrayList<String>> {
+public class DataEntryListFragment extends Fragment
+        implements LoaderManager.LoaderCallbacks<AppUsageDataProcessor> {
 
-    /** Adapter to be used for the list view */
-    protected ArrayAdapter<String> adapter;
+    private DataEntryListAdapter adapter;
+    private ProgressBar progressBar;
 
-    protected ProgressBar progressBar;
+    private String appPackageName;
+    private String filename;
 
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
@@ -60,34 +61,47 @@ public abstract class FileListFragment extends ListFragment
         this.progressBar.setLayoutParams(layoutParams);
         this.progressBar.setIndeterminate(true);
 
-        setUpListAdapter();
-
-        getListView().setEmptyView(this.progressBar);
+        ExpandableListView elv = (ExpandableListView)getView().findViewById(android.R.id.list);
+        elv.setEmptyView(this.progressBar);
         addProgressBarToViewGroup();
+
+        AppUsageDataDetailsActivity activity = (AppUsageDataDetailsActivity)getActivity();
+        this.appPackageName = activity.getAppPackageName();
+        this.filename = activity.getFilename();
+
+        this.adapter = new DataEntryListAdapter(getActivity(), this.appPackageName);
+        elv.setAdapter(this.adapter);
+
+        elv.setGroupIndicator(null);
 
         getLoaderManager().initLoader(0, null, this);
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_file_list, container, false);
+        return inflater.inflate(R.layout.fragment_data_entry_list, container, false);
     }
 
     @Override
-    public void onLoadFinished(Loader<ArrayList<String>> loader, ArrayList<String> data) {
+    public Loader<AppUsageDataProcessor> onCreateLoader(int id, Bundle args) {
+        return new AppUsageDataProcessorLoader(getActivity(), this.appPackageName, this.filename);
+    }
+
+    @Override
+    public void onLoadFinished(Loader<AppUsageDataProcessor> loader, AppUsageDataProcessor data) {
         this.adapter.clear();
-        this.adapter.addAll(data);
+        this.adapter.addAll(data.getAppUsageMetaData());
         this.progressBar.setVisibility(View.GONE);
+        AppUsageDataDetailsActivity activity = (AppUsageDataDetailsActivity)getActivity();
+        activity.setAppUsageDataProcessor(data);
     }
 
     @Override
-    public void onLoaderReset(Loader<ArrayList<String>> loader) {
+    public void onLoaderReset(Loader<AppUsageDataProcessor> loader) {
     }
 
-    protected void setUpListAdapter() {
-        this.adapter = new ArrayAdapter<>(getActivity(), android.R.layout.simple_list_item_1);
-        setListAdapter(this.adapter);
+    protected void addProgressBarToViewGroup() {
+        ViewGroup viewGroup = (ViewGroup)getActivity().findViewById(R.id.fragment_data_entries);
+        viewGroup.addView(this.progressBar);
     }
-
-    protected abstract void addProgressBarToViewGroup();
 }

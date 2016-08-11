@@ -1,6 +1,13 @@
 <resources>
     <string name="app_name">DetectAppScreen</string>
 
+    <!-- Main Activity -->
+    <string name="accessibility_services_menu">Accessibility services</string>
+    <string name="add_app">Add</string>
+
+    <!-- Add App Activity -->
+    <string name="add_detectable_app">Add Detectable App</string>
+
     <!-- Detectable App Details -->
     <string name="activate">Activate</string>
     <string name="detect_layouts">Detect layouts</string>

@@ -22,14 +22,11 @@ package de.uni_bonn.detectappscreen.setup;
 import android.content.Context;
 import android.util.Log;
 
-import org.json.JSONException;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
 import de.uni_bonn.detectappscreen.utility.FileHelper;
