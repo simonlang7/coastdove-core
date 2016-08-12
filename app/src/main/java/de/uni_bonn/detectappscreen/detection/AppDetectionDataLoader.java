@@ -18,12 +18,16 @@
 
 package de.uni_bonn.detectappscreen.detection;
 
+import android.app.NotificationManager;
 import android.content.Context;
+import android.support.v7.app.NotificationCompat;
+import android.widget.ProgressBar;
 
 import org.json.JSONObject;
 
 import java.util.List;
 
+import de.uni_bonn.detectappscreen.ui.LoadingInfo;
 import de.uni_bonn.detectappscreen.utility.FileHelper;
 
 /**
@@ -39,6 +43,9 @@ public class AppDetectionDataLoader implements Runnable {
     private boolean performLayoutChecks;
     /** Whether to listen to OnClick events */
     private boolean performOnClickChecks;
+
+    /** (Optional) progress bar to display the loading progress */
+    private ProgressBar progressBar;
 
     /** Application context */
     private Context context;
@@ -74,11 +81,23 @@ public class AppDetectionDataLoader implements Runnable {
         }
         AppDetectionData detectableApp = new AppDetectionData(this.appPackageName, layouts, reverseMap, context);
 
+        LoadingInfo loadingInfo = new LoadingInfo();
+        loadingInfo.notificationManager = (NotificationManager)this.context.getSystemService(Context.NOTIFICATION_SERVICE);
+        loadingInfo.builder = new NotificationCompat.Builder(this.context);
+        loadingInfo.uid = detectableApp.getUid();
+        loadingInfo.progressBar = this.progressBar;
+        detectableApp.setHashMapLoadingInfo(loadingInfo);
+
         detectableApp.load(this.performLayoutChecks, this.performOnClickChecks);
         synchronized (DetectAppScreenAccessibilityService.detectableAppsLoadedLock) {
             if (detectableApp.isFinishedLoading())
                 detectableAppsLoaded.add(detectableApp);
         }
         DetectAppScreenAccessibilityService.onDetectionDataLoadFinished(this.appPackageName);
+    }
+
+    /** (Optional) progress bar to display the loading progress */
+    public void setProgressBar(ProgressBar progressBar) {
+        this.progressBar = progressBar;
     }
 }

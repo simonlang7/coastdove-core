@@ -32,7 +32,7 @@ import java.util.zip.ZipFile;
 import de.uni_bonn.detectappscreen.utility.FileHelper;
 
 /**
- * Created by Slang on 09.08.2016.
+ * Loads a LayoutCollection
  */
 public class LayoutCollectionLoader implements Runnable {
     private Context context;

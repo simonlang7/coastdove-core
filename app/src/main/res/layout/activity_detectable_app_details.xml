@@ -17,7 +17,7 @@
         app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
 
     <FrameLayout
-        android:layout_width="fill_parent"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/background_floating_material_dark"
         android:clickable="true"
@@ -45,6 +45,13 @@
             android:layout_marginBottom="8dp"
             android:layout_marginRight="8dp" />
     </FrameLayout>
+
+    <ProgressBar
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/detectable_app_progress_bar"
+        android:visibility="gone" />
 
     <fragment
         android:layout_width="match_parent"

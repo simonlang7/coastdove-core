@@ -32,7 +32,7 @@ public class AddAppActivity extends AppCompatActivity {
         setContentView(R.layout.activity_add_app);
 
         Toolbar toolbar = (Toolbar)findViewById(R.id.add_app_toolbar);
-        setSupportActionBar(toolbar);
         toolbar.setTitle(getString(R.string.add_detectable_app));
+        setSupportActionBar(toolbar);
     }
 }

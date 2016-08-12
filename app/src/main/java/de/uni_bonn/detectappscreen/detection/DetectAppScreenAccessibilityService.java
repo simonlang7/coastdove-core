@@ -25,6 +25,7 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
+import android.widget.ProgressBar;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -51,31 +52,45 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
     /** Monitor for any synchronized block accessing {@link DetectAppScreenAccessibilityService#detectableAppsLoaded} */
     public static final Object detectableAppsLoadedLock = new Object();
 
+
     /**
      * Starts loading detection data for the given app. Loading is done in a new thread.
-     * @param packageName The package name of the app to load detection data for
+     * @param appPackageName The package name of the app to load detection data for
      * @param context     The application context
      */
-    public static void startLoadingDetectionData(String packageName, boolean performLayoutChecks,
+    public static void startLoadingDetectionData(String appPackageName, boolean performLayoutChecks,
                                                  boolean performOnClickChecks, Context context) {
+        startLoadingDetectionData(appPackageName, performLayoutChecks, performOnClickChecks, context, null);
+    }
+
+    /**
+     * Starts loading detection data for the given app. Loading is done in a new thread.
+     * @param appPackageName The package name of the app to load detection data for
+     * @param context     The application context
+     */
+    public static void startLoadingDetectionData(String appPackageName, boolean performLayoutChecks,
+                                                 boolean performOnClickChecks, Context context,
+                                                 ProgressBar progressBar) {
         // Already loaded?
         synchronized (detectableAppsLoadedLock) {
             for (AppDetectionData data : detectableAppsLoaded) {
-                if (data.getAppPackageName().equals(packageName))
+                if (data.getAppPackageName().equals(appPackageName))
                     return;
             }
         }
         // Already loading?
-        if (detectableAppsLoading.containsKey(packageName))
+        if (detectableAppsLoading.containsKey(appPackageName))
             return;
 
         // Start new thread
-        AppDetectionDataLoader loader = new AppDetectionDataLoader(packageName, detectableAppsLoaded,
+        AppDetectionDataLoader loader = new AppDetectionDataLoader(appPackageName, detectableAppsLoaded,
                 performLayoutChecks, performOnClickChecks, context);
+        if (progressBar != null)
+            loader.setProgressBar(progressBar);
         Thread loaderThread = new Thread(loader);
-        detectableAppsLoading.put(packageName, loaderThread);
+        detectableAppsLoading.put(appPackageName, loaderThread);
         loaderThread.start();
-        Log.i("AppDetectionData", "Loading " + packageName);
+        Log.i("AppDetectionData", "Loading " + appPackageName);
     }
 
     /**

@@ -22,6 +22,7 @@
         android:name="de.uni_bonn.detectappscreen.ui.add_app.AppListFragment"
         android:id="@+id/fragment_app_list"
         android:layout_below="@+id/add_app_toolbar"
-        android:layout_centerHorizontal="true" />
+        android:layout_centerHorizontal="true"
+        tools:layout="@layout/list_item_app" />
 
 </RelativeLayout>

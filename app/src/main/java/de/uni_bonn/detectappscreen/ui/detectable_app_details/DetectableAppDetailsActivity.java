@@ -26,6 +26,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.CompoundButton;
+import android.widget.ProgressBar;
 import android.widget.Switch;
 
 import de.uni_bonn.detectappscreen.detection.DetectAppScreenAccessibilityService;
@@ -64,6 +65,8 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
         toolbar.setTitle(this.appPackageName);
         setSupportActionBar(toolbar);
 
+        final ProgressBar progressBar = (ProgressBar)findViewById(R.id.detectable_app_progress_bar);
+
         // Switch to activate detection of the specified app
         boolean detectionDataLoadedOrLoading = false;
         try {
@@ -80,7 +83,8 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
                     SharedPreferences preferences = getPreferences(MODE_PRIVATE);
                     boolean detectLayouts = preferences.getBoolean(appPackageName + getString(R.string.pref_detect_layouts), false);
                     boolean detectClicks = preferences.getBoolean(appPackageName + getString(R.string.pref_detect_clicks), false);
-                    DetectAppScreenAccessibilityService.startLoadingDetectionData(appPackageName, detectLayouts, detectClicks, getApplicationContext());
+                    DetectAppScreenAccessibilityService.startLoadingDetectionData(appPackageName, detectLayouts, detectClicks, getApplicationContext(),
+                            progressBar);
                 }
                 else
                     DetectAppScreenAccessibilityService.removeDetectionData(appPackageName);

@@ -18,13 +18,16 @@
 
 package de.uni_bonn.detectappscreen.detection;
 
+import android.app.Activity;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.graphics.Rect;
 import android.support.v7.app.NotificationCompat;
 import android.util.Log;
+import android.view.View;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
+import android.widget.ProgressBar;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -40,6 +43,7 @@ import de.uni_bonn.detectappscreen.R;
 import de.uni_bonn.detectappscreen.app_usage.AppUsageData;
 import de.uni_bonn.detectappscreen.app_usage.AppUsageDataWriter;
 import de.uni_bonn.detectappscreen.app_usage.ClickedEventData;
+import de.uni_bonn.detectappscreen.ui.LoadingInfo;
 import de.uni_bonn.detectappscreen.utility.CollatorWrapper;
 import de.uni_bonn.detectappscreen.utility.FileHelper;
 
@@ -58,6 +62,9 @@ public class AppDetectionData {
     /** Reverse map, mapping from sets of android IDs to layouts that can possibly be identified */
     private JSONObject reverseMapToLoad;
 
+    /** UI elements to display loading progress */
+    private LoadingInfo hashMapLoadingInfo;
+
     /** Name of the package associated, i.e. the app that can be detected */
     private String appPackageName;
     /** Indicates whether the hash maps (layoutIdentificationMap and reverseMap) have been loaded or not */
@@ -75,7 +82,7 @@ public class AppDetectionData {
     /** Usage data collected for this session (that starts when the app is opened and ends when it's closed) */
     private AppUsageData currentAppUsageData;
 
-    /** Application context needed to scan files */
+    /** Application context */
     private Context context;
     /** Unique identifier for the notification progress bar */
     private int uid;
@@ -409,28 +416,33 @@ public class AppDetectionData {
     private boolean buildHashMapsFromBinary() {
         // TODO: un-hardcode
 
-        NotificationManager notifyManager = (NotificationManager)this.context.getSystemService(Context.NOTIFICATION_SERVICE);
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this.context);
-        builder.setContentTitle(context.getString(R.string.app_name))
-                .setContentText(context.getString(R.string.notification_loading_1) + " " + getAppPackageName()
-                        + " " + context.getString(R.string.notification_loading_2))
-                .setSmallIcon(R.drawable.notification_template_icon_bg)
-                .setProgress(0, 0, true);
+        if (hashMapLoadingInfo != null) {
+            hashMapLoadingInfo.setNotificationData(context.getString(R.string.app_name),
+                    context.getString(R.string.notification_loading_1) + " " + getAppPackageName()
+                            + " " + context.getString(R.string.notification_loading_2),
+                    R.drawable.notification_template_icon_bg);
+            hashMapLoadingInfo.start(true);
+        }
+
+
         if (FileHelper.fileExists(this.context, FileHelper.Directory.PACKAGE, getAppPackageName(), "layouts.bin") &&
                 FileHelper.fileExists(this.context, FileHelper.Directory.PACKAGE, getAppPackageName(), "reverseMap.bin")) {
             if (Thread.currentThread().isInterrupted()) {
-                notifyManager.cancel(this.uid);
+                if (hashMapLoadingInfo != null)
+                    hashMapLoadingInfo.cancel();
                 return false;
             }
 
-            notifyManager.notify(this.uid, builder.build());
+            if (hashMapLoadingInfo != null)
+                hashMapLoadingInfo.update();
 
             Log.v("AppDetectionData", "Building hash maps from binary...");
             this.layoutIdentificationMap =
                     (Map<String, LayoutIdentification>)FileHelper.readHashMap(this.context, FileHelper.Directory.PACKAGE, getAppPackageName(), "layouts.bin");
 
             if (Thread.currentThread().isInterrupted()) {
-                notifyManager.cancel(this.uid);
+                if (hashMapLoadingInfo != null)
+                    hashMapLoadingInfo.cancel();
                 return false;
             }
 
@@ -438,14 +450,18 @@ public class AppDetectionData {
             Log.v("AppDetectionData", "Finished building hash maps from binary");
 
             if (Thread.currentThread().isInterrupted()) {
-                notifyManager.cancel(this.uid);
+                if (hashMapLoadingInfo != null)
+                    hashMapLoadingInfo.cancel();
                 return false;
             }
 
-            builder.setContentText(context.getString(R.string.notification_finished_loading_1) + " " + getAppPackageName()
-                    + " " + context.getString(R.string.notification_finished_loading_2));
-            builder.setProgress(0, 0, false);
-            notifyManager.notify(this.uid, builder.build());
+            if (hashMapLoadingInfo != null) {
+                hashMapLoadingInfo.setNotificationData(null,
+                        context.getString(R.string.notification_finished_loading_1) + " " + getAppPackageName()
+                                + " " + context.getString(R.string.notification_finished_loading_2),
+                        null);
+                hashMapLoadingInfo.end();
+            }
 
             return this.layoutIdentificationMap != null && this.reverseMap != null;
         }
@@ -584,5 +600,13 @@ public class AppDetectionData {
             }
         }
         return recognizedLayouts;
+    }
+
+    public void setHashMapLoadingInfo(LoadingInfo hashMapLoadingInfo) {
+        this.hashMapLoadingInfo = hashMapLoadingInfo;
+    }
+
+    public int getUid() {
+        return uid;
     }
 }
