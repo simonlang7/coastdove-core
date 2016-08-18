@@ -77,11 +77,9 @@ public class AppDetectionDataLoader extends ObjectLoader<AppDetectionData> {
                 this.context, FileHelper.Directory.PACKAGE, this.appPackageName, "reverseMap.json");
 
         AppDetectionData detectableApp = new AppDetectionData(this.appPackageName, layouts, reverseMap, context);
-        if (this.loadingInfo != null)
-            this.loadingInfo.uid = detectableApp.getUid();
-
         detectableApp.setHashMapLoadingInfo(this.loadingInfo);
         detectableApp.load(this.performLayoutChecks, this.performOnClickChecks);
+        
         return detectableApp;
     }
 

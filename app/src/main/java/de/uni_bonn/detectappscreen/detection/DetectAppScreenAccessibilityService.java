@@ -19,25 +19,15 @@
 package de.uni_bonn.detectappscreen.detection;
 
 import android.accessibilityservice.AccessibilityService;
-import android.app.NotificationManager;
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
-import android.support.v7.app.NotificationCompat;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
-import android.widget.ProgressBar;
 
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
-import de.uni_bonn.detectappscreen.R;
-import de.uni_bonn.detectappscreen.ui.LoadingInfo;
 import de.uni_bonn.detectappscreen.utility.MultipleObjectLoader;
 
 /**
@@ -48,8 +38,6 @@ import de.uni_bonn.detectappscreen.utility.MultipleObjectLoader;
  */
 public class DetectAppScreenAccessibilityService extends AccessibilityService {
 
-    /** Time (in milliseconds) between two layout comparisons */
-    protected static final int TIME_BETWEEN_LAYOUT_COMPARISONS = 100;
     /** Contains all AppDetectionData needed to process detectable apps */
     protected static MultipleObjectLoader<AppDetectionData> appDetectionDataMultiLoader = new MultipleObjectLoader<>();
 
@@ -65,8 +53,6 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
     private String currentActivity;
     /** Name of the previous app, as extracted from the last activity of the previous app */
     private String previousPackageName;
-    /** Time (in milliseconds) passed since the last layout comparison */
-    private long timeOfLastLayoutComparison = 0;
     /** Data for app detection */
     private Map<String, AppDetectionData> detectableApps;
 
@@ -74,7 +60,7 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
     /**
      * Returns the activity info of the current activity
      */
-    private ActivityInfo tryGetActivity(ComponentName componentName) {
+    private ActivityInfo getCurrentActivity(ComponentName componentName) {
         try {
             return getPackageManager().getActivityInfo(componentName, 0);
         } catch (PackageManager.NameNotFoundException e) {
@@ -94,7 +80,7 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
                     event.getClassName().toString()
             );
 
-            ActivityInfo activityInfo = tryGetActivity(componentName);
+            ActivityInfo activityInfo = getCurrentActivity(componentName);
             if (activityInfo != null) {
                 String newActivity = componentName.flattenToShortString();
                 this.currentActivity = newActivity;
@@ -130,11 +116,10 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
             AppDetectionData detectionData = this.detectableApps.get(packageName);
             if (detectionData != null) {
                 detectionData.performChecks(event, getRootInActiveWindow(), currentActivity);
-                timeOfLastLayoutComparison = System.currentTimeMillis();
             }
 
             // Changed app? Write gathered data to file
-            // todo: separate function
+            // todo: separate function?
             int slashPos = currentActivity.indexOf('/');
             String activityPackageName = currentActivity.substring(0, slashPos < 0 ? 0 : slashPos);
             if (!activityPackageName.equals(previousPackageName)) {

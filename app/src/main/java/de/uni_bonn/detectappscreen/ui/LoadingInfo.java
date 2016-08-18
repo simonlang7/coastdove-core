@@ -28,7 +28,6 @@ public class LoadingInfo {
     }
 
     public void start(boolean indeterminate) {
-        update();
         if (builder != null && indeterminate)
             builder.setProgress(0, 0, true);
         if (progressBar != null) {

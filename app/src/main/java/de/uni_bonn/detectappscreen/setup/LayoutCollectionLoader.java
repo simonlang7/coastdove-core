@@ -30,30 +30,31 @@ import java.io.PrintWriter;
 import java.util.zip.ZipFile;
 
 import de.uni_bonn.detectappscreen.utility.FileHelper;
+import de.uni_bonn.detectappscreen.utility.MultipleObjectLoader;
+import de.uni_bonn.detectappscreen.utility.ObjectLoader;
 
 /**
  * Loads a LayoutCollection
  */
-public class LayoutCollectionLoader implements Runnable {
+public class LayoutCollectionLoader extends ObjectLoader<LayoutCollection> {
     private Context context;
-    private String apkName;
+    private String appPackageName;
+    private String apkFullPath;
     private float minDetectionRate;
 
-    public LayoutCollectionLoader(Context context, String apkName) {
+    public LayoutCollectionLoader(Context context, String appPackageName, String apkFullPath,
+                                  MultipleObjectLoader<LayoutCollection> multipleObjectLoader,
+                                  float minDetectionRate) {
+        super(appPackageName, multipleObjectLoader);
         this.context = context;
-        this.apkName = apkName;
-        this.minDetectionRate = 1.0f;
-    }
-
-    public LayoutCollectionLoader(Context context, String apkName, float minDetectionRate) {
-        this.context = context;
-        this.apkName = apkName;
+        this.appPackageName = appPackageName;
+        this.apkFullPath = apkFullPath;
         this.minDetectionRate = minDetectionRate;
     }
 
     @Override
-    public void run() {
-        File file = FileHelper.getFile(this.context, FileHelper.Directory.PUBLIC, null, apkName);
+    protected LayoutCollection load() {
+        File file = new File(apkFullPath);
         LayoutCollection layouts = null;
         try (ZipFile apk = new ZipFile(file)) {
             layouts = new LayoutCollection(apk, minDetectionRate);
@@ -62,9 +63,9 @@ public class LayoutCollectionLoader implements Runnable {
         }
 
         if (layouts == null)
-            return;
+            return null;
 
-        String appPackageName = this.apkName.replace(".apk", "");
+        String appPackageName = this.appPackageName.replace(".apk", "");
 
         File layoutsFile = FileHelper.getFile(this.context, FileHelper.Directory.PACKAGE, appPackageName, "layouts.json");
         File parent = layoutsFile.getParentFile();
@@ -88,5 +89,7 @@ public class LayoutCollectionLoader implements Runnable {
             Log.e("LayoutCollectionLoader", "Unable to write to JSON: " + e.getMessage());
         }
         FileHelper.scanFile(context, layoutsFile.getAbsolutePath(), reverseMapFile.getAbsolutePath());
+
+        return layouts;
     }
 }

@@ -25,6 +25,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.app.NotificationCompat;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -73,6 +74,7 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         final ProgressBar progressBar = (ProgressBar)findViewById(R.id.detectable_app_progress_bar);
+        final Context context = this;
 
         // Switch to activate detection of the specified app
         boolean detectionDataLoadedOrLoading = false;
@@ -94,17 +96,13 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
                     // Loading info UI elements
                     LoadingInfo loadingInfo = new LoadingInfo();
                     loadingInfo.notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
-                    loadingInfo.builder = new NotificationCompat.Builder(getParent());
-                    loadingInfo.setNotificationData(getString(R.string.app_name),
-                            getString(R.string.notification_loading_1) + " " + appPackageName
-                                    + " " + getString(R.string.notification_loading_2),
-                            R.drawable.notification_template_icon_bg);
-                    loadingInfo.start(true);
+                    loadingInfo.builder = new NotificationCompat.Builder(context);
+                    loadingInfo.uid = appPackageName.hashCode();
 
                     // Start the loading process and add
                     MultipleObjectLoader<AppDetectionData> multiLoader = DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader();
                     AppDetectionDataLoader loader = new AppDetectionDataLoader(appPackageName, multiLoader,
-                            detectLayouts, detectClicks, getParent(), loadingInfo);
+                            detectLayouts, detectClicks, context, loadingInfo);
                     multiLoader.startLoading(appPackageName, loader);
                 }
                 else
@@ -129,14 +127,21 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
         MenuItem checkboxDetectLayouts = menu.findItem(R.id.checkbox_detect_layouts);
         MenuItem checkboxDetectClicks = menu.findItem(R.id.checkbox_detect_clicks);
         MenuItem itemDeleteCache = menu.findItem(R.id.item_delete_cache);
-        boolean cacheExists = FileHelper.fileExists(this, FileHelper.Directory.PACKAGE, getAppPackageName(), "layouts.bin")
-                && FileHelper.fileExists(this, FileHelper.Directory.PACKAGE, getAppPackageName(), "reverseMap.bin");
+        try {
+            boolean cacheExists = FileHelper.fileExists(this, FileHelper.Directory.PACKAGE, getAppPackageName(), "layouts.bin")
+                    && FileHelper.fileExists(this, FileHelper.Directory.PACKAGE, getAppPackageName(), "reverseMap.bin");
 
-        // If the detection data is currently in use, the menu items are disabled
-        boolean detectionDataInUse = DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader().contains(this.appPackageName);
-        checkboxDetectLayouts.setEnabled(!detectionDataInUse);
-        checkboxDetectClicks.setEnabled(!detectionDataInUse);
-        itemDeleteCache.setEnabled(cacheExists && !detectionDataInUse);
+            // If the detection data is currently in use, the menu items are disabled
+            boolean detectionDataInUse = DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader().contains(this.appPackageName);
+            checkboxDetectLayouts.setEnabled(!detectionDataInUse);
+            checkboxDetectClicks.setEnabled(!detectionDataInUse);
+            itemDeleteCache.setEnabled(cacheExists && !detectionDataInUse);
+        } catch (NullPointerException e) {
+            checkboxDetectLayouts.setEnabled(false);
+            checkboxDetectClicks.setEnabled(false);
+            itemDeleteCache.setEnabled(false);
+            Log.i("DetectableAppDetailsAc.", "Error creating menu: " + e.getMessage());
+        }
 
         return super.onPrepareOptionsMenu(menu);
     }

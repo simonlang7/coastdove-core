@@ -18,23 +18,18 @@
 
 package de.uni_bonn.detectappscreen.setup;
 
-import android.content.res.XmlResourceParser;
 import android.support.annotation.Nullable;
 import android.util.Log;
-import android.util.Xml;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.w3c.dom.Document;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Node;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
 import brut.androlib.res.decoder.AXmlResourceParser;
 import de.uni_bonn.detectappscreen.detection.LayoutIdentification;
+import de.uni_bonn.detectappscreen.utility.MultipleObjectLoader;
 import de.uni_bonn.detectappscreen.utility.PowerSet;
 import de.uni_bonn.detectappscreen.utility.XMLHelper;
 import soot.jimple.infoflow.android.resources.ARSCFileParser;
@@ -42,7 +37,6 @@ import soot.jimple.infoflow.android.resources.ARSCFileParser;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.text.Collator;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -65,6 +59,14 @@ public class LayoutCollection {
     private static final int JSON_VERSION_MAJOR = 0;
     private static final int JSON_VERSION_MINOR = 4;
 
+    /** MultipleObjectLoader for layout collections, used in AddAppActivity */
+    private static MultipleObjectLoader<LayoutCollection> layoutCollectionMultipleObjectLoader = new MultipleObjectLoader<>();
+
+    /** MultipleObjectLoader for layout collections, used in AddAppActivity, todo: find better place? */
+    public static MultipleObjectLoader<LayoutCollection> getLayoutCollectionMultipleObjectLoader() {
+        return layoutCollectionMultipleObjectLoader;
+    }
+
     /** Each layout identification object represents one of the app's layouts */
     private List<LayoutIdentification> layoutIdentificationList;
     /** Set of all "android:id" attributes that occur throughout all layouts */
@@ -81,64 +83,17 @@ public class LayoutCollection {
     }
 
     /**
-     * UNDER CONSTRUCTION. DO NOT USE.
-     * TODO: figure out whether this is needed at all
-     * Constructs a new layout collection from all .xml files in the given path
-     * @param fullDirectoryPath    Path of all .xml files to process
-     */
-    public LayoutCollection(String fullDirectoryPath) {
-        File workingDirectory = new File(fullDirectoryPath);
-        this.layoutIdentificationList = new LinkedList<>();
-        this.allAndroidIDs = new TreeSet<>(Collator.getInstance());
-
-        // Get all .xml files
-        String[] xmlFilenames = workingDirectory.list(new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String name) {
-                int extensionPos = name.lastIndexOf('.');
-                if (extensionPos > 0) {
-                    String extension = name.substring(extensionPos + 1);
-                    return extension.equalsIgnoreCase("xml");
-                }
-
-                return false;
-            }
-        });
-
-        List<LayoutIdentificationContainer> containers = new LinkedList<>();
-        // Read them to get layout definitions
-        for (int i = 0; i < xmlFilenames.length; ++i) {
-//            String xmlFilename = xmlFilenames[i];
-//
-////            Document xmlDocument = XMLHelper.parseXMLFile(fullDirectoryPath, xmlFilename);
-//            XmlPullParser parser = Xml.newPullParser();
-//
-//            parser.setInput()
-//            String name = xmlFilename.replace(".xml", "");
-//
-//            LayoutIdentificationContainer container = new LayoutIdentificationContainer(name, xmlDocument);
-//            this.layoutIdentificationList.add(container.getLayoutIdentification());
-//            containers.add(container);
-//
-//            this.allAndroidIDs.addAll(container.getAndroidIDs());
-        }
-
-        // get unique IDs and reverse map
-        List<LayoutIdentificationContainer> containersCopy = new LinkedList<>(containers);
-        lookupUniqueIDs(containersCopy);
-        this.reverseMap = new ReverseMap(containers, this.allAndroidIDs);
-    }
-
-    /**
      * Constructs a new layout collection from the given .apk file
      * @param apk                 APK file to process
      * @param minDetectionRate    minimal target detection rate (i.e. (#detectable layouts)/(#layouts)),
      *                            value between 0f and 1f
      */
     public LayoutCollection(ZipFile apk, float minDetectionRate) {
+        Log.d("LayoutCollection", "Constructor");
         this.layoutIdentificationList = new LinkedList<>();
         this.allAndroidIDs = new TreeSet<>(Collator.getInstance());
 
+        Log.d("LayoutCollection", "Parsing resources.arsc");
         ARSCFileParser resourceParser = new ARSCFileParser();
         ZipEntry arscEntry = apk.getEntry("resources.arsc");
         try {
@@ -147,6 +102,7 @@ public class LayoutCollection {
             e.printStackTrace();
         }
 
+        Log.d("LayoutCollection", "Reading zip file");
         Enumeration<?> zipEntries = apk.entries();
         List<LayoutIdentificationContainer> containers = new LinkedList<>();
         while (zipEntries.hasMoreElements()) {
