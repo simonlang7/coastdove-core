@@ -38,6 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import de.uni_bonn.detectappscreen.R;
 import de.uni_bonn.detectappscreen.ui.LoadingInfo;
+import de.uni_bonn.detectappscreen.utility.MultipleObjectLoader;
 
 /**
  * Accessibility Service for app screen detection. Once started, data needed for app detection
@@ -49,125 +50,14 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
 
     /** Time (in milliseconds) between two layout comparisons */
     protected static final int TIME_BETWEEN_LAYOUT_COMPARISONS = 100;
-    /** Threads that are currently loading app detection data */
-    protected static Map<String, Thread> detectableAppsLoading = new ConcurrentHashMap<>();
-    /** App detection data that has finished loading. Shall only be accessed in a synchronized
-     * block locking {@link DetectAppScreenAccessibilityService#detectableAppsLoadedLock} */
-    protected static List<AppDetectionData> detectableAppsLoaded = new LinkedList<>(); // todo: replace by concurrent hashmap?
-    /** Monitor for any synchronized block accessing {@link DetectAppScreenAccessibilityService#detectableAppsLoaded} */
-    public static final Object detectableAppsLoadedLock = new Object();
-
+    /** Contains all AppDetectionData needed to process detectable apps */
+    protected static MultipleObjectLoader<AppDetectionData> appDetectionDataMultiLoader = new MultipleObjectLoader<>();
 
     /**
-     * Starts loading detection data for the given app. Loading is done in a new thread.
-     * @param appPackageName The package name of the app to load detection data for
-     * @param context     The application context
+     * Returns the MultipleObjectLoader used to load AppDetectionData
      */
-    public static void startLoadingDetectionData(String appPackageName, boolean performLayoutChecks,
-                                                 boolean performOnClickChecks, Context context) {
-        startLoadingDetectionData(appPackageName, performLayoutChecks, performOnClickChecks, context, null);
-    }
-
-    /**
-     * Starts loading detection data for the given app. Loading is done in a new thread.
-     * @param appPackageName The package name of the app to load detection data for
-     * @param context     The application context
-     */
-    public static void startLoadingDetectionData(String appPackageName, boolean performLayoutChecks,
-                                                 boolean performOnClickChecks, Context context,
-                                                 ProgressBar progressBar) {
-        // Already loaded?
-        synchronized (detectableAppsLoadedLock) {
-            for (AppDetectionData data : detectableAppsLoaded) {
-                if (data.getAppPackageName().equals(appPackageName))
-                    return;
-            }
-        }
-        // Already loading?
-        if (detectableAppsLoading.containsKey(appPackageName))
-            return;
-
-        // Start new thread
-
-        LoadingInfo loadingInfo = new LoadingInfo();
-        loadingInfo.notificationManager = (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
-        loadingInfo.builder = new NotificationCompat.Builder(context);
-        if (progressBar != null)
-            loadingInfo.progressBar = progressBar;
-
-
-        loadingInfo.setNotificationData(context.getString(R.string.app_name),
-                context.getString(R.string.notification_loading_1) + " " + appPackageName
-                        + " " + context.getString(R.string.notification_loading_2),
-                R.drawable.notification_template_icon_bg);
-        loadingInfo.start(true);
-
-        AppDetectionDataLoader loader = new AppDetectionDataLoader(appPackageName, detectableAppsLoaded,
-                performLayoutChecks, performOnClickChecks, context, loadingInfo);
-        Thread loaderThread = new Thread(loader);
-        detectableAppsLoading.put(appPackageName, loaderThread);
-        loaderThread.start();
-        Log.i("AppDetectionData", "Loading " + appPackageName);
-    }
-
-    /**
-     * Removes detection data for the given app / package name, or stops loading the data if loading
-     * is currently in progress
-     */
-    public static void removeDetectionData(String packageName) {
-        // Stop loading, remove from loading threads
-        if (detectableAppsLoading.containsKey(packageName)) {
-            Thread loaderThread = detectableAppsLoading.get(packageName);
-            loaderThread.interrupt();
-            Log.i("AppDetectionData", "Stopped LoaderThread");
-            detectableAppsLoading.remove(packageName);
-            Log.i("AppDetectionData", "Removed LoaderThread");
-        }
-
-        // Remove from already loaded data
-        synchronized (detectableAppsLoadedLock) {
-            Iterator<AppDetectionData> iterator = detectableAppsLoaded.iterator();
-            while (iterator.hasNext()) {
-                AppDetectionData data = iterator.next();
-                if (data.getAppPackageName().equals(packageName)) {
-                    iterator.remove();
-                    Log.i("AppDetectionData", "Removed loaded data");
-                    break;
-                }
-            }
-        }
-    }
-
-    /**
-     * Tells whether or not detection data for the given app is currently being
-     * loaded or finished loading
-     * @param packageName    Package name of the app in question
-     * @return true iff detection data for the given app loaded or in the process of being loaded
-     */
-    public static boolean isDetectionDataLoadedOrLoading(String packageName) {
-        if (detectableAppsLoading != null && detectableAppsLoading.containsKey(packageName))
-            return true;
-        if (detectableAppsLoaded != null) {
-            synchronized (detectableAppsLoadedLock) {
-                for (AppDetectionData data : detectableAppsLoaded) {
-                    if (data.getAppPackageName().equals(packageName))
-                        return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Removes loader thread from {@link DetectAppScreenAccessibilityService#detectableAppsLoading}
-     * @param packageName Name of the package for the associated loader thread
-     */
-    public static void onDetectionDataLoadFinished(String packageName) {
-        if (detectableAppsLoading != null && detectableAppsLoading.containsKey(packageName)) {
-            detectableAppsLoading.remove(packageName);
-            Log.i("AppDetectionData", "Removed LoaderThread");
-        }
+    public static MultipleObjectLoader<AppDetectionData> getAppDetectionDataMultiLoader() {
+        return appDetectionDataMultiLoader;
     }
 
 
@@ -208,7 +98,7 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
             if (activityInfo != null) {
                 String newActivity = componentName.flattenToShortString();
                 this.currentActivity = newActivity;
-                Log.i("CurrentActivity", newActivity);
+                Log.d("CurrentActivity", newActivity);
             }
         }
     }
@@ -217,12 +107,10 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
      * Activates any detectable app that has finished loading
      */
     private void activateDetectableApps() {
-        synchronized (detectableAppsLoadedLock) {
-            for (AppDetectionData data : detectableAppsLoaded) {
-                if (!this.detectableApps.containsKey(data.getAppPackageName())) {
-                    Log.i("Loaded DetectableApp", data.getAppPackageName());
-                    this.detectableApps.put(data.getAppPackageName(), data);
-                }
+        for (AppDetectionData data : appDetectionDataMultiLoader.getAll()) {
+            if (!this.detectableApps.containsKey(data.getAppPackageName())) {
+                Log.i("Loaded DetectableApp", data.getAppPackageName());
+                this.detectableApps.put(data.getAppPackageName(), data);
             }
         }
     }

@@ -18,9 +18,12 @@
 
 package de.uni_bonn.detectappscreen.ui.detectable_app_details;
 
+import android.app.NotificationManager;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.NotificationCompat;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -29,9 +32,13 @@ import android.widget.CompoundButton;
 import android.widget.ProgressBar;
 import android.widget.Switch;
 
+import de.uni_bonn.detectappscreen.detection.AppDetectionData;
+import de.uni_bonn.detectappscreen.detection.AppDetectionDataLoader;
 import de.uni_bonn.detectappscreen.detection.DetectAppScreenAccessibilityService;
+import de.uni_bonn.detectappscreen.ui.LoadingInfo;
 import de.uni_bonn.detectappscreen.utility.FileHelper;
 import de.uni_bonn.detectappscreen.R;
+import de.uni_bonn.detectappscreen.utility.MultipleObjectLoader;
 
 /**
  * Activity started when a detectable app in the main list is clicked,
@@ -70,7 +77,7 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
         // Switch to activate detection of the specified app
         boolean detectionDataLoadedOrLoading = false;
         try {
-            detectionDataLoadedOrLoading = DetectAppScreenAccessibilityService.isDetectionDataLoadedOrLoading(this.appPackageName);
+            detectionDataLoadedOrLoading = DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader().contains(this.appPackageName);
         } catch (NullPointerException e) {
         }
         final Switch activateSwitch = (Switch)findViewById(R.id.detectable_app_activate_switch);
@@ -83,11 +90,25 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
                     SharedPreferences preferences = getPreferences(MODE_PRIVATE);
                     boolean detectLayouts = preferences.getBoolean(appPackageName + getString(R.string.pref_detect_layouts), false);
                     boolean detectClicks = preferences.getBoolean(appPackageName + getString(R.string.pref_detect_clicks), false);
-                    DetectAppScreenAccessibilityService.startLoadingDetectionData(appPackageName, detectLayouts, detectClicks, getApplicationContext(),
-                            progressBar);
+
+                    // Loading info UI elements
+                    LoadingInfo loadingInfo = new LoadingInfo();
+                    loadingInfo.notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+                    loadingInfo.builder = new NotificationCompat.Builder(getParent());
+                    loadingInfo.setNotificationData(getString(R.string.app_name),
+                            getString(R.string.notification_loading_1) + " " + appPackageName
+                                    + " " + getString(R.string.notification_loading_2),
+                            R.drawable.notification_template_icon_bg);
+                    loadingInfo.start(true);
+
+                    // Start the loading process and add
+                    MultipleObjectLoader<AppDetectionData> multiLoader = DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader();
+                    AppDetectionDataLoader loader = new AppDetectionDataLoader(appPackageName, multiLoader,
+                            detectLayouts, detectClicks, getParent(), loadingInfo);
+                    multiLoader.startLoading(appPackageName, loader);
                 }
                 else
-                    DetectAppScreenAccessibilityService.removeDetectionData(appPackageName);
+                    DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader().remove(appPackageName);
             }
         });
     }
@@ -112,7 +133,7 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
                 && FileHelper.fileExists(this, FileHelper.Directory.PACKAGE, getAppPackageName(), "reverseMap.bin");
 
         // If the detection data is currently in use, the menu items are disabled
-        boolean detectionDataInUse = DetectAppScreenAccessibilityService.isDetectionDataLoadedOrLoading(appPackageName);
+        boolean detectionDataInUse = DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader().contains(this.appPackageName);
         checkboxDetectLayouts.setEnabled(!detectionDataInUse);
         checkboxDetectClicks.setEnabled(!detectionDataInUse);
         itemDeleteCache.setEnabled(cacheExists && !detectionDataInUse);

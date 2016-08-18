@@ -18,28 +18,23 @@
 
 package de.uni_bonn.detectappscreen.detection;
 
-import android.app.NotificationManager;
 import android.content.Context;
-import android.support.v7.app.NotificationCompat;
 import android.widget.ProgressBar;
 
 import org.json.JSONObject;
 
-import java.util.List;
-
-import de.uni_bonn.detectappscreen.R;
 import de.uni_bonn.detectappscreen.ui.LoadingInfo;
 import de.uni_bonn.detectappscreen.utility.FileHelper;
+import de.uni_bonn.detectappscreen.utility.MultipleObjectLoader;
+import de.uni_bonn.detectappscreen.utility.ObjectLoader;
 
 /**
  * Loader for app detection data that is supposed to be run in a separate thread
  */
-public class AppDetectionDataLoader implements Runnable {
+public class AppDetectionDataLoader extends ObjectLoader<AppDetectionData> {
 
     /** Package name associated with the app detection data */
     private String appPackageName;
-    /** List to add the loaded object to */
-    private List<AppDetectionData> detectableAppsLoaded;
     /** Whether to compare current layouts with layout definitions */
     private boolean performLayoutChecks;
     /** Whether to listen to OnClick events */
@@ -57,14 +52,12 @@ public class AppDetectionDataLoader implements Runnable {
     /**
      * Constructs a loader using the given data
      * @param appPackageName          Name of the package associated
-     * @param detectableAppsLoaded    List to add the loaded object to
      */
-    public AppDetectionDataLoader(String appPackageName, List<AppDetectionData> detectableAppsLoaded,
-                                  boolean performLayoutChecks, boolean performOnClickChecks,
-                                  Context context, LoadingInfo loadingInfo) {
-        super();
+    public AppDetectionDataLoader(String appPackageName, MultipleObjectLoader<AppDetectionData> multipleObjectLoader,
+                                  boolean performLayoutChecks, boolean performOnClickChecks, Context context,
+                                  LoadingInfo loadingInfo) {
+        super(appPackageName, multipleObjectLoader);
         this.appPackageName = appPackageName;
-        this.detectableAppsLoaded = detectableAppsLoaded;
         this.performLayoutChecks = performLayoutChecks;
         this.performOnClickChecks = performOnClickChecks;
         this.context = context;
@@ -75,27 +68,21 @@ public class AppDetectionDataLoader implements Runnable {
      * Loads the according app detection data
      */
     @Override
-    public void run() {
+    protected AppDetectionData load() {
         JSONObject layouts;
         JSONObject reverseMap;
-        synchronized (DetectAppScreenAccessibilityService.detectableAppsLoadedLock) {
-            layouts = FileHelper.readJSONFile(
-                    this.context, FileHelper.Directory.PACKAGE, this.appPackageName, "layouts.json");
-            reverseMap = FileHelper.readJSONFile(
-                    this.context, FileHelper.Directory.PACKAGE, this.appPackageName, "reverseMap.json");
-        }
+        layouts = FileHelper.readJSONFile(
+                this.context, FileHelper.Directory.PACKAGE, this.appPackageName, "layouts.json");
+        reverseMap = FileHelper.readJSONFile(
+                this.context, FileHelper.Directory.PACKAGE, this.appPackageName, "reverseMap.json");
+
         AppDetectionData detectableApp = new AppDetectionData(this.appPackageName, layouts, reverseMap, context);
         if (this.loadingInfo != null)
             this.loadingInfo.uid = detectableApp.getUid();
 
         detectableApp.setHashMapLoadingInfo(this.loadingInfo);
-
         detectableApp.load(this.performLayoutChecks, this.performOnClickChecks);
-        synchronized (DetectAppScreenAccessibilityService.detectableAppsLoadedLock) {
-            if (detectableApp.isFinishedLoading())
-                detectableAppsLoaded.add(detectableApp);
-        }
-        DetectAppScreenAccessibilityService.onDetectionDataLoadFinished(this.appPackageName);
+        return detectableApp;
     }
 
     /** (Optional) progress bar to display the loading progress */

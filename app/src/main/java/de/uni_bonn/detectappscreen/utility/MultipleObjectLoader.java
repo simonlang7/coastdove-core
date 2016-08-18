@@ -2,6 +2,7 @@ package de.uni_bonn.detectappscreen.utility;
 
 import android.util.Log;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -18,18 +19,25 @@ public class MultipleObjectLoader<T> {
     /**
      * Constructs a MultipleObjectLoader
      */
-    private MultipleObjectLoader() {
+    public MultipleObjectLoader() {
         this.loadingObjects = new ConcurrentHashMap<>();
         this.loadedObjects = new ConcurrentHashMap<>();
     }
 
     /**
-     * Retrieves the object for the given key
+     * Retrieves the object for the given key, if it has finished loading
      * @param key    Key to identify the object
      * @return The object, if it has finished loading and the key exists; null otherwise
      */
     public T get(String key) {
         return loadedObjects.get(key);
+    }
+
+    /**
+     * Returns all objects that have finished loading
+     */
+    public Collection<T> getAll() {
+        return loadedObjects.values();
     }
 
     /**
