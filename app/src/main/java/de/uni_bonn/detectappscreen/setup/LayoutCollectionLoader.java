@@ -37,10 +37,18 @@ import de.uni_bonn.detectappscreen.utility.FileHelper;
 public class LayoutCollectionLoader implements Runnable {
     private Context context;
     private String apkName;
+    private float minDetectionRate;
 
     public LayoutCollectionLoader(Context context, String apkName) {
         this.context = context;
         this.apkName = apkName;
+        this.minDetectionRate = 1.0f;
+    }
+
+    public LayoutCollectionLoader(Context context, String apkName, float minDetectionRate) {
+        this.context = context;
+        this.apkName = apkName;
+        this.minDetectionRate = minDetectionRate;
     }
 
     @Override
@@ -48,7 +56,7 @@ public class LayoutCollectionLoader implements Runnable {
         File file = FileHelper.getFile(this.context, FileHelper.Directory.PUBLIC, null, apkName);
         LayoutCollection layouts = null;
         try (ZipFile apk = new ZipFile(file)) {
-            layouts = new LayoutCollection(apk);
+            layouts = new LayoutCollection(apk, minDetectionRate);
         } catch (IOException e) {
             Log.e("LayoutCollectionLoader", "Unable to load APK: " + e.getMessage());
         }

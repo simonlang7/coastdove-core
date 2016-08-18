@@ -19,10 +19,12 @@
 package de.uni_bonn.detectappscreen.detection;
 
 import android.accessibilityservice.AccessibilityService;
+import android.app.NotificationManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.support.v7.app.NotificationCompat;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.widget.ProgressBar;
@@ -33,6 +35,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import de.uni_bonn.detectappscreen.R;
+import de.uni_bonn.detectappscreen.ui.LoadingInfo;
 
 /**
  * Accessibility Service for app screen detection. Once started, data needed for app detection
@@ -83,10 +88,22 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
             return;
 
         // Start new thread
-        AppDetectionDataLoader loader = new AppDetectionDataLoader(appPackageName, detectableAppsLoaded,
-                performLayoutChecks, performOnClickChecks, context);
+
+        LoadingInfo loadingInfo = new LoadingInfo();
+        loadingInfo.notificationManager = (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
+        loadingInfo.builder = new NotificationCompat.Builder(context);
         if (progressBar != null)
-            loader.setProgressBar(progressBar);
+            loadingInfo.progressBar = progressBar;
+
+
+        loadingInfo.setNotificationData(context.getString(R.string.app_name),
+                context.getString(R.string.notification_loading_1) + " " + appPackageName
+                        + " " + context.getString(R.string.notification_loading_2),
+                R.drawable.notification_template_icon_bg);
+        loadingInfo.start(true);
+
+        AppDetectionDataLoader loader = new AppDetectionDataLoader(appPackageName, detectableAppsLoaded,
+                performLayoutChecks, performOnClickChecks, context, loadingInfo);
         Thread loaderThread = new Thread(loader);
         detectableAppsLoading.put(appPackageName, loaderThread);
         loaderThread.start();

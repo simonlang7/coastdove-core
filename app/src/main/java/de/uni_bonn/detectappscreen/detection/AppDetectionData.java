@@ -416,13 +416,13 @@ public class AppDetectionData {
     private boolean buildHashMapsFromBinary() {
         // TODO: un-hardcode
 
-        if (hashMapLoadingInfo != null) {
-            hashMapLoadingInfo.setNotificationData(context.getString(R.string.app_name),
-                    context.getString(R.string.notification_loading_1) + " " + getAppPackageName()
-                            + " " + context.getString(R.string.notification_loading_2),
-                    R.drawable.notification_template_icon_bg);
-            hashMapLoadingInfo.start(true);
-        }
+//        if (hashMapLoadingInfo != null) {
+//            hashMapLoadingInfo.setNotificationData(context.getString(R.string.app_name),
+//                    context.getString(R.string.notification_loading_1) + " " + getAppPackageName()
+//                            + " " + context.getString(R.string.notification_loading_2),
+//                    R.drawable.notification_template_icon_bg);
+//            hashMapLoadingInfo.start(true);
+//        }
 
 
         if (FileHelper.fileExists(this.context, FileHelper.Directory.PACKAGE, getAppPackageName(), "layouts.bin") &&
@@ -460,7 +460,7 @@ public class AppDetectionData {
                         context.getString(R.string.notification_finished_loading_1) + " " + getAppPackageName()
                                 + " " + context.getString(R.string.notification_finished_loading_2),
                         null);
-                hashMapLoadingInfo.end();
+//                hashMapLoadingInfo.end();
             }
 
             return this.layoutIdentificationMap != null && this.reverseMap != null;

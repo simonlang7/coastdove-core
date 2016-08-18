@@ -27,6 +27,7 @@ import org.json.JSONObject;
 
 import java.util.List;
 
+import de.uni_bonn.detectappscreen.R;
 import de.uni_bonn.detectappscreen.ui.LoadingInfo;
 import de.uni_bonn.detectappscreen.utility.FileHelper;
 
@@ -50,20 +51,24 @@ public class AppDetectionDataLoader implements Runnable {
     /** Application context */
     private Context context;
 
+    /** UI elements to display loading progress */
+    private LoadingInfo loadingInfo;
+
     /**
      * Constructs a loader using the given data
-     * @param appPackageName             Name of the package associated
+     * @param appPackageName          Name of the package associated
      * @param detectableAppsLoaded    List to add the loaded object to
      */
     public AppDetectionDataLoader(String appPackageName, List<AppDetectionData> detectableAppsLoaded,
                                   boolean performLayoutChecks, boolean performOnClickChecks,
-                                  Context context) {
+                                  Context context, LoadingInfo loadingInfo) {
         super();
         this.appPackageName = appPackageName;
         this.detectableAppsLoaded = detectableAppsLoaded;
         this.performLayoutChecks = performLayoutChecks;
         this.performOnClickChecks = performOnClickChecks;
         this.context = context;
+        this.loadingInfo = loadingInfo;
     }
 
     /**
@@ -80,13 +85,10 @@ public class AppDetectionDataLoader implements Runnable {
                     this.context, FileHelper.Directory.PACKAGE, this.appPackageName, "reverseMap.json");
         }
         AppDetectionData detectableApp = new AppDetectionData(this.appPackageName, layouts, reverseMap, context);
+        if (this.loadingInfo != null)
+            this.loadingInfo.uid = detectableApp.getUid();
 
-        LoadingInfo loadingInfo = new LoadingInfo();
-        loadingInfo.notificationManager = (NotificationManager)this.context.getSystemService(Context.NOTIFICATION_SERVICE);
-        loadingInfo.builder = new NotificationCompat.Builder(this.context);
-        loadingInfo.uid = detectableApp.getUid();
-        loadingInfo.progressBar = this.progressBar;
-        detectableApp.setHashMapLoadingInfo(loadingInfo);
+        detectableApp.setHashMapLoadingInfo(this.loadingInfo);
 
         detectableApp.load(this.performLayoutChecks, this.performOnClickChecks);
         synchronized (DetectAppScreenAccessibilityService.detectableAppsLoadedLock) {

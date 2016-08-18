@@ -131,9 +131,11 @@ public class LayoutCollection {
 
     /**
      * Constructs a new layout collection from the given .apk file
-     * @param apk    APK file to process
+     * @param apk                 APK file to process
+     * @param minDetectionRate    minimal target detection rate (i.e. (#detectable layouts)/(#layouts)),
+     *                            value between 0f and 1f
      */
-    public LayoutCollection(ZipFile apk) {
+    public LayoutCollection(ZipFile apk, float minDetectionRate) {
         this.layoutIdentificationList = new LinkedList<>();
         this.allAndroidIDs = new TreeSet<>(Collator.getInstance());
 
