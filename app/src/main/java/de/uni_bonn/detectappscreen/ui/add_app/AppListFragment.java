@@ -6,6 +6,7 @@ import android.support.v4.content.Loader;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 
 import java.util.ArrayList;
 
@@ -13,6 +14,7 @@ import de.uni_bonn.detectappscreen.R;
 import de.uni_bonn.detectappscreen.setup.LayoutCollection;
 import de.uni_bonn.detectappscreen.setup.LayoutCollectionLoader;
 import de.uni_bonn.detectappscreen.ui.LoadableListFragment;
+import de.uni_bonn.detectappscreen.ui.LoadingInfo;
 import de.uni_bonn.detectappscreen.utility.MultipleObjectLoader;
 
 /**
@@ -40,9 +42,13 @@ public class AppListFragment extends LoadableListFragment<ApplicationInfo> {
         super.onListItemClick(listView, view, position, id);
         final ApplicationInfo item = (ApplicationInfo)listView.getItemAtPosition(position);
 
+        ProgressBar progressBar = (ProgressBar)getActivity().findViewById(R.id.progressBar);
+        LoadingInfo loadingInfo = new LoadingInfo(getActivity(), item.publicSourceDir.hashCode(),
+                progressBar, true);
+
         MultipleObjectLoader<LayoutCollection> multiLoader = LayoutCollection.getLayoutCollectionMultipleObjectLoader();
         LayoutCollectionLoader loader = new LayoutCollectionLoader(getActivity(), item.packageName, item.publicSourceDir,
-                multiLoader, 1.0f);
+                multiLoader, 1.0f, loadingInfo);
         multiLoader.startLoading(item.packageName, loader);
     }
 

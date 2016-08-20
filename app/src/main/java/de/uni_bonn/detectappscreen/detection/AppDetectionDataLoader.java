@@ -40,9 +40,6 @@ public class AppDetectionDataLoader extends ObjectLoader<AppDetectionData> {
     /** Whether to listen to OnClick events */
     private boolean performOnClickChecks;
 
-    /** (Optional) progress bar to display the loading progress */
-    private ProgressBar progressBar;
-
     /** Application context */
     private Context context;
 
@@ -81,10 +78,5 @@ public class AppDetectionDataLoader extends ObjectLoader<AppDetectionData> {
         detectableApp.load(this.performLayoutChecks, this.performOnClickChecks);
         
         return detectableApp;
-    }
-
-    /** (Optional) progress bar to display the loading progress */
-    public void setProgressBar(ProgressBar progressBar) {
-        this.progressBar = progressBar;
     }
 }

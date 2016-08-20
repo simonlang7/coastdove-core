@@ -1,7 +1,10 @@
 package de.uni_bonn.detectappscreen.ui;
 
+import android.app.Activity;
 import android.app.NotificationManager;
+import android.content.Context;
 import android.graphics.drawable.Drawable;
+import android.support.annotation.NonNull;
 import android.support.v7.app.NotificationCompat;
 import android.view.View;
 import android.widget.ProgressBar;
@@ -10,20 +13,49 @@ import android.widget.ProgressBar;
  * UI elements for displaying progress
  */
 public class LoadingInfo {
-    public NotificationManager notificationManager;
-    public NotificationCompat.Builder builder;
-    public ProgressBar progressBar;
-    public int uid;
+    private NotificationManager notificationManager;
+    private NotificationCompat.Builder builder;
+    private ProgressBar progressBar;
+    private Activity activity;
+    private int uid;
+
+    public LoadingInfo(@NonNull Activity activity, int uid,
+                       @NonNull ProgressBar progressBar, boolean notification) {
+        this.activity = activity;
+        this.uid = uid;
+        this.progressBar = progressBar;
+        if (notification)
+            initNotification();
+        else {
+            this.notificationManager = null;
+            this.builder = null;
+        }
+    }
+
+    public LoadingInfo(@NonNull Activity activity, int uid) {
+        this.activity = activity;
+        this.uid = uid;
+        this.progressBar = null;
+        initNotification();
+    }
 
     public LoadingInfo() {
+        this.notificationManager = null;
+        this.builder = null;
+        this.progressBar = null;
     }
 
     public void cancel() {
         if (notificationManager != null)
             notificationManager.cancel(this.uid);
         if (progressBar != null) {
-            progressBar.setIndeterminate(false);
-            progressBar.setVisibility(View.GONE);
+            activity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    progressBar.setIndeterminate(false);
+                    progressBar.setVisibility(View.GONE);
+                }
+            });
         }
     }
 
@@ -31,19 +63,29 @@ public class LoadingInfo {
         if (builder != null && indeterminate)
             builder.setProgress(0, 0, true);
         if (progressBar != null) {
-            progressBar.setVisibility(View.VISIBLE);
-            progressBar.setIndeterminate(true);
+            activity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    progressBar.setVisibility(View.VISIBLE);
+                    progressBar.setIndeterminate(true);
+                }
+            });
         }
         update();
     }
 
-    public void update(int maxProgress, int progress) {
+    public void update(final int maxProgress, final int progress) {
         if (builder != null)
             builder.setProgress(maxProgress, progress, false);
         if (progressBar != null) {
-            progressBar.setIndeterminate(false);
-            progressBar.setMax(maxProgress);
-            progressBar.setProgress(progress);
+            activity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    progressBar.setIndeterminate(false);
+                    progressBar.setMax(maxProgress);
+                    progressBar.setProgress(progress);
+                }
+            });
         }
         update();
     }
@@ -57,8 +99,13 @@ public class LoadingInfo {
         if (builder != null)
             builder.setProgress(0, 0, false);
         if (progressBar != null) {
-            progressBar.setIndeterminate(false);
-            progressBar.setVisibility(View.GONE);
+            activity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    progressBar.setIndeterminate(false);
+                    progressBar.setVisibility(View.GONE);
+                }
+            });
         }
         update();
     }
@@ -72,5 +119,10 @@ public class LoadingInfo {
             if (smallIcon != null)
                 builder.setSmallIcon(smallIcon);
         }
+    }
+
+    private void initNotification() {
+        this.notificationManager = (NotificationManager)activity.getSystemService(Context.NOTIFICATION_SERVICE);
+        this.builder = new NotificationCompat.Builder(activity);
     }
 }

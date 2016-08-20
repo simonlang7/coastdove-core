@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.zip.ZipFile;
 
+import de.uni_bonn.detectappscreen.ui.LoadingInfo;
 import de.uni_bonn.detectappscreen.utility.FileHelper;
 import de.uni_bonn.detectappscreen.utility.MultipleObjectLoader;
 import de.uni_bonn.detectappscreen.utility.ObjectLoader;
@@ -41,15 +42,17 @@ public class LayoutCollectionLoader extends ObjectLoader<LayoutCollection> {
     private String appPackageName;
     private String apkFullPath;
     private float minDetectionRate;
+    private LoadingInfo loadingInfo;
 
     public LayoutCollectionLoader(Context context, String appPackageName, String apkFullPath,
                                   MultipleObjectLoader<LayoutCollection> multipleObjectLoader,
-                                  float minDetectionRate) {
+                                  float minDetectionRate, LoadingInfo loadingInfo) {
         super(appPackageName, multipleObjectLoader);
         this.context = context;
         this.appPackageName = appPackageName;
         this.apkFullPath = apkFullPath;
         this.minDetectionRate = minDetectionRate;
+        this.loadingInfo = loadingInfo;
     }
 
     @Override
@@ -57,7 +60,7 @@ public class LayoutCollectionLoader extends ObjectLoader<LayoutCollection> {
         File file = new File(apkFullPath);
         LayoutCollection layouts = null;
         try (ZipFile apk = new ZipFile(file)) {
-            layouts = new LayoutCollection(apk, minDetectionRate);
+            layouts = new LayoutCollection(apk, minDetectionRate, loadingInfo);
         } catch (IOException e) {
             Log.e("LayoutCollectionLoader", "Unable to load APK: " + e.getMessage());
         }

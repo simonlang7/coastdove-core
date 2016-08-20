@@ -28,7 +28,9 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
 import brut.androlib.res.decoder.AXmlResourceParser;
+import de.uni_bonn.detectappscreen.R;
 import de.uni_bonn.detectappscreen.detection.LayoutIdentification;
+import de.uni_bonn.detectappscreen.ui.LoadingInfo;
 import de.uni_bonn.detectappscreen.utility.MultipleObjectLoader;
 import de.uni_bonn.detectappscreen.utility.PowerSet;
 import de.uni_bonn.detectappscreen.utility.XMLHelper;
@@ -88,10 +90,14 @@ public class LayoutCollection {
      * @param minDetectionRate    minimal target detection rate (i.e. (#detectable layouts)/(#layouts)),
      *                            value between 0f and 1f
      */
-    public LayoutCollection(ZipFile apk, float minDetectionRate) {
+    public LayoutCollection(ZipFile apk, float minDetectionRate, LoadingInfo loadingInfo) {
         Log.d("LayoutCollection", "Constructor");
         this.layoutIdentificationList = new LinkedList<>();
         this.allAndroidIDs = new TreeSet<>(Collator.getInstance());
+
+        loadingInfo.setNotificationData("Setting up " + apk.getName(), "Blorp",
+                R.drawable.notification_template_icon_bg);
+        loadingInfo.start(true);
 
         Log.d("LayoutCollection", "Parsing resources.arsc");
         ARSCFileParser resourceParser = new ARSCFileParser();
@@ -131,6 +137,8 @@ public class LayoutCollection {
         List<LayoutIdentificationContainer> containersCopy = new LinkedList<>(containers);
         lookupUniqueIDs(containersCopy);
         this.reverseMap = new ReverseMap(containers, this.allAndroidIDs);
+
+        loadingInfo.end();
     }
 
     /**

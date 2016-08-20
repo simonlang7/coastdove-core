@@ -18,6 +18,7 @@
 
 package de.uni_bonn.detectappscreen.ui.detectable_app_details;
 
+import android.app.Activity;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -78,6 +79,7 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
 
         // Switch to activate detection of the specified app
         boolean detectionDataLoadedOrLoading = false;
+
         try {
             detectionDataLoadedOrLoading = DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader().contains(this.appPackageName);
         } catch (NullPointerException e) {
@@ -94,10 +96,9 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
                     boolean detectClicks = preferences.getBoolean(appPackageName + getString(R.string.pref_detect_clicks), false);
 
                     // Loading info UI elements
-                    LoadingInfo loadingInfo = new LoadingInfo();
-                    loadingInfo.notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
-                    loadingInfo.builder = new NotificationCompat.Builder(context);
-                    loadingInfo.uid = appPackageName.hashCode();
+                    int uid = appPackageName.hashCode();
+                    LoadingInfo loadingInfo = new LoadingInfo(DetectableAppDetailsActivity.this,
+                            uid, progressBar, true);
 
                     // Start the loading process and add
                     MultipleObjectLoader<AppDetectionData> multiLoader = DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader();

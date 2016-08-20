@@ -28,4 +28,5 @@ dependencies {
     compile 'com.android.support:recyclerview-v7:22.2.1'
     compile 'com.android.support:design:22.2.1'
     compile files('libs/apktool_2.2.0.jar')
+    compile files('libs/arscparser.jar')
 }
