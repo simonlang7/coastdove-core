@@ -90,12 +90,12 @@ public class LayoutCollection {
      * @param minDetectionRate    minimal target detection rate (i.e. (#detectable layouts)/(#layouts)),
      *                            value between 0f and 1f
      */
-    public LayoutCollection(ZipFile apk, float minDetectionRate, LoadingInfo loadingInfo) {
+    public LayoutCollection(ZipFile apk, String appPackageName, float minDetectionRate, LoadingInfo loadingInfo) {
         Log.d("LayoutCollection", "Constructor");
         this.layoutIdentificationList = new LinkedList<>();
         this.allAndroidIDs = new TreeSet<>(Collator.getInstance());
 
-        loadingInfo.setNotificationData("Setting up " + apk.getName(), "Blorp",
+        loadingInfo.setNotificationData("Setting up layouts", appPackageName,
                 R.drawable.notification_template_icon_bg);
         loadingInfo.start(true);
 
@@ -138,6 +138,7 @@ public class LayoutCollection {
         lookupUniqueIDs(containersCopy);
         this.reverseMap = new ReverseMap(containers, this.allAndroidIDs);
 
+        loadingInfo.setNotificationData("Finished setting up layouts", null, null);
         loadingInfo.end();
     }
 

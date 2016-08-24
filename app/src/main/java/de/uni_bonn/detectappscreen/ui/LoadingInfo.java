@@ -18,6 +18,10 @@ public class LoadingInfo {
     private ProgressBar progressBar;
     private Activity activity;
     private int uid;
+    private volatile int progress;
+    private volatile int maxProgress;
+    private volatile boolean updated;
+    private volatile boolean finished;
 
     public LoadingInfo(@NonNull Activity activity, int uid,
                        @NonNull ProgressBar progressBar, boolean notification) {
@@ -30,6 +34,10 @@ public class LoadingInfo {
             this.notificationManager = null;
             this.builder = null;
         }
+        this.progress = 0;
+        this.maxProgress = 0;
+        this.updated = false;
+        this.finished = false;
     }
 
     public LoadingInfo(@NonNull Activity activity, int uid) {
@@ -37,12 +45,20 @@ public class LoadingInfo {
         this.uid = uid;
         this.progressBar = null;
         initNotification();
+        this.progress = 0;
+        this.maxProgress = 0;
+        this.updated = false;
+        this.finished = false;
     }
 
     public LoadingInfo() {
         this.notificationManager = null;
         this.builder = null;
         this.progressBar = null;
+        this.progress = 0;
+        this.maxProgress = 0;
+        this.updated = false;
+        this.finished = false;
     }
 
     public void cancel() {
@@ -72,6 +88,10 @@ public class LoadingInfo {
             });
         }
         update();
+        this.progress = 0;
+        this.maxProgress = 0;
+        this.updated = true;
+        this.finished = false;
     }
 
     public void update(final int maxProgress, final int progress) {
@@ -87,6 +107,9 @@ public class LoadingInfo {
                 }
             });
         }
+        this.progress = progress;
+        this.maxProgress = maxProgress;
+        this.updated = true;
         update();
     }
 
@@ -108,6 +131,7 @@ public class LoadingInfo {
             });
         }
         update();
+        this.finished = true;
     }
 
     public void setNotificationData(String title, String contentText, Integer smallIcon) {
@@ -119,6 +143,22 @@ public class LoadingInfo {
             if (smallIcon != null)
                 builder.setSmallIcon(smallIcon);
         }
+    }
+
+    public int getProgress() {
+        return progress;
+    }
+
+    public int getMaxProgress() {
+        return maxProgress;
+    }
+
+    public boolean isUpdated() {
+        return updated;
+    }
+
+    public boolean isFinished() {
+        return this.finished;
     }
 
     private void initNotification() {

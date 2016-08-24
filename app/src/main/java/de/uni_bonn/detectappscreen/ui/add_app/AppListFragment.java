@@ -42,14 +42,12 @@ public class AppListFragment extends LoadableListFragment<ApplicationInfo> {
         super.onListItemClick(listView, view, position, id);
         final ApplicationInfo item = (ApplicationInfo)listView.getItemAtPosition(position);
 
-        ProgressBar progressBar = (ProgressBar)getActivity().findViewById(R.id.progressBar);
-        LoadingInfo loadingInfo = new LoadingInfo(getActivity(), item.publicSourceDir.hashCode(),
-                progressBar, true);
+        LoadingInfo loadingInfo = new LoadingInfo(getActivity(), item.publicSourceDir.hashCode());
 
         MultipleObjectLoader<LayoutCollection> multiLoader = LayoutCollection.getLayoutCollectionMultipleObjectLoader();
         LayoutCollectionLoader loader = new LayoutCollectionLoader(getActivity(), item.packageName, item.publicSourceDir,
                 multiLoader, 1.0f, loadingInfo);
-        multiLoader.startLoading(item.packageName, loader);
+        multiLoader.startLoading(item.packageName, loader, loadingInfo);
     }
 
     @Override

@@ -11,9 +11,10 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import java.util.ArrayList;
-
 import de.uni_bonn.detectappscreen.R;
+import de.uni_bonn.detectappscreen.setup.LayoutCollection;
+import de.uni_bonn.detectappscreen.ui.LoadingInfo;
+import de.uni_bonn.detectappscreen.utility.MultipleObjectLoader;
 
 /**
  * Adapter for app usage data - an array adapter that tracks which items are selected
@@ -41,7 +42,7 @@ public class AppListAdapter extends ArrayAdapter<ApplicationInfo> {
 
             holder.imageView = (ImageView)convertView.findViewById(R.id.appIcon);
             holder.appName = (TextView)convertView.findViewById(R.id.appName);
-            holder.progressBar = (ProgressBar)convertView.findViewById(R.id.appProgressBar);
+//            holder.progressBar = (ProgressBar)convertView.findViewById(R.id.appProgressBar);
 
             convertView.setTag(holder);
         }
@@ -54,6 +55,24 @@ public class AppListAdapter extends ArrayAdapter<ApplicationInfo> {
         String text = appInfo.loadLabel(pm).toString();
         holder.appName.setText(text);
 
+//        MultipleObjectLoader<LayoutCollection> multiLoader = LayoutCollection.getLayoutCollectionMultipleObjectLoader();
+//        LoadingInfo loadingInfo = multiLoader.getLoadingInfo(appInfo.packageName);
+//        if (loadingInfo != null) {
+//            ProgressBar progressBar = holder.progressBar;
+//            if (!loadingInfo.isFinished() && loadingInfo.isUpdated()) {
+//                progressBar.setVisibility(View.VISIBLE);
+//                progressBar.setIndeterminate(loadingInfo.getMaxProgress() == 0);
+//                progressBar.setMax(loadingInfo.getMaxProgress());
+//                progressBar.setProgress(loadingInfo.getProgress());
+//            }
+//            else if (loadingInfo.isFinished()) {
+//                progressBar.setVisibility(View.GONE);
+//                progressBar.setIndeterminate(false);
+//                progressBar.setProgress(loadingInfo.getMaxProgress());
+//                progressBar.setMax(loadingInfo.getMaxProgress());
+//            }
+//        }
+
         return convertView;
     }
 
@@ -61,6 +80,6 @@ public class AppListAdapter extends ArrayAdapter<ApplicationInfo> {
     private class ViewHolder {
         ImageView imageView;
         TextView appName;
-        ProgressBar progressBar;
+//        ProgressBar progressBar;
     }
 }

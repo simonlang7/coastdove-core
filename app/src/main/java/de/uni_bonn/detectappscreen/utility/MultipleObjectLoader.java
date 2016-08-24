@@ -6,6 +6,8 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import de.uni_bonn.detectappscreen.ui.LoadingInfo;
+
 /**
  * Runs ObjectLoaders in a new Thread and keeps them in a map (Strings as keys) once finished.
  * Loading processes can be cancelled and the current status of each object can be retrieved.
@@ -13,6 +15,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MultipleObjectLoader<T> {
     /** Map of Threads currently loading objects */
     private Map<String, Thread> loadingObjects;
+    /** Map of LoadingInfos for loading objects */
+    private Map<String, LoadingInfo> loadingInfos;
     /** Map of objects already loaded */
     private Map<String, T> loadedObjects;
 
@@ -21,6 +25,7 @@ public class MultipleObjectLoader<T> {
      */
     public MultipleObjectLoader() {
         this.loadingObjects = new ConcurrentHashMap<>();
+        this.loadingInfos = new ConcurrentHashMap<>();
         this.loadedObjects = new ConcurrentHashMap<>();
     }
 
@@ -47,10 +52,23 @@ public class MultipleObjectLoader<T> {
      * @return True if loading was started, false if the key already exists
      */
     public boolean startLoading(String key, ObjectLoader<T> loader) {
+        return startLoading(key, loader, null);
+    }
+
+    /**
+     * Starts loading a new object
+     * @param key            Key used to identify the object
+     * @param loader         Loader to load the object with
+     * @param loadingInfo    LoadingInfo for the object to load
+     * @return True if loading was started, false if the key already exists
+     */
+    public boolean startLoading(String key, ObjectLoader<T> loader, LoadingInfo loadingInfo) {
         if (loadedObjects.containsKey(key) || loadingObjects.containsKey(key))
             return false;
         Thread thread = new Thread(loader);
         loadingObjects.put(key, thread);
+        if (loadingInfo != null)
+            loadingInfos.put(key, loadingInfo);
         thread.start();
         Log.d("MultipleObjectLoader", "Started loading " + key);
         return true;
@@ -75,6 +93,8 @@ public class MultipleObjectLoader<T> {
             Log.d("MultipleObjectLoader", "Removed loaded data for " + key);
             removed = true;
         }
+        if (loadingInfos.containsKey(key))
+            loadingInfos.remove(key);
         return removed;
     }
 
@@ -85,6 +105,10 @@ public class MultipleObjectLoader<T> {
      */
     public boolean contains(String key) {
         return loadedObjects.containsKey(key) || loadingObjects.containsKey(key);
+    }
+
+    public LoadingInfo getLoadingInfo(String key) {
+        return loadingInfos.get(key);
     }
 
     /**
