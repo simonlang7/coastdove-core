@@ -18,6 +18,7 @@
 
 package de.uni_bonn.detectappscreen.setup;
 
+import android.content.Context;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
@@ -61,6 +62,9 @@ public class LayoutCollection {
     private static final int JSON_VERSION_MAJOR = 0;
     private static final int JSON_VERSION_MINOR = 4;
 
+    /** Context for UI stuff */
+    private Context context;
+
     /** MultipleObjectLoader for layout collections, used in AddAppActivity */
     private static MultipleObjectLoader<LayoutCollection> layoutCollectionMultipleObjectLoader = new MultipleObjectLoader<>();
 
@@ -90,13 +94,13 @@ public class LayoutCollection {
      * @param minDetectionRate    minimal target detection rate (i.e. (#detectable layouts)/(#layouts)),
      *                            value between 0f and 1f
      */
-    public LayoutCollection(ZipFile apk, String appPackageName, float minDetectionRate, LoadingInfo loadingInfo) {
+    public LayoutCollection(Context context, ZipFile apk, String appPackageName, float minDetectionRate, LoadingInfo loadingInfo) {
         Log.d("LayoutCollection", "Constructor");
         this.layoutIdentificationList = new LinkedList<>();
         this.allAndroidIDs = new TreeSet<>(Collator.getInstance());
 
-        loadingInfo.setNotificationData("Setting up layouts", appPackageName,
-                R.drawable.notification_template_icon_bg);
+        loadingInfo.setNotificationData(context.getString(R.string.add_app_notification_loading),
+                appPackageName, R.drawable.notification_template_icon_bg);
         loadingInfo.start(true);
 
         Log.d("LayoutCollection", "Parsing resources.arsc");
@@ -138,7 +142,8 @@ public class LayoutCollection {
         lookupUniqueIDs(containersCopy);
         this.reverseMap = new ReverseMap(containers, this.allAndroidIDs);
 
-        loadingInfo.setNotificationData("Finished setting up layouts", null, null);
+        loadingInfo.setNotificationData(context.getString(R.string.add_app_notification_finished_loading),
+                null, null);
         loadingInfo.end();
     }
 

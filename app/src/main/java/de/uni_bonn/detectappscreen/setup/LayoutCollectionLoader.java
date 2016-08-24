@@ -60,7 +60,7 @@ public class LayoutCollectionLoader extends ObjectLoader<LayoutCollection> {
         File file = new File(apkFullPath);
         LayoutCollection layouts = null;
         try (ZipFile apk = new ZipFile(file)) {
-            layouts = new LayoutCollection(apk, appPackageName, minDetectionRate, loadingInfo);
+            layouts = new LayoutCollection(this.context, apk, appPackageName, minDetectionRate, loadingInfo);
         } catch (IOException e) {
             Log.e("LayoutCollectionLoader", "Unable to load APK: " + e.getMessage());
         }

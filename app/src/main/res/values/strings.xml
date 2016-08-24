@@ -7,6 +7,9 @@
 
     <!-- Add App Activity -->
     <string name="add_detectable_app">Add Detectable App</string>
+    <!-- Add App Notifications -->
+    <string name="add_app_notification_loading">Setting up layouts</string>
+    <string name="add_app_notification_finished_loading">Finished setting up layouts</string>
 
     <!-- Detectable App Details -->
     <string name="activate">Activate</string>
