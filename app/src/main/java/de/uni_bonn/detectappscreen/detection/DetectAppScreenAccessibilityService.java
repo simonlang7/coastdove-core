@@ -22,12 +22,15 @@ import android.accessibilityservice.AccessibilityService;
 import android.content.ComponentName;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageContract;
+import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageDbHelper;
 import de.uni_bonn.detectappscreen.utility.MultipleObjectLoader;
 
 /**
@@ -214,6 +217,11 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
 //            config.flags = AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS;
 
         //setServiceInfo(config);
+
+//        AppUsageDbHelper dbHelper = new AppUsageDbHelper(getApplicationContext());
+//        SQLiteDatabase db = dbHelper.getWritableDatabase();
+//        dbHelper.close();
+        
 
         this.currentActivity = "";
         this.previousPackageName = "";

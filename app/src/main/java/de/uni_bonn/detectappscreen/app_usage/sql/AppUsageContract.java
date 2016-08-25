@@ -1,12 +1,15 @@
 package de.uni_bonn.detectappscreen.app_usage.sql;
 
+import android.content.Context;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
 import android.provider.BaseColumns;
 
 /**
  * Defines everything needed for SQL interaction
  */
-public final class CoastContract {
-    private CoastContract() {}
+public final class AppUsageContract {
+    private AppUsageContract() {}
 
     public static abstract class AppTable implements BaseColumns {
         public static final String TABLE_NAME = "app";
@@ -25,7 +28,7 @@ public final class CoastContract {
         public static final String TABLE_NAME = "data_entry";
         public static final String COLUMN_NAME_TIMESTAMP = "timestamp";
         public static final String COLUMN_NAME_ACTIVITY_ID = "activity_id";
-        public static final String COLUMN_NAME_COUNT = "count";
+        public static final String COLUMN_NAME_COUNT = "occurrences";
         public static final String COLUMN_NAME_TYPE = "type";
     }
 
@@ -50,50 +53,76 @@ public final class CoastContract {
     }
 
     private static final String TEXT_TYPE = " TEXT";
-    private static final String COMMA_SEP = ",";
-    private static final String SQL_CREATE_APPS =
+    private static final String COMMA_SEP = ", ";
+
+
+    public static final String SQL_CREATE_APPS =
             "CREATE TABLE " + AppTable.TABLE_NAME + " (" +
                     AppTable._ID + " INTEGER PRIMARY KEY," +
                     AppTable.COLUMN_NAME_TIMESTAMP + TEXT_TYPE + COMMA_SEP +
                     AppTable.COLUMN_NAME_PACKAGE + TEXT_TYPE
                     + " )";
 
-    private static final String SQL_CREATE_ACTIVITIES =
+    public static final String SQL_DELETE_APPS =
+            "DROP TABLE IF EXISTS " + AppTable.TABLE_NAME;
+
+    public static final String SQL_CREATE_ACTIVITIES =
             "CREATE TABLE " + ActivityTable.TABLE_NAME + " (" +
                     ActivityTable._ID + " INTEGER PRIMARY KEY," +
                     ActivityTable.COLUMN_NAME_TIMESTAMP + TEXT_TYPE + COMMA_SEP +
-                    ActivityTable.COLUMN_NAME_APP_ID + " INTEGER FOREIGN KEY REFERENCES " + AppTable.TABLE_NAME + "(" + AppTable._ID + ")"
+                    ActivityTable.COLUMN_NAME_APP_ID + " INTEGER" + COMMA_SEP +
+                    ActivityTable.COLUMN_NAME_ACTIVITY + TEXT_TYPE + COMMA_SEP +
+                    "FOREIGN KEY (" + ActivityTable.COLUMN_NAME_APP_ID + ") REFERENCES " + AppTable.TABLE_NAME + "(" + AppTable._ID + ")"
                     + " )";
 
-    private static final String SQL_CREATE_DATA_ENTRIES =
+    public static final String SQL_DELETE_ACTIVITIES =
+            "DROP TABLE IF EXISTS " + ActivityTable.TABLE_NAME;
+
+    public static final String SQL_CREATE_DATA_ENTRIES =
             "CREATE TABLE " + DataEntryTable.TABLE_NAME + " (" +
                     DataEntryTable._ID + " INTEGER PRIMARY KEY," +
                     DataEntryTable.COLUMN_NAME_TIMESTAMP + TEXT_TYPE + COMMA_SEP +
-                    DataEntryTable.COLUMN_NAME_ACTIVITY_ID + " INTEGER FOREIGN KEY REFERENCES " + ActivityTable.TABLE_NAME + "(" + ActivityTable._ID + ")" + COMMA_SEP +
+                    DataEntryTable.COLUMN_NAME_ACTIVITY_ID + " INTEGER" + COMMA_SEP +
                     DataEntryTable.COLUMN_NAME_COUNT + " INTEGER" + COMMA_SEP +
-                    DataEntryTable.COLUMN_NAME_TYPE + TEXT_TYPE
+                    DataEntryTable.COLUMN_NAME_TYPE + TEXT_TYPE + COMMA_SEP +
+                    "FOREIGN KEY (" + DataEntryTable.COLUMN_NAME_ACTIVITY_ID + ") REFERENCES " + ActivityTable.TABLE_NAME + "(" + ActivityTable._ID + ")"
                     + " )";
 
-    private static final String SQL_CREATE_CLICK_DETAILS =
+    public static final String SQL_DELETE_DATA_ENTRIES =
+            "DROP TABLE IF EXISTS " + DataEntryTable.TABLE_NAME;
+
+    public static final String SQL_CREATE_CLICK_DETAILS =
             "CREATE TABLE " + ClickDetailsTable.TABLE_NAME + " (" +
                     ClickDetailsTable._ID + " INTEGER PRIMARY KEY," +
-                    ClickDetailsTable.COLUMN_NAME_DATA_ENTRY_ID + " INTEGER FOREIGN KEY REFERENCES " + DataEntryTable.TABLE_NAME + "(" + DataEntryTable._ID + ")" + COMMA_SEP +
+                    ClickDetailsTable.COLUMN_NAME_DATA_ENTRY_ID + " INTEGER" + COMMA_SEP +
                     ClickDetailsTable.COLUMN_NAME_ANDROID_ID + TEXT_TYPE + COMMA_SEP +
                     ClickDetailsTable.COLUMN_NAME_TEXT + TEXT_TYPE + COMMA_SEP +
-                    ClickDetailsTable.COLUMN_NAME_CLASS_NAME + TEXT_TYPE
+                    ClickDetailsTable.COLUMN_NAME_CLASS_NAME + TEXT_TYPE + COMMA_SEP +
+                    "FOREIGN KEY (" + ClickDetailsTable.COLUMN_NAME_DATA_ENTRY_ID + ") REFERENCES " + DataEntryTable.TABLE_NAME + "(" + DataEntryTable._ID + ")"
                     + " )";
 
-    private static final String SQL_CREATE_LAYOUT_DETAILS =
+    public static final String SQL_DELETE_CLICK_DETAILS =
+            "DROP TABLE IF EXISTS " + ClickDetailsTable.TABLE_NAME;
+
+    public static final String SQL_CREATE_LAYOUT_DETAILS =
             "CREATE TABLE " + LayoutDetailsTable.TABLE_NAME + " (" +
                     LayoutDetailsTable._ID + " INTEGER PRIMARY KEY," +
-                    LayoutDetailsTable.COLUMN_NAME_DATA_ENTRY_ID + " INTEGER FOREIGN KEY REFERENCES " + DataEntryTable.TABLE_NAME + "(" + DataEntryTable._ID + ")" + COMMA_SEP +
-                    LayoutDetailsTable.COLUMN_NAME_LAYOUT + TEXT_TYPE
+                    LayoutDetailsTable.COLUMN_NAME_DATA_ENTRY_ID + " INTEGER" + COMMA_SEP +
+                    LayoutDetailsTable.COLUMN_NAME_LAYOUT + TEXT_TYPE + COMMA_SEP +
+                    "FOREIGN KEY (" + LayoutDetailsTable.COLUMN_NAME_DATA_ENTRY_ID + ") REFERENCES " + DataEntryTable.TABLE_NAME + "(" + DataEntryTable._ID + ")"
                     + " )";
 
-    private static final String SQL_CREATE_SCROLL_DETAILS =
+    public static final String SQL_DELETE_LAYOUT_DETAILS =
+            "DROP TABLE IF EXISTS " + LayoutDetailsTable.TABLE_NAME;
+
+    public static final String SQL_CREATE_SCROLL_DETAILS =
             "CREATE TABLE " + ScrollDetailsTable.TABLE_NAME + " (" +
                     ScrollDetailsTable._ID + " INTEGER PRIMARY KEY," +
-                    ScrollDetailsTable.COLUMN_NAME_DATA_ENTRY_ID + " INTEGER FOREIGN KEY REFERENCES " + DataEntryTable.TABLE_NAME + "(" + DataEntryTable._ID + ")" + COMMA_SEP +
-                    ScrollDetailsTable.COLUMN_NAME_ELEMENT + TEXT_TYPE
+                    ScrollDetailsTable.COLUMN_NAME_DATA_ENTRY_ID + " INTEGER" + COMMA_SEP +
+                    ScrollDetailsTable.COLUMN_NAME_ELEMENT + TEXT_TYPE + COMMA_SEP +
+                    "FOREIGN KEY (" + ScrollDetailsTable.COLUMN_NAME_DATA_ENTRY_ID + ") REFERENCES " + DataEntryTable.TABLE_NAME + "(" + DataEntryTable._ID + ")"
                     + " )";
+
+    public static final String SQL_DELETE_SCROLL_DETAILS =
+            "DROP TABLE IF EXISTS " + ScrollDetailsTable.TABLE_NAME;
 }
