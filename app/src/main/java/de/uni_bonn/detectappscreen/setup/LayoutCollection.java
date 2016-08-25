@@ -98,6 +98,7 @@ public class LayoutCollection {
         Log.d("LayoutCollection", "Constructor");
         this.layoutIdentificationList = new LinkedList<>();
         this.allAndroidIDs = new TreeSet<>(Collator.getInstance());
+        this.context = context;
 
         loadingInfo.setNotificationData(context.getString(R.string.add_app_notification_loading),
                 appPackageName, R.drawable.notification_template_icon_bg);

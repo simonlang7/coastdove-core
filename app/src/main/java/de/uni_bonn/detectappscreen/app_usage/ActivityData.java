@@ -19,7 +19,7 @@ import java.util.Set;
  * of the types ScrollDataEntry, LayoutDataEntry, and ClickDataEntry
  */
 public class ActivityData {
-    /**  */
+    /** Package name of the app */
     private String appPackageName;
     /** Time at which this activity was activated */
     private Date timestamp;
