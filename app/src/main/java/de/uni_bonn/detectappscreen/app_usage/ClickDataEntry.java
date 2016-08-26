@@ -104,6 +104,7 @@ public class ClickDataEntry extends AppUsageDataEntry {
         long dataEntryID = super.writeToSQLiteDB(db, activityID);
         for (ClickedEventData data : this.detectedClick) {
             ContentValues values = data.toContentValues(dataEntryID);
+            Log.d("ClickDataEntry", "Adding values: " + values.toString());
             long rowId = db.insert(AppUsageContract.ClickDetailsTable.TABLE_NAME, null, values);
             if (rowId == -1)
                 throw new SQLiteException("Unable to add row to " + AppUsageContract.ClickDetailsTable.TABLE_NAME + ": "

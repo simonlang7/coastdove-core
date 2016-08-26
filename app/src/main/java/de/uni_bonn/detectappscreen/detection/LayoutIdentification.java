@@ -149,7 +149,12 @@ public class LayoutIdentification implements Serializable {
         try {
             result.put("_type", "LayoutIdentification");
             result.put("name", getName());
-            result.put("layoutIdentifiers", getLayoutIdentifiers());
+            JSONArray layoutIdentifiersAsJSON = new JSONArray();
+            for (Set<String> identifier : layoutIdentifiers) {
+                JSONArray identifierAsJSON = new JSONArray(identifier);
+                layoutIdentifiersAsJSON.put(identifierAsJSON);
+            }
+            result.put("layoutIdentifiers", layoutIdentifiersAsJSON);
         } catch (JSONException e) {
             System.err.println("Error saving LayoutIdentification (" +
                     getName() + ") to JSON: " + e.getMessage());

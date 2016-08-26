@@ -19,6 +19,7 @@
 package de.uni_bonn.detectappscreen.app_usage;
 
 import android.content.ContentValues;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.util.Log;
@@ -40,6 +41,28 @@ import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageContract;
  * with an activity and a list of layouts detected at that time
  */
 public class AppUsageData {
+//    public static AppUsageData fromSQLiteDB(SQLiteDatabase db) {
+//        AppUsageData result;
+//
+//        String[] projection = {
+//                AppUsageContract.AppTable.COLUMN_NAME_TIMESTAMP,
+//                AppUsageContract.AppTable.COLUMN_NAME_PACKAGE
+//        };
+//        String sortOrder = AppUsageContract.AppTable.COLUMN_NAME_TIMESTAMP + " ASC";
+//
+//        Cursor c = db.query(AppUsageContract.AppTable.TABLE_NAME,
+//                projection, null, null, null, null, sortOrder);
+//        c.moveToFirst();
+//        while (!c.isAfterLast()) {
+//
+//
+//            c.moveToNext();
+//        }
+//
+//        return result;
+//    }
+
+
     /** Name of the package associated with these app usage data */
     private String appPackageName;
     /** Activity data, each object containing data entries with detailed information */

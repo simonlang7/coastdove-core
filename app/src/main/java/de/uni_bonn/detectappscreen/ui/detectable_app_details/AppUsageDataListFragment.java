@@ -34,6 +34,8 @@ import android.widget.ListView;
 import java.util.ArrayList;
 
 import de.uni_bonn.detectappscreen.R;
+import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageDbHelper;
+import de.uni_bonn.detectappscreen.ui.SQLiteTableLoader;
 import de.uni_bonn.detectappscreen.ui.app_usage_data_details.AppUsageDataDetailsActivity;
 import de.uni_bonn.detectappscreen.ui.LoadableListFragment;
 import de.uni_bonn.detectappscreen.ui.FileListLoader;
@@ -93,9 +95,10 @@ public class AppUsageDataListFragment extends LoadableListFragment<String> {
 
     @Override
     public Loader<ArrayList<String>> onCreateLoader(int id, Bundle args) {
-        String subDirectory = ((DetectableAppDetailsActivity)getActivity()).getAppPackageName();
-        return new FileListLoader(getActivity(), getString(R.string.external_folder_name),
-                subDirectory + "/" + getString(R.string.app_usage_data_folder_name), ".json");
+        String appPackageName = ((DetectableAppDetailsActivity)getActivity()).getAppPackageName();
+        return new SQLiteTableLoader(getActivity(), appPackageName);
+//        return new FileListLoader(getActivity(), getString(R.string.external_folder_name),
+//                subDirectory + "/" + getString(R.string.app_usage_data_folder_name), ".json");
     }
 
     @Override

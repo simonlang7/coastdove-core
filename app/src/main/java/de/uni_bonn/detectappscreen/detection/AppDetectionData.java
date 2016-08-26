@@ -43,6 +43,7 @@ import de.uni_bonn.detectappscreen.R;
 import de.uni_bonn.detectappscreen.app_usage.AppUsageData;
 import de.uni_bonn.detectappscreen.app_usage.AppUsageDataWriter;
 import de.uni_bonn.detectappscreen.app_usage.ClickedEventData;
+import de.uni_bonn.detectappscreen.app_usage.sql.SQLiteWriter;
 import de.uni_bonn.detectappscreen.ui.LoadingInfo;
 import de.uni_bonn.detectappscreen.utility.CollatorWrapper;
 import de.uni_bonn.detectappscreen.utility.FileHelper;
@@ -403,6 +404,7 @@ public class AppDetectionData {
     private void writeAppUsageData() {
         AppUsageData appUsageData = currentAppUsageData;
         new Thread(new AppUsageDataWriter("AppUsageData", appUsageData, this.context)).start();
+        new Thread(new SQLiteWriter(this.context, appUsageData)).start();
     }
 
     /**
@@ -493,7 +495,7 @@ public class AppDetectionData {
 
                 JSONObject currentLayout = layoutsAsArray.getJSONObject(i);
                 String name = currentLayout.getString("name");
-                int ambiguity = currentLayout.getInt("ambiguity");
+                int ambiguity = 1;//currentLayout.getInt("ambiguity"); // todo: Hotfix! Gonna remove method anyway
                 LayoutIdentification layoutIdentification
                         = new LayoutIdentification(name, ambiguity, currentLayout.getJSONArray("layoutIdentifiers"));
 
