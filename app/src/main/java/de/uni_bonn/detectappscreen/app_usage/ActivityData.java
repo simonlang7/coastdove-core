@@ -1,5 +1,8 @@
 package de.uni_bonn.detectappscreen.app_usage;
 
+import android.content.ContentValues;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -14,11 +17,15 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageContract;
+
 /**
  * Data collected in any one activity, usually contains several app usage data entries
  * of the types ScrollDataEntry, LayoutDataEntry, and ClickDataEntry
  */
 public class ActivityData {
+    public static final String DATE_DETAILED = "yyyy-MM-dd HH:mm:ss:SSS";
+
     /** Package name of the app */
     private String appPackageName;
     /** Time at which this activity was activated */
@@ -53,7 +60,7 @@ public class ActivityData {
             this.appPackageName = dataJSON.getString("package");
             this.activity = dataJSON.getString("activity");
             String timestamp = dataJSON.getString("timestamp");
-            this.timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS").parse(timestamp);
+            this.timestamp = new SimpleDateFormat(DATE_DETAILED).parse(timestamp);
             JSONArray dataEntriesJSON = dataJSON.getJSONArray("dataEntries");
             for (int i = 0; i < dataEntriesJSON.length(); ++i) {
                 JSONObject dataEntryJSON = dataEntriesJSON.getJSONObject(i);
@@ -81,6 +88,11 @@ public class ActivityData {
         return timestamp;
     }
 
+    /** Returns the timestamp as a formatted string */
+    public String getTimestampString() {
+        return new SimpleDateFormat(DATE_DETAILED).format(this.timestamp);
+    }
+
     /** Activity detected */
     public String getActivity() {
         return activity;
@@ -106,7 +118,7 @@ public class ActivityData {
             result.put("_type", "ActivityData");
             result.put("package", this.appPackageName);
             result.put("activity", this.activity);
-            result.put("timestamp", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS").format(this.timestamp));
+            result.put("timestamp", getTimestampString());
 
             JSONArray dataEntriesJSON = new JSONArray();
             for (AppUsageDataEntry entry : dataEntries)
@@ -118,6 +130,26 @@ public class ActivityData {
         }
 
         return result;
+    }
+
+    /**
+     * Writes the contents of this object to an SQLite database
+     * @param db       Database to write to
+     * @param appID    Primary key of the associated app (AppUsageData)
+     */
+    public void writeToSQLiteDB(SQLiteDatabase db, long appID) {
+        ContentValues values = new ContentValues();
+        values.put(AppUsageContract.ActivityTable.COLUMN_NAME_TIMESTAMP, getTimestampString());
+        values.put(AppUsageContract.ActivityTable.COLUMN_NAME_APP_ID, appID);
+        values.put(AppUsageContract.ActivityTable.COLUMN_NAME_ACTIVITY, this.activity);
+
+        long rowId = db.insert(AppUsageContract.ActivityTable.TABLE_NAME, null, values);
+        if (rowId == -1)
+            throw new SQLiteException("Unable to add row to " + AppUsageContract.ActivityTable.TABLE_NAME + ": "
+                    + values.toString());
+
+        for (AppUsageDataEntry entry : dataEntries)
+            entry.writeToSQLiteDB(db, rowId);
     }
 
 
@@ -194,7 +226,7 @@ public class ActivityData {
     }
 
     public String toString(int padding) {
-        String timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(getTimestamp());
+        String timestamp = getTimestampString();
         String paddingString = " ";
         for (int i = 0; i < padding; ++i)
             paddingString += " ";

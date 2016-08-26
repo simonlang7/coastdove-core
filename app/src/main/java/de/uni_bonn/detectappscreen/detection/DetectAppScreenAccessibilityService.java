@@ -22,6 +22,7 @@ import android.accessibilityservice.AccessibilityService;
 import android.content.ComponentName;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
@@ -219,7 +220,26 @@ public class DetectAppScreenAccessibilityService extends AccessibilityService {
         //setServiceInfo(config);
 
 //        AppUsageDbHelper dbHelper = new AppUsageDbHelper(getApplicationContext());
-//        SQLiteDatabase db = dbHelper.getWritableDatabase();
+//        SQLiteDatabase db = dbHelper.getReadableDatabase();
+//        Cursor c = db.rawQuery("SELECT name FROM sqlite_master WHERE type='table'", null);
+//        if (c.moveToFirst()) {
+//            while (!c.isAfterLast()) {
+//                Log.d("Table", c.getString(0));
+//                if (c.getString(0).equals("android_metadata")) {
+//                    c.moveToNext();
+//                    continue;
+//                }
+//                Cursor u = db.rawQuery("SELECT * FROM " + c.getString(0), null);
+//                if (u.moveToFirst()) {
+//                    String cols = "";
+//                    while (!u.isAfterLast()) {
+//                        cols += u.getString(0) + " ";
+//                    }
+//                    Log.d("Columns", cols);
+//                }
+//                c.moveToNext();
+//            }
+//        }
 //        dbHelper.close();
         
 

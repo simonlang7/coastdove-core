@@ -47,7 +47,7 @@ public final class AppUsageContract {
     }
 
     public static abstract class ScrollDetailsTable implements BaseColumns {
-        public static final String TABLE_NAME = "layout_details";
+        public static final String TABLE_NAME = "scroll_details";
         public static final String COLUMN_NAME_DATA_ENTRY_ID = "data_entry_id";
         public static final String COLUMN_NAME_ELEMENT = "element";
     }

@@ -18,6 +18,9 @@
 
 package de.uni_bonn.detectappscreen.app_usage;
 
+import android.content.ContentValues;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -27,6 +30,8 @@ import org.json.JSONObject;
 import java.util.Date;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+
+import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageContract;
 
 /**
  * Data entry containing a detected click at a certain point during app usage
@@ -92,6 +97,19 @@ public class ClickDataEntry extends AppUsageDataEntry {
             Log.e("ClickDataEntry", "Unable to create JSONObject: " + e.getMessage());
         }
         return result;
+    }
+
+    @Override
+    public long writeToSQLiteDB(SQLiteDatabase db, long activityID) {
+        long dataEntryID = super.writeToSQLiteDB(db, activityID);
+        for (ClickedEventData data : this.detectedClick) {
+            ContentValues values = data.toContentValues(dataEntryID);
+            long rowId = db.insert(AppUsageContract.ClickDetailsTable.TABLE_NAME, null, values);
+            if (rowId == -1)
+                throw new SQLiteException("Unable to add row to " + AppUsageContract.ClickDetailsTable.TABLE_NAME + ": "
+                    + values.toString());
+        }
+        return dataEntryID;
     }
 
     @Override

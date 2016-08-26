@@ -18,11 +18,15 @@
 
 package de.uni_bonn.detectappscreen.app_usage;
 
+import android.content.ContentValues;
+import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 import android.view.accessibility.AccessibilityNodeInfo;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageContract;
 
 /**
  * Data gathered when a TYPE_VIEW_CLICKED event occurs
@@ -80,6 +84,15 @@ public class ClickedEventData {
         }
 
         return result;
+    }
+
+    public ContentValues toContentValues(long dataEntryID) {
+        ContentValues values = new ContentValues();
+        values.put(AppUsageContract.ClickDetailsTable.COLUMN_NAME_ANDROID_ID, this.androidID);
+        values.put(AppUsageContract.ClickDetailsTable.COLUMN_NAME_TEXT, this.text);
+        values.put(AppUsageContract.ClickDetailsTable.COLUMN_NAME_CLASS_NAME, this.className);
+        values.put(AppUsageContract.ClickDetailsTable.COLUMN_NAME_DATA_ENTRY_ID, dataEntryID);
+        return values;
     }
 
     public String getClassName() {

@@ -18,6 +18,9 @@
 
 package de.uni_bonn.detectappscreen.app_usage;
 
+import android.content.ContentValues;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -26,8 +29,11 @@ import org.json.JSONObject;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.IllegalFormatException;
 import java.util.LinkedList;
 import java.util.Set;
+
+import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageContract;
 
 /**
  * Data collected from app usage, typically contains a list of timestamps associated
@@ -193,6 +199,24 @@ public class AppUsageData {
         }
 
         return result;
+    }
+
+    /**
+     * Writes the contained data into an SQLite database
+     * @param db    Database to write to
+     */
+    public void writeToSQLiteDB(SQLiteDatabase db) {
+        if (this.activityDataList.isEmpty())
+            throw new RuntimeException("No activity data");
+
+        String timestamp = this.activityDataList.getFirst().getTimestampString();
+        ContentValues values = new ContentValues();
+        values.put(AppUsageContract.AppTable.COLUMN_NAME_PACKAGE, this.appPackageName);
+        values.put(AppUsageContract.AppTable.COLUMN_NAME_TIMESTAMP, timestamp);
+
+        long rowId = db.insert(AppUsageContract.AppTable.TABLE_NAME, null, values);
+        for (ActivityData data : this.activityDataList)
+            data.writeToSQLiteDB(db, rowId);
     }
 
     /**

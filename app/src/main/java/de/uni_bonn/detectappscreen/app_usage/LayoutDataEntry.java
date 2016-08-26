@@ -18,6 +18,9 @@
 
 package de.uni_bonn.detectappscreen.app_usage;
 
+import android.content.ContentValues;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -28,6 +31,7 @@ import java.util.Date;
 import java.util.Set;
 import java.util.TreeSet;
 
+import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageContract;
 import de.uni_bonn.detectappscreen.utility.CollatorWrapper;
 
 /**
@@ -90,6 +94,22 @@ public class LayoutDataEntry extends AppUsageDataEntry {
             Log.e("LayoutDataEntry", "Unable to create JSONObject: " + e.getMessage());
         }
         return result;
+    }
+
+    @Override
+    public long writeToSQLiteDB(SQLiteDatabase db, long activityID) {
+        long dataEntryID = super.writeToSQLiteDB(db, activityID);
+        for (String layout : this.detectedLayouts) {
+            ContentValues values = new ContentValues();
+            values.put(AppUsageContract.LayoutDetailsTable.COLUMN_NAME_DATA_ENTRY_ID, dataEntryID);
+            values.put(AppUsageContract.LayoutDetailsTable.COLUMN_NAME_LAYOUT, layout);
+
+            long rowId = db.insert(AppUsageContract.LayoutDetailsTable.TABLE_NAME, null, values);
+            if (rowId == -1)
+                throw new SQLiteException("Unable to add row to " + AppUsageContract.LayoutDetailsTable.TABLE_NAME + ": "
+                        + values.toString());
+        }
+        return dataEntryID;
     }
 
     @Override

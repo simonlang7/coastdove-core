@@ -19,6 +19,9 @@
 package de.uni_bonn.detectappscreen.app_usage;
 
 
+import android.content.ContentValues;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.util.Log;
 
 import org.json.JSONException;
@@ -29,10 +32,14 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
+import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageContract;
+
 /**
  * Data entry containing information about one special event during app usage
  */
 public abstract class AppUsageDataEntry {
+    public static final String DATE_DETAILED = "yyyy-MM-dd HH:mm:ss:SSS";
+
     /** Time at which these data were collected */
     private Date timestamp;
     /** Activity detected */
@@ -61,7 +68,7 @@ public abstract class AppUsageDataEntry {
         try {
             this.activity = entryJSON.getString("activity");
             String timestamp = entryJSON.getString("timestamp");
-            this.timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS").parse(timestamp);
+            this.timestamp = new SimpleDateFormat(DATE_DETAILED).parse(timestamp);
             this.count = entryJSON.getInt("count");
         } catch (JSONException e) {
             Log.e("AppUsageDataEntry", "Unable to read from JSONObject: " + e.getMessage());
@@ -95,7 +102,7 @@ public abstract class AppUsageDataEntry {
     public JSONObject toJSON() {
         JSONObject result = new JSONObject();
         try {
-            result.put("timestamp", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS").format(this.timestamp));
+            result.put("timestamp", getTimestampString());
             result.put("activity", this.activity);
             result.put("count", this.count);
         } catch (JSONException e) {
@@ -105,6 +112,23 @@ public abstract class AppUsageDataEntry {
         return result;
     }
 
+    /**
+     * Writes the contents of this object into an SQLite database
+     * @param db            Database to write to
+     * @param activityID    Primary key of the associated activity (ActivityData)
+     */
+    public long writeToSQLiteDB(SQLiteDatabase db, long activityID) {
+        ContentValues values = new ContentValues();
+        values.put(AppUsageContract.DataEntryTable.COLUMN_NAME_TIMESTAMP, getTimestampString());
+        values.put(AppUsageContract.DataEntryTable.COLUMN_NAME_ACTIVITY_ID, activityID);
+        values.put(AppUsageContract.DataEntryTable.COLUMN_NAME_COUNT, this.count);
+        values.put(AppUsageContract.DataEntryTable.COLUMN_NAME_TYPE, getType());
+
+        long rowId = db.insert(AppUsageContract.DataEntryTable.TABLE_NAME, null, values);
+        if (rowId == -1)
+            throw new SQLiteException("Unable to add row to " + AppUsageContract.DataEntryTable.TABLE_NAME + ": " + values.toString());
+        return rowId;
+    }
 
     @Override
     public String toString() {
@@ -112,7 +136,7 @@ public abstract class AppUsageDataEntry {
     }
 
     public String toString(int padding) {
-        String timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(getTimestamp());
+        String timestamp = getTimestampString();
         String paddingString = " ";
         for (int i = 0; i < padding; ++i)
             paddingString += " ";
@@ -128,6 +152,11 @@ public abstract class AppUsageDataEntry {
     /** Time at which these data were collected */
     public Date getTimestamp() {
         return timestamp;
+    }
+
+    /** Returns the timestamp as a formatted string */
+    public String getTimestampString() {
+        return new SimpleDateFormat(DATE_DETAILED).format(this.timestamp);
     }
 
     /** Activity detected */

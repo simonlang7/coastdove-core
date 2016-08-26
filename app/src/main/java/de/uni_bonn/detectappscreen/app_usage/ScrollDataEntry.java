@@ -18,12 +18,17 @@
 
 package de.uni_bonn.detectappscreen.app_usage;
 
+import android.content.ContentValues;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Date;
+
+import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageContract;
 
 /**
  * Data entry containing a scroll event at a certain point during app usage
@@ -72,6 +77,22 @@ public class ScrollDataEntry extends AppUsageDataEntry {
             Log.e("ScrollDataEntry", "Unable to create JSONObject: " + e.getMessage());
         }
         return result;
+    }
+
+    @Override
+    public long writeToSQLiteDB(SQLiteDatabase db, long activityID) {
+        long dataEntryID = super.writeToSQLiteDB(db, activityID);
+
+        ContentValues values = new ContentValues();
+        values.put(AppUsageContract.ScrollDetailsTable.COLUMN_NAME_DATA_ENTRY_ID, dataEntryID);
+        values.put(AppUsageContract.ScrollDetailsTable.COLUMN_NAME_ELEMENT, this.scrolledElement);
+
+        long rowId = db.insert(AppUsageContract.ScrollDetailsTable.TABLE_NAME, null, values);
+        if (rowId == -1)
+            throw new SQLiteException("Unable to add row to " + AppUsageContract.ScrollDetailsTable.TABLE_NAME + ": "
+                    + values.toString());
+
+        return dataEntryID;
     }
 
     @Override

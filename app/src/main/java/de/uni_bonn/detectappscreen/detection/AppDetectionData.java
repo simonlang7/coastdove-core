@@ -412,7 +412,7 @@ public class AppDetectionData {
      * @return True if building the hash maps was successful, false otherwise
      */
     private boolean buildHashMapsFromBinary() {
-        // TODO: un-hardcode
+        // todo: constants for filenames
 
         hashMapLoadingInfo.setNotificationData(context.getString(R.string.app_name),
                 context.getString(R.string.notification_loading_1) + " " + getAppPackageName()
