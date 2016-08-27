@@ -22,6 +22,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.content.Loader;
+import android.support.v4.util.Pair;
 import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -44,7 +45,7 @@ import de.uni_bonn.detectappscreen.ui.FileListLoader;
  * ListFragment displayed in the DetectableAppDetailsActivity,
  * shows a list of collected usage data for the according app
  */
-public class AppUsageDataListFragment extends LoadableListFragment<String> {
+public class AppUsageDataListFragment extends LoadableListFragment<Pair<Integer, String>> {
 
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
@@ -94,28 +95,26 @@ public class AppUsageDataListFragment extends LoadableListFragment<String> {
     }
 
     @Override
-    public Loader<ArrayList<String>> onCreateLoader(int id, Bundle args) {
+    public Loader<ArrayList<Pair<Integer, String>>> onCreateLoader(int id, Bundle args) {
         String appPackageName = ((DetectableAppDetailsActivity)getActivity()).getAppPackageName();
         return new SQLiteTableLoader(getActivity(), appPackageName);
-//        return new FileListLoader(getActivity(), getString(R.string.external_folder_name),
-//                subDirectory + "/" + getString(R.string.app_usage_data_folder_name), ".json");
     }
 
     @Override
-    public void onLoaderReset(Loader<ArrayList<String>> loader) {
+    public void onLoaderReset(Loader<ArrayList<Pair<Integer, String>>> loader) {
     }
 
 
     @Override
     public void onListItemClick(ListView listView, View view, int position, long id) {
         super.onListItemClick(listView, view, position, id);
-        final String item = (String)listView.getItemAtPosition(position);
+        final Pair<Integer, String> item = (Pair<Integer, String>)listView.getItemAtPosition(position);
 
         String appPackageName = ((DetectableAppDetailsActivity)getActivity()).getAppPackageName();
 
         Intent intent = new Intent(getActivity(), AppUsageDataDetailsActivity.class);
         intent.putExtra(getString(R.string.extras_package_name), appPackageName);
-        intent.putExtra(getString(R.string.extras_filename), item);
+        intent.putExtra(getString(R.string.extras_app_id), item.first);
         startActivity(intent);
     }
 

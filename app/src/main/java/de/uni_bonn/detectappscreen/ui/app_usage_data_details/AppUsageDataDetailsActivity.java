@@ -40,7 +40,7 @@ import de.uni_bonn.detectappscreen.R;
  */
 public class AppUsageDataDetailsActivity extends AppCompatActivity {
     private String appPackageName;
-    private String filename;
+    private int appID;
     private AppUsageDataProcessor appUsageDataProcessor;
 
     @Override
@@ -53,21 +53,21 @@ public class AppUsageDataDetailsActivity extends AppCompatActivity {
             Bundle extras = getIntent().getExtras();
             if (extras == null) {
                 this.appPackageName = null;
-                this.filename = null;
+                this.appID = -1;
             }
             else {
                 this.appPackageName = extras.getString(getString(R.string.extras_package_name));
-                this.filename = extras.getString(getString(R.string.extras_filename));
+                this.appID = extras.getInt(getString(R.string.extras_app_id));
             }
         }
         else {
             this.appPackageName = (String) savedInstanceState.getSerializable(getString(R.string.extras_package_name));
-            this.filename = (String) savedInstanceState.getSerializable(getString(R.string.extras_filename));
+            this.appID = (int) savedInstanceState.getSerializable(getString(R.string.extras_app_id));
         }
 
         // Set support action bar
         Toolbar toolbar = (Toolbar)findViewById(R.id.detectable_app_toolbar);
-        toolbar.setTitle(this.filename);
+        toolbar.setTitle(this.appPackageName);
         setSupportActionBar(toolbar);
     }
 
@@ -81,25 +81,25 @@ public class AppUsageDataDetailsActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         // Store options regarding layout / click detection
         switch (item.getItemId()) {
-            case R.id.item_export_to_txt:
-                String txtFilename = this.filename.replace(".json", ".txt");
-                if (!FileHelper.fileExists(this, FileHelper.Directory.APP_USAGE_DATA_EXPORT, this.appPackageName, txtFilename) &&
-                        this.appUsageDataProcessor != null) {
-                    FileHelper.writeTxtFile(this, this.appUsageDataProcessor.toStrings(), FileHelper.Directory.APP_USAGE_DATA_EXPORT, this.appPackageName, txtFilename);
-                    Toast toast = Toast.makeText(this, getString(R.string.toast_saved_to_txt), Toast.LENGTH_SHORT);
-                    toast.show();
-                }
-                else {
-                    Toast toast = Toast.makeText(this, getString(R.string.toast_file_exists), Toast.LENGTH_SHORT);
-                    toast.show();
-                }
-                return true;
-            case R.id.item_delete:
-                FileHelper.deleteFile(this, FileHelper.Directory.APP_USAGE_DATA, this.appPackageName, this.filename);
-                Toast toast = Toast.makeText(this, getString(R.string.toast_file_deleted), Toast.LENGTH_SHORT);
-                toast.show();
-                finish();
-                return true;
+//            case R.id.item_export_to_txt:
+//                String txtFilename = this.filename.replace(".json", ".txt");
+//                if (!FileHelper.fileExists(this, FileHelper.Directory.APP_USAGE_DATA_EXPORT, this.appPackageName, txtFilename) &&
+//                        this.appUsageDataProcessor != null) {
+//                    FileHelper.writeTxtFile(this, this.appUsageDataProcessor.toStrings(), FileHelper.Directory.APP_USAGE_DATA_EXPORT, this.appPackageName, txtFilename);
+//                    Toast toast = Toast.makeText(this, getString(R.string.toast_saved_to_txt), Toast.LENGTH_SHORT);
+//                    toast.show();
+//                }
+//                else {
+//                    Toast toast = Toast.makeText(this, getString(R.string.toast_file_exists), Toast.LENGTH_SHORT);
+//                    toast.show();
+//                }
+//                return true;
+//            case R.id.item_delete:
+//                FileHelper.deleteFile(this, FileHelper.Directory.APP_USAGE_DATA, this.appPackageName, this.filename);
+//                Toast toast = Toast.makeText(this, getString(R.string.toast_file_deleted), Toast.LENGTH_SHORT);
+//                toast.show();
+//                finish();
+//                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -113,10 +113,10 @@ public class AppUsageDataDetailsActivity extends AppCompatActivity {
     }
 
     /**
-     * Returns the filename of the app usage data
+     * Returns the primary key of the app usage data
      */
-    public String getFilename() {
-        return this.filename;
+    public int getAppID() {
+        return this.appID;
     }
 
     /**

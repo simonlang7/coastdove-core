@@ -45,7 +45,7 @@ public class DataEntryListFragment extends Fragment
     private ProgressBar progressBar;
 
     private String appPackageName;
-    private String filename;
+    private int appID;
 
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
@@ -67,7 +67,7 @@ public class DataEntryListFragment extends Fragment
 
         AppUsageDataDetailsActivity activity = (AppUsageDataDetailsActivity)getActivity();
         this.appPackageName = activity.getAppPackageName();
-        this.filename = activity.getFilename();
+        this.appID = activity.getAppID();
 
         this.adapter = new DataEntryListAdapter(getActivity(), this.appPackageName);
         elv.setAdapter(this.adapter);
@@ -84,7 +84,7 @@ public class DataEntryListFragment extends Fragment
 
     @Override
     public Loader<AppUsageDataProcessor> onCreateLoader(int id, Bundle args) {
-        return new AppUsageDataProcessorLoader(getActivity(), this.appPackageName, this.filename);
+        return new AppUsageDataProcessorLoader(getActivity(), this.appPackageName, this.appID);
     }
 
     @Override

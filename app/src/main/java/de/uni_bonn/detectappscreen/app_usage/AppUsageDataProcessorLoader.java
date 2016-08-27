@@ -19,13 +19,11 @@
 package de.uni_bonn.detectappscreen.app_usage;
 
 import android.content.Context;
+import android.database.sqlite.SQLiteDatabase;
 import android.support.v4.content.Loader;
 
-import org.json.JSONObject;
-
-import de.uni_bonn.detectappscreen.R;
 import de.uni_bonn.detectappscreen.analyze.AppUsageDataProcessor;
-import de.uni_bonn.detectappscreen.utility.FileHelper;
+import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageDbHelper;
 
 /**
  * Loader for app usage data and an according processor
@@ -34,28 +32,33 @@ public class AppUsageDataProcessorLoader extends Loader<AppUsageDataProcessor> {
 
     /** Package name of the app */
     private String appPackageName;
-    /** Filename of the AppUsageData JSON file */
-    private String filename;
+    /** Primary key of the app */
+    private int appID;
 
     /**
      * Creates a new AppUsageDataProcessorLoader using the given data
-     * @param context           Application context
-     * @param filename          Filename of the AppUsageData JSON file
+     * @param context        Application context
+     * @param appID          Primary key of the app
      */
-    public AppUsageDataProcessorLoader(Context context, String appPackageName, String filename) {
+    public AppUsageDataProcessorLoader(Context context, String appPackageName, int appID) {
         super(context);
         this.appPackageName = appPackageName;
-        this.filename = filename;
+        this.appID = appID;
     }
 
     /**
-     * Loads the app usage data + processor from the given filename
+     * Loads the app usage data + processor for the given appID
      */
     @Override
     public void onStartLoading() {
-        AppUsageDataProcessor processor = new AppUsageDataProcessor(getContext(), this.appPackageName,
-                this.filename);
+        AppUsageDbHelper dbHelper = new AppUsageDbHelper(getContext());
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        AppUsageData appUsageData = AppUsageData.fromSQLiteDB(db, appPackageName, appID);
 
+        AppUsageDataProcessor processor = new AppUsageDataProcessor(getContext(), this.appPackageName,
+                appUsageData);
+
+        dbHelper.close();
         deliverResult(processor);
     }
 }

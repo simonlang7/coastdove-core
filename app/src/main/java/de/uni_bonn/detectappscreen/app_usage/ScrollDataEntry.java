@@ -19,6 +19,7 @@
 package de.uni_bonn.detectappscreen.app_usage;
 
 import android.content.ContentValues;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.util.Log;
@@ -27,13 +28,41 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Date;
+import java.util.Set;
+import java.util.TreeSet;
 
 import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageContract;
+import de.uni_bonn.detectappscreen.utility.CollatorWrapper;
 
 /**
  * Data entry containing a scroll event at a certain point during app usage
  */
 public class ScrollDataEntry extends AppUsageDataEntry {
+
+    public static AppUsageDataEntry fromSQLiteDB(SQLiteDatabase db, Date timestamp, String activity,
+                                                 int count, int dataEntryID) {
+        String[] projection = {
+                AppUsageContract.ScrollDetailsTable.COLUMN_NAME_DATA_ENTRY_ID,
+                AppUsageContract.ScrollDetailsTable.COLUMN_NAME_ELEMENT
+        };
+        String selection = AppUsageContract.ScrollDetailsTable.COLUMN_NAME_DATA_ENTRY_ID + "=?";
+        String[] selectionArgs = { ""+dataEntryID };
+
+        Cursor c = db.query(AppUsageContract.ScrollDetailsTable.TABLE_NAME, projection,
+                selection, selectionArgs, null, null, null);
+        c.moveToFirst();
+        Set<String> scrolledElements = new TreeSet<>(new CollatorWrapper());
+        while (!c.isAfterLast()) {
+            String element = c.getString(1);
+            scrolledElements.add(element);
+
+            c.moveToNext();
+        }
+
+        ScrollDataEntry dataEntry = new ScrollDataEntry(timestamp, activity, scrolledElements.toString());
+        dataEntry.count = count;
+        return dataEntry;
+    }
 
     /** Element scrolled */
     private String scrolledElement;

@@ -19,6 +19,7 @@
 package de.uni_bonn.detectappscreen.app_usage;
 
 import android.content.ContentValues;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.util.Log;
@@ -30,6 +31,7 @@ import org.json.JSONObject;
 import java.util.Date;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageContract;
 import de.uni_bonn.detectappscreen.utility.CollatorWrapper;
@@ -38,6 +40,31 @@ import de.uni_bonn.detectappscreen.utility.CollatorWrapper;
  * Data entry containing detected layouts at a certain point during app usage
  */
 public class LayoutDataEntry extends AppUsageDataEntry {
+
+    public static AppUsageDataEntry fromSQLiteDB(SQLiteDatabase db, Date timestamp, String activity,
+                                                 int count, int dataEntryID) {
+        String[] projection = {
+                AppUsageContract.LayoutDetailsTable.COLUMN_NAME_DATA_ENTRY_ID,
+                AppUsageContract.LayoutDetailsTable.COLUMN_NAME_LAYOUT
+        };
+        String selection = AppUsageContract.LayoutDetailsTable.COLUMN_NAME_DATA_ENTRY_ID + "=?";
+        String[] selectionArgs = { ""+dataEntryID };
+
+        Cursor c = db.query(AppUsageContract.LayoutDetailsTable.TABLE_NAME, projection,
+                selection, selectionArgs, null, null, null);
+        c.moveToFirst();
+        Set<String> layouts = new TreeSet<>(new CollatorWrapper());
+        while (!c.isAfterLast()) {
+            String layout = c.getString(1);
+            layouts.add(layout);
+
+            c.moveToNext();
+        }
+
+        LayoutDataEntry dataEntry = new LayoutDataEntry(timestamp, activity, layouts);
+        dataEntry.count = count;
+        return dataEntry;
+    }
 
     /** Layouts detected */
     private Set<String> detectedLayouts;

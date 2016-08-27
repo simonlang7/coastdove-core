@@ -19,6 +19,7 @@
 package de.uni_bonn.detectappscreen.app_usage;
 
 import android.content.ContentValues;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.util.Log;
@@ -27,6 +28,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -37,6 +40,36 @@ import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageContract;
  * Data entry containing a detected click at a certain point during app usage
  */
 public class ClickDataEntry extends AppUsageDataEntry {
+    public static AppUsageDataEntry fromSQLiteDB(SQLiteDatabase db, Date timestamp, String activity,
+                                                 int count, int dataEntryID) {
+        String[] projection = {
+                AppUsageContract.ClickDetailsTable.COLUMN_NAME_DATA_ENTRY_ID,
+                AppUsageContract.ClickDetailsTable.COLUMN_NAME_ANDROID_ID,
+                AppUsageContract.ClickDetailsTable.COLUMN_NAME_TEXT,
+                AppUsageContract.ClickDetailsTable.COLUMN_NAME_CLASS_NAME
+        };
+        String selection = AppUsageContract.ClickDetailsTable.COLUMN_NAME_DATA_ENTRY_ID + "=?";
+        String[] selectionArgs = { ""+dataEntryID };
+        //String sortOrder = AppUsageContract.ClickDetailsTable.COLUMN_NAME_TIMESTAMP + " ASC";
+
+        Cursor c = db.query(AppUsageContract.ClickDetailsTable.TABLE_NAME, projection,
+                selection, selectionArgs, null, null, null);
+        c.moveToFirst();
+        Set<ClickedEventData> click = new CopyOnWriteArraySet<>();
+        while (!c.isAfterLast()) {
+            String androidID = c.getString(1);
+            String text = c.getString(2);
+            String className = c.getString(3);
+            ClickedEventData eventData = new ClickedEventData(androidID, text, className);
+            click.add(eventData);
+
+            c.moveToNext();
+        }
+
+        ClickDataEntry dataEntry = new ClickDataEntry(timestamp, activity, click);
+        dataEntry.count = count;
+        return dataEntry;
+    }
 
     /** Elements clicked */
     private Set<ClickedEventData> detectedClick;

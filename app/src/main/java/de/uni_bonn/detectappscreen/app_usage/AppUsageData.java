@@ -28,6 +28,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.IllegalFormatException;
@@ -41,26 +42,41 @@ import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageContract;
  * with an activity and a list of layouts detected at that time
  */
 public class AppUsageData {
-//    public static AppUsageData fromSQLiteDB(SQLiteDatabase db) {
-//        AppUsageData result;
-//
-//        String[] projection = {
-//                AppUsageContract.AppTable.COLUMN_NAME_TIMESTAMP,
-//                AppUsageContract.AppTable.COLUMN_NAME_PACKAGE
-//        };
-//        String sortOrder = AppUsageContract.AppTable.COLUMN_NAME_TIMESTAMP + " ASC";
-//
-//        Cursor c = db.query(AppUsageContract.AppTable.TABLE_NAME,
-//                projection, null, null, null, null, sortOrder);
-//        c.moveToFirst();
-//        while (!c.isAfterLast()) {
-//
-//
-//            c.moveToNext();
-//        }
-//
-//        return result;
-//    }
+    public static AppUsageData fromSQLiteDB(SQLiteDatabase db, String appPackageName, int appID) {
+        AppUsageData result = new AppUsageData(appPackageName);
+
+        String[] projection = {
+                AppUsageContract.ActivityTable._ID,
+                AppUsageContract.ActivityTable.COLUMN_NAME_TIMESTAMP,
+                AppUsageContract.ActivityTable.COLUMN_NAME_APP_ID,
+                AppUsageContract.ActivityTable.COLUMN_NAME_ACTIVITY
+        };
+        String selection = AppUsageContract.ActivityTable.COLUMN_NAME_APP_ID + "=?";
+        String[] selectionArgs = { ""+appID };
+        String sortOrder = AppUsageContract.ActivityTable.COLUMN_NAME_TIMESTAMP + " ASC";
+
+        Cursor c = db.query(AppUsageContract.ActivityTable.TABLE_NAME,
+                projection, selection, selectionArgs, null, null, sortOrder);
+        c.moveToFirst();
+        while (!c.isAfterLast()) {
+            int activityID = c.getInt(0);
+            Date timestamp;
+            try {
+                timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS").parse(c.getString(1));
+            } catch (ParseException e) {
+                throw new RuntimeException("Cannot parse date: " + c.getString(1));
+            }
+            String activity = c.getString(3);
+
+            // add activity data
+            result.activityDataList.add(ActivityData.fromSQLiteDB(db, appPackageName, timestamp,
+                    activity, activityID));
+
+            c.moveToNext();
+        }
+
+        return result;
+    }
 
 
     /** Name of the package associated with these app usage data */

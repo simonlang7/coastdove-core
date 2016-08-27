@@ -45,7 +45,7 @@ public abstract class AppUsageDataEntry {
     /** Activity detected */
     private String activity;
     /** Number of consecutive occurrences of this data entry, disregarding the timestamp */
-    private int count;
+    protected int count;
 
     /**
      * Creates a new app usage data entry

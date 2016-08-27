@@ -4,9 +4,10 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.v4.content.Loader;
+import android.support.v4.util.Pair;
+import android.util.Log;
 
 import java.util.ArrayList;
-import java.util.Collections;
 
 import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageContract;
 import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageDbHelper;
@@ -14,7 +15,7 @@ import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageDbHelper;
 /**
  * Loads a list of entries from an SQLite table
  */
-public class SQLiteTableLoader extends Loader<ArrayList<String>> {
+public class SQLiteTableLoader extends Loader<ArrayList<Pair<Integer, String>>> {
     /** Name of the app, needed for the external storage public directory */
     private String appPackageName;
 
@@ -29,15 +30,16 @@ public class SQLiteTableLoader extends Loader<ArrayList<String>> {
     }
 
     /**
-     * Loads the list of files in the external storage public directory of the given app name, usually
-     * /sdcard/{appPackageName}/{subDirectory}/, and delivers the result
+     * Loads the list of app usage data collections for this object's appPackageName
      */
     @Override
     public void onStartLoading() {
+        // Open database
         AppUsageDbHelper dbHelper = new AppUsageDbHelper(getContext());
         SQLiteDatabase db = dbHelper.getReadableDatabase();
 
         String[] projection = {
+                AppUsageContract.AppTable._ID,
                 AppUsageContract.AppTable.COLUMN_NAME_TIMESTAMP,
                 AppUsageContract.AppTable.COLUMN_NAME_PACKAGE
         };
@@ -50,11 +52,14 @@ public class SQLiteTableLoader extends Loader<ArrayList<String>> {
         Cursor c = db.query(AppUsageContract.AppTable.TABLE_NAME,
                 projection, selection, selectionArgs, null, null, sortOrder);
 
-        ArrayList<String> data = new ArrayList<>(c.getCount());
+        // Extract all data from the cursor, so we can close the database
+        ArrayList<Pair<Integer, String>> data = new ArrayList<>(c.getCount());
         c.moveToFirst();
         while (!c.isAfterLast()) {
-            int index = c.getColumnIndex(AppUsageContract.AppTable.COLUMN_NAME_TIMESTAMP);
-            data.add(c.getString(index));
+            int timestampIndex = c.getColumnIndex(AppUsageContract.AppTable.COLUMN_NAME_TIMESTAMP);
+            int idIndex = c.getColumnIndex(AppUsageContract.AppTable._ID);
+            Log.d("SQLiteTableLoader", "(timestamp, id) = (" + timestampIndex + ", " + idIndex + ")");
+            data.add(new Pair<Integer, String>(c.getInt(idIndex), c.getString(timestampIndex)));
 
             c.moveToNext();
         }

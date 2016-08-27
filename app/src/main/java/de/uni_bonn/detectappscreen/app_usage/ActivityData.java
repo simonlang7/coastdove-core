@@ -1,6 +1,7 @@
 package de.uni_bonn.detectappscreen.app_usage;
 
 import android.content.ContentValues;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.util.Log;
@@ -25,6 +26,56 @@ import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageContract;
  */
 public class ActivityData {
     public static final String DATE_DETAILED = "yyyy-MM-dd HH:mm:ss:SSS";
+
+    public static ActivityData fromSQLiteDB(SQLiteDatabase db, String appPackageName,
+                                            Date timestamp, String activity, int activityID) {
+        ActivityData result = new ActivityData(appPackageName, timestamp, activity);
+
+        String[] projection = {
+                AppUsageContract.DataEntryTable._ID,
+                AppUsageContract.DataEntryTable.COLUMN_NAME_TIMESTAMP,
+                AppUsageContract.DataEntryTable.COLUMN_NAME_ACTIVITY_ID,
+                AppUsageContract.DataEntryTable.COLUMN_NAME_COUNT,
+                AppUsageContract.DataEntryTable.COLUMN_NAME_TYPE
+        };
+        String selection = AppUsageContract.DataEntryTable.COLUMN_NAME_ACTIVITY_ID + "=?";
+        String[] selectionArgs = { ""+activityID };
+        String sortOrder = AppUsageContract.DataEntryTable.COLUMN_NAME_TIMESTAMP + " ASC";
+
+        Cursor c = db.query(AppUsageContract.DataEntryTable.TABLE_NAME, projection,
+                selection, selectionArgs, null, null, sortOrder);
+        c.moveToFirst();
+        while (!c.isAfterLast()) {
+            int dataEntryID = c.getInt(0);
+            Date entryTimestamp;
+            try {
+                entryTimestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS").parse(c.getString(1));
+            } catch (ParseException e) {
+                throw new RuntimeException("Cannot parse date: " + c.getString(1));
+            }
+            int count = c.getInt(3);
+            String type = c.getString(4);
+
+            switch (type) {
+                case "Click":
+                    result.dataEntries.add(ClickDataEntry.fromSQLiteDB(db, entryTimestamp, activity,
+                            count, dataEntryID));
+                    break;
+                case "Layouts":
+                    result.dataEntries.add(LayoutDataEntry.fromSQLiteDB(db, entryTimestamp, activity,
+                            count, dataEntryID));
+                    break;
+                case "Scrolling":
+                    result.dataEntries.add(ScrollDataEntry.fromSQLiteDB(db, entryTimestamp, activity,
+                            count, dataEntryID));
+                    break;
+            }
+
+            c.moveToNext();
+        }
+
+        return result;
+    }
 
     /** Package name of the app */
     private String appPackageName;
