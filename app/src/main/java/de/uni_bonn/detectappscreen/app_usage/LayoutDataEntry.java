@@ -140,7 +140,12 @@ public class LayoutDataEntry extends ActivityDataEntry {
 
     @Override
     public String getType() {
-        return "Layouts";
+        return EntryType.LAYOUTS.name();
+    }
+
+    @Override
+    public String getTypePretty() {
+        return EntryType.LAYOUTS.toString();
     }
 
     @Override

@@ -18,13 +18,10 @@
 
 package de.uni_bonn.detectappscreen.ui.detectable_app_details;
 
-import android.app.Activity;
-import android.app.NotificationManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.app.NotificationCompat;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
@@ -118,7 +115,7 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
 
         // Set up the menu checkboxes
         setUpCheckbox(menu.findItem(R.id.checkbox_detect_layouts), getString(R.string.pref_detect_layouts));
-        setUpCheckbox(menu.findItem(R.id.checkbox_detect_clicks), getString(R.string.pref_detect_clicks));
+        setUpCheckbox(menu.findItem(R.id.checkbox_detect_interactions), getString(R.string.pref_detect_clicks));
 
         return super.onCreateOptionsMenu(menu);
     }
@@ -126,7 +123,7 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         MenuItem checkboxDetectLayouts = menu.findItem(R.id.checkbox_detect_layouts);
-        MenuItem checkboxDetectClicks = menu.findItem(R.id.checkbox_detect_clicks);
+        MenuItem checkboxDetectClicks = menu.findItem(R.id.checkbox_detect_interactions);
         MenuItem itemDeleteCache = menu.findItem(R.id.item_delete_cache);
         try {
             boolean cacheExists = FileHelper.fileExists(this, FileHelper.Directory.PACKAGE, getAppPackageName(), "layouts.bin")
@@ -155,7 +152,7 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
                 item.setChecked(!item.isChecked());
                 setSharedPreference(appPackageName + getString(R.string.pref_detect_layouts), item.isChecked());
                 return true;
-            case R.id.checkbox_detect_clicks:
+            case R.id.checkbox_detect_interactions:
                 item.setChecked(!item.isChecked());
                 setSharedPreference(appPackageName + getString(R.string.pref_detect_clicks), item.isChecked());
                 return true;

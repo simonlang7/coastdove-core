@@ -39,6 +39,29 @@ import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageContract;
  */
 public abstract class ActivityDataEntry {
     public static final String DATE_DETAILED = "yyyy-MM-dd HH:mm:ss:SSS";
+    public static EntryType entryTypeFromString(String type) {
+        if (type.equals(EntryType.LAYOUTS.name()))
+            return EntryType.LAYOUTS;
+        if (type.equals(EntryType.CLICK.name()))
+            return EntryType.CLICK;
+        if (type.equals(EntryType.LONG_CLICK.name()))
+            return EntryType.LONG_CLICK;
+        if (type.equals(EntryType.SCROLLING.name()))
+            return EntryType.SCROLLING;
+        else
+            return EntryType.OTHER;
+    }
+    public enum EntryType {
+        LAYOUTS,
+        CLICK,
+        LONG_CLICK,
+        SCROLLING,
+        OTHER;
+
+        public String toString() {
+            return name().charAt(0) + name().substring(1).toLowerCase().replaceAll("_", " ");
+        }
+    }
 
     /** Time at which these data were collected */
     private Date timestamp;
@@ -84,6 +107,8 @@ public abstract class ActivityDataEntry {
      */
     public boolean equals(ActivityDataEntry other) {
         if (!this.activity.equals(other.activity))
+            return false;
+        if (!this.getType().equals(other.getType()))
             return false;
 
         return true;
@@ -140,11 +165,14 @@ public abstract class ActivityDataEntry {
         String paddingString = " ";
         for (int i = 0; i < padding; ++i)
             paddingString += " ";
-        return timestamp + paddingString + getType() + " (" + getCount() + "x): " + getContent();
+        return timestamp + paddingString + getTypePretty() + " (" + getCount() + "x): " + getContent();
     }
 
     /** Type of data entry */
     public abstract String getType();
+
+    /** Type of data entry, well-formatted */
+    public abstract String getTypePretty();
 
     /** Content of this data entry as a string */
     public abstract String getContent();

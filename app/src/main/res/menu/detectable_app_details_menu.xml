@@ -8,8 +8,8 @@
         android:checkable="true"/>
 
     <item
-        android:id="@+id/checkbox_detect_clicks"
-        android:title="@string/detect_clicks"
+        android:id="@+id/checkbox_detect_interactions"
+        android:title="@string/detect_interactions"
         app:showAsAction="never"
         android:checkable="true"/>
 

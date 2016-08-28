@@ -159,7 +159,7 @@ public class DataEntryListAdapter extends BaseExpandableListAdapter {
         ActivityDataEntry dataEntry = (ActivityDataEntry)getChild(groupPosition, childPosition);
 
         holder.innerContainer.setPadding(metaEntry.getLevel()*32, 0, 0, 0);
-        holder.entryType.setText(dataEntry.getType());
+        holder.entryType.setText(dataEntry.getTypePretty());
         holder.entryCount.setText("(" + dataEntry.getCount() + "x)");
         holder.entryContent.setText(dataEntry.getContent());
 

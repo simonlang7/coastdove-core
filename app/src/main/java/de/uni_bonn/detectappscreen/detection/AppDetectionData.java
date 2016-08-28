@@ -18,16 +18,11 @@
 
 package de.uni_bonn.detectappscreen.detection;
 
-import android.app.Activity;
-import android.app.NotificationManager;
 import android.content.Context;
 import android.graphics.Rect;
-import android.support.v7.app.NotificationCompat;
 import android.util.Log;
-import android.view.View;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
-import android.widget.ProgressBar;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -40,9 +35,10 @@ import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import de.uni_bonn.detectappscreen.R;
+import de.uni_bonn.detectappscreen.app_usage.ActivityDataEntry;
 import de.uni_bonn.detectappscreen.app_usage.AppUsageData;
 import de.uni_bonn.detectappscreen.app_usage.AppUsageDataWriter;
-import de.uni_bonn.detectappscreen.app_usage.ClickedEventData;
+import de.uni_bonn.detectappscreen.app_usage.InteractionEventData;
 import de.uni_bonn.detectappscreen.app_usage.sql.SQLiteWriter;
 import de.uni_bonn.detectappscreen.ui.LoadingInfo;
 import de.uni_bonn.detectappscreen.utility.CollatorWrapper;
@@ -77,8 +73,8 @@ public class AppDetectionData {
 
     /** Indicates whether to perform layout checks or not */
     private boolean performLayoutChecks;
-    /** Indicates whether to perform on-click checks or not */
-    private boolean performOnClickChecks;
+    /** Indicates whether to perform interaction checks or not */
+    private boolean performInteractionChecks;
 
     /** Usage data collected for this session (that starts when the app is opened and ends when it's closed) */
     private AppUsageData currentAppUsageData;
@@ -95,7 +91,7 @@ public class AppDetectionData {
     public AppDetectionData(String appPackageName, JSONObject layouts, JSONObject reverseMap, Context context) {
         this.finishedLoading = false;
         this.performLayoutChecks = false;
-        this.performOnClickChecks = false;
+        this.performInteractionChecks = false;
         this.appPackageName = appPackageName;
         this.hashMapsLoaded = false;
         this.layoutsToLoad = layouts;
@@ -115,7 +111,7 @@ public class AppDetectionData {
     public AppDetectionData(String appPackageName, Context context) {
         this.finishedLoading = false;
         this.performLayoutChecks = false;
-        this.performOnClickChecks = false;
+        this.performInteractionChecks = false;
         this.appPackageName = appPackageName;
         this.hashMapsLoaded = false;
         this.layoutsToLoad = FileHelper.readJSONFile(
@@ -139,9 +135,9 @@ public class AppDetectionData {
     /**
      * Loads the app detection data, i.e. constructs hash maps needed for real-time detection
      */
-    public void load(boolean performLayoutChecks, boolean performOnClickChecks) {
+    public void load(boolean performLayoutChecks, boolean performInteractionChecks) {
         this.performLayoutChecks = performLayoutChecks;
-        this.performOnClickChecks = performOnClickChecks;
+        this.performInteractionChecks = performInteractionChecks;
         boolean finishedLoading = true;
 
         if (performLayoutChecks && !this.hashMapsLoaded) {
@@ -170,7 +166,7 @@ public class AppDetectionData {
 
     /**
      * Performs necessary operations to detect the layouts currently being used by the according app,
-     * and/or gesture events and/or on-click events
+     * and/or gesture events and/or interaction events
      * @param event       Accessibility event that was triggered
      * @param activity    Current activity to add to the ActivityDataEntry
      */
@@ -192,20 +188,35 @@ public class AppDetectionData {
                 Log.i("Recognized layouts", recognizedLayouts.toString());
         }
 
-        if (shallPerformScrollChecks(event)) {
-            String scrolledElement = checkScrollEvent(event.getSource(), rootNodeInfo);
+//        if (shallPerformScrollChecks(event)) {
+//            String scrolledElement = checkScrollEvent(event.getSource(), rootNodeInfo);
+//
+//            boolean shallLog = currentAppUsageData.addScrollDataEntry(activity, scrolledElement);
+//            if (shallLog)
+//                Log.i("Scrolled element", scrolledElement);
+//        }
 
-            boolean shallLog = currentAppUsageData.addScrollDataEntry(activity, scrolledElement);
+        if (shallPerformInteractionChecks(event)) {
+            Set<InteractionEventData> interactionEventData = checkInteractionEvents(event.getSource(), rootNodeInfo);
+            ActivityDataEntry.EntryType type;
+            switch (event.getEventType()) {
+                case AccessibilityEvent.TYPE_VIEW_CLICKED:
+                    type = ActivityDataEntry.EntryType.CLICK;
+                    break;
+                case AccessibilityEvent.TYPE_VIEW_LONG_CLICKED:
+                    type = ActivityDataEntry.EntryType.LONG_CLICK;
+                    break;
+                case AccessibilityEvent.TYPE_VIEW_SCROLLED:
+                    type = ActivityDataEntry.EntryType.SCROLLING;
+                    break;
+                default:
+                    type = ActivityDataEntry.EntryType.OTHER;
+                    break;
+            }
+
+            boolean shallLog = currentAppUsageData.addInteractionDataEntry(activity, interactionEventData, type);
             if (shallLog)
-                Log.i("Scrolled element", scrolledElement);
-        }
-
-        if (shallPerformOnClickChecks(event)) {
-            Set<ClickedEventData> clickedEventData = checkOnClickEvents(event.getSource(), rootNodeInfo);
-
-            boolean shallLog = currentAppUsageData.addClickDataEntry(activity, clickedEventData);
-            if (shallLog)
-                Log.i("Clicked events", clickedEventData.toString());
+                Log.i("Interaction events", interactionEventData.toString());
         }
 
     }
@@ -230,8 +241,8 @@ public class AppDetectionData {
         return this.performLayoutChecks;
     }
 
-    public boolean getPerformOnClickChecks() {
-        return this.performOnClickChecks;
+    public boolean getPerformInteractionChecks() {
+        return this.performInteractionChecks;
     }
 
     private boolean shallPerformActivityChecks(AccessibilityEvent event) {
@@ -271,14 +282,15 @@ public class AppDetectionData {
     }
 
     /**
-     * Returns true iff an on-click event check shall be performed
+     * Returns true iff an interaction event check shall be performed
      */
-    private boolean shallPerformOnClickChecks(AccessibilityEvent event) {
-        if (event.getEventType() != AccessibilityEvent.TYPE_VIEW_CLICKED)
+    private boolean shallPerformInteractionChecks(AccessibilityEvent event) {
+        if (event.getEventType() != AccessibilityEvent.TYPE_VIEW_CLICKED &&
+                event.getEventType() != AccessibilityEvent.TYPE_VIEW_SCROLLED)
             return false;
         if (event.getSource() == null)
             return false;
-        if (!performOnClickChecks)
+        if (!performInteractionChecks)
             return false;
 
         return true;
@@ -308,13 +320,12 @@ public class AppDetectionData {
     }
 
     /**
-     * Handles on-click events, i.e. creates a data entry showing which element was clicked
+     * Handles interaction events, i.e. creates a data entry showing which element was interacted with
      * @param source    Source node info
-     * @return Data regarding this on-click event
+     * @return Data regarding this interaction event
      */
-    private Set<ClickedEventData> checkOnClickEvents(AccessibilityNodeInfo source, AccessibilityNodeInfo rootNodeInfo) {
-        Set<ClickedEventData> result = new CopyOnWriteArraySet<>();
-        //AccessibilityNodeInfo rootNodeInfo = getRootNodeInfo(source);
+    private Set<InteractionEventData> checkInteractionEvents(AccessibilityNodeInfo source, AccessibilityNodeInfo rootNodeInfo) {
+        Set<InteractionEventData> result = new CopyOnWriteArraySet<>();
 
         // Try to find the node info with the same bounds as the source.
         // For some reason, the source does not contain any View ID information,
@@ -324,18 +335,20 @@ public class AppDetectionData {
         if (subTree == null)
             subTree = source;
 
-        NodeInfoTraverser<ClickedEventData> traverser = new NodeInfoTraverser<>(subTree,
-                new NodeInfoDataExtractor<ClickedEventData>() {
+        NodeInfoTraverser<InteractionEventData> traverser = new NodeInfoTraverser<>(subTree,
+                new NodeInfoDataExtractor<InteractionEventData>() {
                     @Override
-                    public ClickedEventData extractData(AccessibilityNodeInfo nodeInfo) {
-                        return new ClickedEventData(nodeInfo);
+                    public InteractionEventData extractData(AccessibilityNodeInfo nodeInfo) {
+                        return new InteractionEventData(nodeInfo);
                     }
                 },
                 new NodeInfoFilter() {
                     @Override
                     public boolean filter(AccessibilityNodeInfo nodeInfo) {
                         return nodeInfo != null &&
-                                (nodeInfo.getViewIdResourceName() != null || nodeInfo.getText() != null);
+                                (nodeInfo.getViewIdResourceName() != null || nodeInfo.getText() != null) &&
+                                (nodeInfo.getViewIdResourceName() == null ||
+                                        nodeInfo.getViewIdResourceName().endsWith("id/list"));
                     }
                 });
 
@@ -348,7 +361,7 @@ public class AppDetectionData {
             if (parent != null &&
                     (parent.getViewIdResourceName() != null
                     || parent.getText() != null))
-                result.add(new ClickedEventData(parent));
+                result.add(new InteractionEventData(parent));
         }
 
         return result;

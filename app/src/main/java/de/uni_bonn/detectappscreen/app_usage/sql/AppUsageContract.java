@@ -1,8 +1,5 @@
 package de.uni_bonn.detectappscreen.app_usage.sql;
 
-import android.content.Context;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
 import android.provider.BaseColumns;
 
 /**
@@ -32,8 +29,8 @@ public final class AppUsageContract {
         public static final String COLUMN_NAME_TYPE = "type";
     }
 
-    public static abstract class ClickDetailsTable implements BaseColumns {
-        public static final String TABLE_NAME = "click_details";
+    public static abstract class InteractionDetailsTable implements BaseColumns {
+        public static final String TABLE_NAME = "interaction_details";
         public static final String COLUMN_NAME_DATA_ENTRY_ID = "data_entry_id";
         public static final String COLUMN_NAME_ANDROID_ID = "android_id";
         public static final String COLUMN_NAME_TEXT = "text";
@@ -91,18 +88,18 @@ public final class AppUsageContract {
     public static final String SQL_DELETE_DATA_ENTRIES =
             "DROP TABLE IF EXISTS " + DataEntryTable.TABLE_NAME;
 
-    public static final String SQL_CREATE_CLICK_DETAILS =
-            "CREATE TABLE " + ClickDetailsTable.TABLE_NAME + " (" +
-                    ClickDetailsTable._ID + " INTEGER PRIMARY KEY," +
-                    ClickDetailsTable.COLUMN_NAME_DATA_ENTRY_ID + " INTEGER" + COMMA_SEP +
-                    ClickDetailsTable.COLUMN_NAME_ANDROID_ID + TEXT_TYPE + COMMA_SEP +
-                    ClickDetailsTable.COLUMN_NAME_TEXT + TEXT_TYPE + COMMA_SEP +
-                    ClickDetailsTable.COLUMN_NAME_CLASS_NAME + TEXT_TYPE + COMMA_SEP +
-                    "FOREIGN KEY (" + ClickDetailsTable.COLUMN_NAME_DATA_ENTRY_ID + ") REFERENCES " + DataEntryTable.TABLE_NAME + "(" + DataEntryTable._ID + ")"
+    public static final String SQL_CREATE_INTERACTION_DETAILS =
+            "CREATE TABLE " + InteractionDetailsTable.TABLE_NAME + " (" +
+                    InteractionDetailsTable._ID + " INTEGER PRIMARY KEY," +
+                    InteractionDetailsTable.COLUMN_NAME_DATA_ENTRY_ID + " INTEGER" + COMMA_SEP +
+                    InteractionDetailsTable.COLUMN_NAME_ANDROID_ID + TEXT_TYPE + COMMA_SEP +
+                    InteractionDetailsTable.COLUMN_NAME_TEXT + TEXT_TYPE + COMMA_SEP +
+                    InteractionDetailsTable.COLUMN_NAME_CLASS_NAME + TEXT_TYPE + COMMA_SEP +
+                    "FOREIGN KEY (" + InteractionDetailsTable.COLUMN_NAME_DATA_ENTRY_ID + ") REFERENCES " + DataEntryTable.TABLE_NAME + "(" + DataEntryTable._ID + ")"
                     + " )";
 
-    public static final String SQL_DELETE_CLICK_DETAILS =
-            "DROP TABLE IF EXISTS " + ClickDetailsTable.TABLE_NAME;
+    public static final String SQL_DELETE_INTERACTION_DETAILS =
+            "DROP TABLE IF EXISTS " + InteractionDetailsTable.TABLE_NAME;
 
     public static final String SQL_CREATE_LAYOUT_DETAILS =
             "CREATE TABLE " + LayoutDetailsTable.TABLE_NAME + " (" +

@@ -9,7 +9,7 @@ import android.database.sqlite.SQLiteOpenHelper;
  * Helper to access SQLite database for app usage data
  */
 public class AppUsageDbHelper extends SQLiteOpenHelper {
-    public static final int DATABASE_VERSION = 3;
+    public static final int DATABASE_VERSION = 4;
     public static final String DATABASE_NAME = "AppUsageData.db";
 
 
@@ -22,9 +22,9 @@ public class AppUsageDbHelper extends SQLiteOpenHelper {
         db.execSQL(AppUsageContract.SQL_CREATE_APPS);
         db.execSQL(AppUsageContract.SQL_CREATE_ACTIVITIES);
         db.execSQL(AppUsageContract.SQL_CREATE_DATA_ENTRIES);
-        db.execSQL(AppUsageContract.SQL_CREATE_CLICK_DETAILS);
+        db.execSQL(AppUsageContract.SQL_CREATE_INTERACTION_DETAILS);
         db.execSQL(AppUsageContract.SQL_CREATE_LAYOUT_DETAILS);
-        db.execSQL(AppUsageContract.SQL_CREATE_SCROLL_DETAILS);
+//        db.execSQL(AppUsageContract.SQL_CREATE_SCROLL_DETAILS);
     }
 
     @Override
@@ -32,7 +32,7 @@ public class AppUsageDbHelper extends SQLiteOpenHelper {
         db.execSQL(AppUsageContract.SQL_DELETE_APPS);
         db.execSQL(AppUsageContract.SQL_DELETE_ACTIVITIES);
         db.execSQL(AppUsageContract.SQL_DELETE_DATA_ENTRIES);
-        db.execSQL(AppUsageContract.SQL_DELETE_CLICK_DETAILS);
+        db.execSQL(AppUsageContract.SQL_DELETE_INTERACTION_DETAILS);
         db.execSQL(AppUsageContract.SQL_DELETE_LAYOUT_DETAILS);
         db.execSQL(AppUsageContract.SQL_DELETE_SCROLL_DETAILS);
         onCreate(db);

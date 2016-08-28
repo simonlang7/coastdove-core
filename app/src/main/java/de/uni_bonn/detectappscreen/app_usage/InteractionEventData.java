@@ -19,7 +19,6 @@
 package de.uni_bonn.detectappscreen.app_usage;
 
 import android.content.ContentValues;
-import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 import android.view.accessibility.AccessibilityNodeInfo;
 
@@ -29,14 +28,14 @@ import org.json.JSONObject;
 import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageContract;
 
 /**
- * Data gathered when a TYPE_VIEW_CLICKED event occurs
+ * Data gathered when a TYPE_VIEW_CLICKED or TYPE_VIEW_SCROLLED event occurs
  */
-public class ClickedEventData {
+public class InteractionEventData {
     private String androidID;
     private String text;
     private String className;
 
-    public ClickedEventData(JSONObject dataJSON) {
+    public InteractionEventData(JSONObject dataJSON) {
         this.androidID = null;
         this.text = null;
         this.className = null;
@@ -45,17 +44,17 @@ public class ClickedEventData {
             this.text = dataJSON.getString("text");
             this.className = dataJSON.getString("className");
         } catch (JSONException e) {
-            Log.e("ClickedEventData", "Unable to read from JSONObject: " + e.getMessage());
+            Log.e("InteractionEventData", "Unable to read from JSONObject: " + e.getMessage());
         }
     }
 
-    public ClickedEventData(String androidID, String text, String className) {
+    public InteractionEventData(String androidID, String text, String className) {
         this.androidID = androidID;
         this.text = text;
         this.className = className;
     }
 
-    public ClickedEventData(AccessibilityNodeInfo nodeInfo) {
+    public InteractionEventData(AccessibilityNodeInfo nodeInfo) {
         this.androidID = nodeInfo.getViewIdResourceName() != null ? nodeInfo.getViewIdResourceName() : "";
         this.text = nodeInfo.getText() != null ? nodeInfo.getText().toString().replaceAll("\n", " ") : "";
         this.className = nodeInfo.getClassName() != null ? nodeInfo.getClassName().toString() : "";
@@ -63,10 +62,16 @@ public class ClickedEventData {
 
     @Override
     public String toString() {
-        return "(ID: " + androidID + ", Text: " + text + ", Class: " + className + ")";
+        String idString = androidID == null ? "" : "ID: " + androidID;
+        String textSep = idString.equals("") ? "" : ", ";
+        String textString = text == null ? "" : textSep + "Text: " + text;
+        String classSep = (idString.equals("") || textString.equals("")) ? "" : ", ";
+        String classString = className == null ? "" : classSep + "Class: " + className;
+
+        return "(" + idString + textString + classString + ")";
     }
 
-    public boolean equals(ClickedEventData other) {
+    public boolean equals(InteractionEventData other) {
         return this.androidID.equals(other.androidID) &&
                 this.text.equals(other.text) &&
                 this.className.equals(other.className);
@@ -80,7 +85,7 @@ public class ClickedEventData {
             result.put("text", this.text);
             result.put("className", this.className);
         } catch (JSONException e) {
-            Log.e("ClickedEventData", "Unable to create JSONObject for " + androidID + " (" + text + "): " + e.getMessage());
+            Log.e("InteractionEventData", "Unable to create JSONObject for " + androidID + " (" + text + "): " + e.getMessage());
         }
 
         return result;
@@ -88,10 +93,10 @@ public class ClickedEventData {
 
     public ContentValues toContentValues(long dataEntryID) {
         ContentValues values = new ContentValues();
-        values.put(AppUsageContract.ClickDetailsTable.COLUMN_NAME_ANDROID_ID, this.androidID);
-        values.put(AppUsageContract.ClickDetailsTable.COLUMN_NAME_TEXT, this.text);
-        values.put(AppUsageContract.ClickDetailsTable.COLUMN_NAME_CLASS_NAME, this.className);
-        values.put(AppUsageContract.ClickDetailsTable.COLUMN_NAME_DATA_ENTRY_ID, dataEntryID);
+        values.put(AppUsageContract.InteractionDetailsTable.COLUMN_NAME_ANDROID_ID, this.androidID);
+        values.put(AppUsageContract.InteractionDetailsTable.COLUMN_NAME_TEXT, this.text);
+        values.put(AppUsageContract.InteractionDetailsTable.COLUMN_NAME_CLASS_NAME, this.className);
+        values.put(AppUsageContract.InteractionDetailsTable.COLUMN_NAME_DATA_ENTRY_ID, dataEntryID);
         return values;
     }
 

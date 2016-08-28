@@ -22,7 +22,7 @@ import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageContract;
 
 /**
  * Data collected in any one activity, usually contains several app usage data entries
- * of the types ScrollDataEntry, LayoutDataEntry, and ClickDataEntry
+ * of the types LayoutDataEntry and InteractionDataEntry
  */
 public class ActivityData {
     public static final String DATE_DETAILED = "yyyy-MM-dd HH:mm:ss:SSS";
@@ -56,17 +56,16 @@ public class ActivityData {
             int count = c.getInt(3);
             String type = c.getString(4);
 
-            switch (type) {
-                case "Click":
-                    result.dataEntries.add(ClickDataEntry.fromSQLiteDB(db, entryTimestamp, activity,
-                            count, dataEntryID));
+            ActivityDataEntry.EntryType entryType = ActivityDataEntry.entryTypeFromString(type);
+            switch (entryType) {
+                case CLICK:
+                case LONG_CLICK:
+                case SCROLLING:
+                    result.dataEntries.add(InteractionDataEntry.fromSQLiteDB(db, entryTimestamp, activity,
+                            entryType, count, dataEntryID));
                     break;
-                case "Layouts":
+                case LAYOUTS:
                     result.dataEntries.add(LayoutDataEntry.fromSQLiteDB(db, entryTimestamp, activity,
-                            count, dataEntryID));
-                    break;
-                case "Scrolling":
-                    result.dataEntries.add(ScrollDataEntry.fromSQLiteDB(db, entryTimestamp, activity,
                             count, dataEntryID));
                     break;
             }
@@ -120,9 +119,7 @@ public class ActivityData {
                 if (dataEntryJSON.has("detectedLayouts"))
                     dataEntry = new LayoutDataEntry(dataEntryJSON);
                 else if (dataEntryJSON.has("detectedClick"))
-                    dataEntry = new ClickDataEntry(dataEntryJSON);
-                else if (dataEntryJSON.has("scrolledElement"))
-                    dataEntry = new ScrollDataEntry(dataEntryJSON);
+                    dataEntry = new InteractionDataEntry(dataEntryJSON);
 
                 if (dataEntry != null)
                     this.dataEntries.add(dataEntry);
@@ -223,33 +220,18 @@ public class ActivityData {
     }
 
     /**
-     * Adds a click data entry
+     * Adds an interaction data entry
      * @param timestamp        Time at which the data were collected
      * @param activity         Activity detected
-     * @param detectedClick    Click detected
+     * @param detectedInteraction    Interaction detected
      * @return True if a new data entry was added, false if the previous data entry equals these data
      */
-    public boolean addClickDataEntry(Date timestamp, String activity, Set<ClickedEventData> detectedClick) {
-        boolean lastEntryEqual = increasePreviousEntryCountIfEqual(new ClickDataEntry(null, activity, detectedClick));
+    public boolean addInteractionDataEntry(Date timestamp, String activity, Set<InteractionEventData> detectedInteraction,
+                                           ActivityDataEntry.EntryType type) {
+        boolean lastEntryEqual = increasePreviousEntryCountIfEqual(new InteractionDataEntry(null, activity, detectedInteraction,
+                type));
         if (!lastEntryEqual) {
-            ActivityDataEntry entry = new ClickDataEntry(timestamp, activity, detectedClick);
-            this.dataEntries.add(entry);
-            return true;
-        }
-        else
-            return false;
-    }
-
-    /**
-     * Adds a scroll data entry
-     * @param timestamp        Time at which the data were collected
-     * @param activity         Activity detected
-     * @return True if there was a previous scroll data entry, false otherwise
-     */
-    public boolean addScrollDataEntry(Date timestamp, String activity, String scrolledElement) {
-        boolean lastEntryEqual = increasePreviousEntryCountIfEqual(new ScrollDataEntry(null, activity, scrolledElement));
-        if (!lastEntryEqual) {
-            ActivityDataEntry entry = new ScrollDataEntry(timestamp, activity, scrolledElement);
+            ActivityDataEntry entry = new InteractionDataEntry(timestamp, activity, detectedInteraction, type);
             this.dataEntries.add(entry);
             return true;
         }
@@ -298,14 +280,9 @@ public class ActivityData {
      */
     private boolean increasePreviousEntryCountIfEqual(ActivityDataEntry other) {
         ActivityDataEntry previousEntry = null;
-        if (other instanceof ScrollDataEntry) {
+        if (other instanceof InteractionDataEntry) {
             ActivityDataEntry last = this.dataEntries.peekLast();
-            if (last != null && last instanceof ScrollDataEntry)
-                previousEntry = last;
-        }
-        else if (other instanceof ClickDataEntry) {
-            ActivityDataEntry last = this.dataEntries.peekLast();
-            if (last != null && last instanceof ClickDataEntry)
+            if (last != null && last instanceof InteractionDataEntry)
                 previousEntry = last;
         }
         else if (other instanceof LayoutDataEntry) {

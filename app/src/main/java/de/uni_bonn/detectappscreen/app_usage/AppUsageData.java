@@ -21,7 +21,6 @@ package de.uni_bonn.detectappscreen.app_usage;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteException;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -31,7 +30,6 @@ import org.json.JSONObject;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.IllegalFormatException;
 import java.util.LinkedList;
 import java.util.Set;
 
@@ -169,54 +167,30 @@ public class AppUsageData {
     }
 
     /**
-     * Adds a click data entry
+     * Adds an interaction data entry
      * @param timestamp        Time at which the data were collected
      * @param activity         Activity detected
-     * @param detectedClick    Click detected
+     * @param detectedInteraction    Interaction detected
      * @return True if a new data entry was added, false if the previous data entry equals these data
      *         or there was no activity data object to add the data to
      */
-    public boolean addClickDataEntry(Date timestamp, String activity, Set<ClickedEventData> detectedClick) {
+    public boolean addInteractionDataEntry(Date timestamp, String activity, Set<InteractionEventData> detectedInteraction,
+                                           ActivityDataEntry.EntryType type) {
         if (activityDataList.isEmpty())
             return false;
-        return activityDataList.peekLast().addClickDataEntry(timestamp, activity, detectedClick);
+        return activityDataList.peekLast().addInteractionDataEntry(timestamp, activity, detectedInteraction, type);
     }
 
     /**
-     * Adds a click data entry, using the current time when creating the timestamp
+     * Adds an interaction data entry, using the current time when creating the timestamp
      * @param activity         Activity detected
-     * @param detectedClick    Click detected
+     * @param detectedInteraction    Interaction detected
      * @return True if a new data entry was added, false if the previous data entry equals these data
      *         or there was no activity data object to add the data to
      */
-    public boolean addClickDataEntry(String activity, Set<ClickedEventData> detectedClick) {
+    public boolean addInteractionDataEntry(String activity, Set<InteractionEventData> detectedInteraction, ActivityDataEntry.EntryType type) {
         Date timestamp = new Date();
-        return addClickDataEntry(timestamp, activity, detectedClick);
-    }
-
-    /**
-     * Adds a scroll data entry
-     * @param timestamp        Time at which the data were collected
-     * @param activity         Activity detected
-     * @return True if a new data entry was added, false if the previous data entry equals these data
-     *         or there was no activity data object to add the data to
-     */
-    public boolean addScrollDataEntry(Date timestamp, String activity, String scrolledElement) {
-        if (activityDataList.isEmpty())
-            return false;
-        return activityDataList.peekLast().addScrollDataEntry(timestamp, activity, scrolledElement);
-    }
-
-    /**
-     * Adds a scroll data entry, using the current time when creating the timestamp
-     * @param activity         Activity detected
-     * @param scrolledElement  Element scrolled
-     * @return True if a new data entry was added, false if the previous data entry equals these data
-     *         or there was no activity data object to add the data to
-     */
-    public boolean addScrollDataEntry(String activity, String scrolledElement) {
-        Date timestamp = new Date();
-        return addScrollDataEntry(timestamp, activity, scrolledElement);
+        return addInteractionDataEntry(timestamp, activity, detectedInteraction, type);
     }
 
     /**
