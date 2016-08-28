@@ -58,7 +58,6 @@ public class SQLiteTableLoader extends Loader<ArrayList<Pair<Integer, String>>> 
         while (!c.isAfterLast()) {
             int timestampIndex = c.getColumnIndex(AppUsageContract.AppTable.COLUMN_NAME_TIMESTAMP);
             int idIndex = c.getColumnIndex(AppUsageContract.AppTable._ID);
-            Log.d("SQLiteTableLoader", "(timestamp, id) = (" + timestampIndex + ", " + idIndex + ")");
             data.add(new Pair<Integer, String>(c.getInt(idIndex), c.getString(timestampIndex)));
 
             c.moveToNext();

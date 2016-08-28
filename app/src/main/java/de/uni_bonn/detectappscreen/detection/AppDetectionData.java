@@ -172,7 +172,7 @@ public class AppDetectionData {
      * Performs necessary operations to detect the layouts currently being used by the according app,
      * and/or gesture events and/or on-click events
      * @param event       Accessibility event that was triggered
-     * @param activity    Current activity to add to the AppUsageDataEntry
+     * @param activity    Current activity to add to the ActivityDataEntry
      */
     public void performChecks(AccessibilityEvent event, AccessibilityNodeInfo rootNodeInfo, String activity) {
         if (!isFinishedLoading())

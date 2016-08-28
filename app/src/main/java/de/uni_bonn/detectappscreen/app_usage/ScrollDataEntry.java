@@ -37,9 +37,9 @@ import de.uni_bonn.detectappscreen.utility.CollatorWrapper;
 /**
  * Data entry containing a scroll event at a certain point during app usage
  */
-public class ScrollDataEntry extends AppUsageDataEntry {
+public class ScrollDataEntry extends ActivityDataEntry {
 
-    public static AppUsageDataEntry fromSQLiteDB(SQLiteDatabase db, Date timestamp, String activity,
+    public static ActivityDataEntry fromSQLiteDB(SQLiteDatabase db, Date timestamp, String activity,
                                                  int count, int dataEntryID) {
         String[] projection = {
                 AppUsageContract.ScrollDetailsTable.COLUMN_NAME_DATA_ENTRY_ID,
@@ -83,7 +83,7 @@ public class ScrollDataEntry extends AppUsageDataEntry {
 
 
     @Override
-    public boolean equals(AppUsageDataEntry other) {
+    public boolean equals(ActivityDataEntry other) {
         if (!super.equals(other))
             return false;
 

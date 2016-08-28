@@ -37,7 +37,7 @@ import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageContract;
 /**
  * Data entry containing information about one special event during app usage
  */
-public abstract class AppUsageDataEntry {
+public abstract class ActivityDataEntry {
     public static final String DATE_DETAILED = "yyyy-MM-dd HH:mm:ss:SSS";
 
     /** Time at which these data were collected */
@@ -52,7 +52,7 @@ public abstract class AppUsageDataEntry {
      * @param timestamp          Time at which the data were collected
      * @param activity           Activity detected
      */
-    public AppUsageDataEntry(Date timestamp, String activity) {
+    public ActivityDataEntry(Date timestamp, String activity) {
         this.timestamp = timestamp;
         this.activity = activity;
         this.count = 1;
@@ -62,7 +62,7 @@ public abstract class AppUsageDataEntry {
      * Creates a new app usage data entry from a JSONObject
      * @param entryJSON An entry in JSON format
      */
-    public AppUsageDataEntry(JSONObject entryJSON) {
+    public ActivityDataEntry(JSONObject entryJSON) {
         this.timestamp = new Date(new GregorianCalendar(0, 1, 1).getTimeInMillis());
         this.activity = "";
         try {
@@ -71,9 +71,9 @@ public abstract class AppUsageDataEntry {
             this.timestamp = new SimpleDateFormat(DATE_DETAILED).parse(timestamp);
             this.count = entryJSON.getInt("count");
         } catch (JSONException e) {
-            Log.e("AppUsageDataEntry", "Unable to read from JSONObject: " + e.getMessage());
+            Log.e("ActivityDataEntry", "Unable to read from JSONObject: " + e.getMessage());
         } catch (ParseException e) {
-            Log.e("AppUsageDataEntry", "Unable to parse timestamp: " + e.getMessage());
+            Log.e("ActivityDataEntry", "Unable to parse timestamp: " + e.getMessage());
         }
     }
 
@@ -82,7 +82,7 @@ public abstract class AppUsageDataEntry {
      * @param other    Entry to compare with
      * @return True if the entries are equal, false otherwise
      */
-    public boolean equals(AppUsageDataEntry other) {
+    public boolean equals(ActivityDataEntry other) {
         if (!this.activity.equals(other.activity))
             return false;
 
@@ -106,7 +106,7 @@ public abstract class AppUsageDataEntry {
             result.put("activity", this.activity);
             result.put("count", this.count);
         } catch (JSONException e) {
-            Log.e("AppUsageDataEntry", "Unable to create JSONObject: " + e.getMessage());
+            Log.e("ActivityDataEntry", "Unable to create JSONObject: " + e.getMessage());
         }
 
         return result;

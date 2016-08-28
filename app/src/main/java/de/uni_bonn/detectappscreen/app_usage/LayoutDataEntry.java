@@ -31,7 +31,6 @@ import org.json.JSONObject;
 import java.util.Date;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.CopyOnWriteArraySet;
 
 import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageContract;
 import de.uni_bonn.detectappscreen.utility.CollatorWrapper;
@@ -39,9 +38,9 @@ import de.uni_bonn.detectappscreen.utility.CollatorWrapper;
 /**
  * Data entry containing detected layouts at a certain point during app usage
  */
-public class LayoutDataEntry extends AppUsageDataEntry {
+public class LayoutDataEntry extends ActivityDataEntry {
 
-    public static AppUsageDataEntry fromSQLiteDB(SQLiteDatabase db, Date timestamp, String activity,
+    public static ActivityDataEntry fromSQLiteDB(SQLiteDatabase db, Date timestamp, String activity,
                                                  int count, int dataEntryID) {
         String[] projection = {
                 AppUsageContract.LayoutDetailsTable.COLUMN_NAME_DATA_ENTRY_ID,
@@ -90,7 +89,7 @@ public class LayoutDataEntry extends AppUsageDataEntry {
     }
 
     @Override
-    public boolean equals(AppUsageDataEntry other) {
+    public boolean equals(ActivityDataEntry other) {
         if (!super.equals(other))
             return false;
 

@@ -22,7 +22,6 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.BaseAdapter;
 import android.widget.BaseExpandableListAdapter;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -31,7 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import de.uni_bonn.detectappscreen.analyze.MetaEntry;
-import de.uni_bonn.detectappscreen.app_usage.AppUsageDataEntry;
+import de.uni_bonn.detectappscreen.app_usage.ActivityDataEntry;
 import de.uni_bonn.detectappscreen.R;
 
 /**
@@ -103,7 +102,7 @@ public class DataEntryListAdapter extends BaseExpandableListAdapter {
     public long getChildId(int groupPosition, int childPosition) {
         // Use timestamp as ID
         MetaEntry metaEntry = metaEntries.get(groupPosition);
-        AppUsageDataEntry entry = metaEntry.getActivityData().getDataEntries().get(childPosition);
+        ActivityDataEntry entry = metaEntry.getActivityData().getDataEntries().get(childPosition);
         return entry.getTimestamp().getTime();
     }
 
@@ -157,7 +156,7 @@ public class DataEntryListAdapter extends BaseExpandableListAdapter {
 
         // Set the actual data
         MetaEntry metaEntry = (MetaEntry)getGroup(groupPosition);
-        AppUsageDataEntry dataEntry = (AppUsageDataEntry)getChild(groupPosition, childPosition);
+        ActivityDataEntry dataEntry = (ActivityDataEntry)getChild(groupPosition, childPosition);
 
         holder.innerContainer.setPadding(metaEntry.getLevel()*32, 0, 0, 0);
         holder.entryType.setText(dataEntry.getType());

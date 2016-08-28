@@ -28,7 +28,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import de.uni_bonn.detectappscreen.app_usage.ActivityData;
-import de.uni_bonn.detectappscreen.app_usage.AppUsageDataEntry;
 
 /**
  * Contains meta information regarding a detectable app, such as entry activities

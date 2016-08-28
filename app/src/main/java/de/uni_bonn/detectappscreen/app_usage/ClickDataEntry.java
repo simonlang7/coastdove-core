@@ -28,8 +28,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -39,8 +37,8 @@ import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageContract;
 /**
  * Data entry containing a detected click at a certain point during app usage
  */
-public class ClickDataEntry extends AppUsageDataEntry {
-    public static AppUsageDataEntry fromSQLiteDB(SQLiteDatabase db, Date timestamp, String activity,
+public class ClickDataEntry extends ActivityDataEntry {
+    public static ActivityDataEntry fromSQLiteDB(SQLiteDatabase db, Date timestamp, String activity,
                                                  int count, int dataEntryID) {
         String[] projection = {
                 AppUsageContract.ClickDetailsTable.COLUMN_NAME_DATA_ENTRY_ID,
@@ -96,7 +94,7 @@ public class ClickDataEntry extends AppUsageDataEntry {
     }
 
     @Override
-    public boolean equals(AppUsageDataEntry other) {
+    public boolean equals(ActivityDataEntry other) {
         if (!super.equals(other))
             return false;
 

@@ -84,7 +84,7 @@ public class ActivityData {
     /** Activity detected */
     private String activity;
     /** List of data entries that were collected during this activity */
-    private LinkedList<AppUsageDataEntry> dataEntries;
+    private LinkedList<ActivityDataEntry> dataEntries;
 
     /**
      * Creates a new activity data object
@@ -116,7 +116,7 @@ public class ActivityData {
             for (int i = 0; i < dataEntriesJSON.length(); ++i) {
                 JSONObject dataEntryJSON = dataEntriesJSON.getJSONObject(i);
 
-                AppUsageDataEntry dataEntry = null;
+                ActivityDataEntry dataEntry = null;
                 if (dataEntryJSON.has("detectedLayouts"))
                     dataEntry = new LayoutDataEntry(dataEntryJSON);
                 else if (dataEntryJSON.has("detectedClick"))
@@ -155,7 +155,7 @@ public class ActivityData {
     }
 
     /** List of data entries that were collected during this activity */
-    public List<AppUsageDataEntry> getDataEntries() {
+    public List<ActivityDataEntry> getDataEntries() {
         return dataEntries;
     }
 
@@ -172,7 +172,7 @@ public class ActivityData {
             result.put("timestamp", getTimestampString());
 
             JSONArray dataEntriesJSON = new JSONArray();
-            for (AppUsageDataEntry entry : dataEntries)
+            for (ActivityDataEntry entry : dataEntries)
                 dataEntriesJSON.put(entry.toJSON());
 
             result.put("dataEntries", dataEntriesJSON);
@@ -199,7 +199,7 @@ public class ActivityData {
             throw new SQLiteException("Unable to add row to " + AppUsageContract.ActivityTable.TABLE_NAME + ": "
                     + values.toString());
 
-        for (AppUsageDataEntry entry : dataEntries)
+        for (ActivityDataEntry entry : dataEntries)
             entry.writeToSQLiteDB(db, rowId);
     }
 
@@ -214,7 +214,7 @@ public class ActivityData {
     public boolean addLayoutDataEntry(Date timestamp, String activity, Set<String> detectedLayouts) {
         boolean lastEntryEqual = increasePreviousEntryCountIfEqual(new LayoutDataEntry(null, activity, detectedLayouts));
         if (!lastEntryEqual) {
-            AppUsageDataEntry entry = new LayoutDataEntry(timestamp, activity, detectedLayouts);
+            ActivityDataEntry entry = new LayoutDataEntry(timestamp, activity, detectedLayouts);
             this.dataEntries.add(entry);
             return true;
         }
@@ -232,7 +232,7 @@ public class ActivityData {
     public boolean addClickDataEntry(Date timestamp, String activity, Set<ClickedEventData> detectedClick) {
         boolean lastEntryEqual = increasePreviousEntryCountIfEqual(new ClickDataEntry(null, activity, detectedClick));
         if (!lastEntryEqual) {
-            AppUsageDataEntry entry = new ClickDataEntry(timestamp, activity, detectedClick);
+            ActivityDataEntry entry = new ClickDataEntry(timestamp, activity, detectedClick);
             this.dataEntries.add(entry);
             return true;
         }
@@ -249,7 +249,7 @@ public class ActivityData {
     public boolean addScrollDataEntry(Date timestamp, String activity, String scrolledElement) {
         boolean lastEntryEqual = increasePreviousEntryCountIfEqual(new ScrollDataEntry(null, activity, scrolledElement));
         if (!lastEntryEqual) {
-            AppUsageDataEntry entry = new ScrollDataEntry(timestamp, activity, scrolledElement);
+            ActivityDataEntry entry = new ScrollDataEntry(timestamp, activity, scrolledElement);
             this.dataEntries.add(entry);
             return true;
         }
@@ -265,7 +265,7 @@ public class ActivityData {
         String[] result = new String[this.dataEntries.size() + 1];
         result[0] = toString(padding);
         int i = 1;
-        for (AppUsageDataEntry entry : this.dataEntries) {
+        for (ActivityDataEntry entry : this.dataEntries) {
             result[i++] = entry.toString(padding);
         }
         return result;
@@ -296,15 +296,15 @@ public class ActivityData {
      * @param other    Entry to compare the previous same-type entry with
      * @return True if the entries are equal, false otherwise
      */
-    private boolean increasePreviousEntryCountIfEqual(AppUsageDataEntry other) {
-        AppUsageDataEntry previousEntry = null;
+    private boolean increasePreviousEntryCountIfEqual(ActivityDataEntry other) {
+        ActivityDataEntry previousEntry = null;
         if (other instanceof ScrollDataEntry) {
-            AppUsageDataEntry last = this.dataEntries.peekLast();
+            ActivityDataEntry last = this.dataEntries.peekLast();
             if (last != null && last instanceof ScrollDataEntry)
                 previousEntry = last;
         }
         else if (other instanceof ClickDataEntry) {
-            AppUsageDataEntry last = this.dataEntries.peekLast();
+            ActivityDataEntry last = this.dataEntries.peekLast();
             if (last != null && last instanceof ClickDataEntry)
                 previousEntry = last;
         }
@@ -323,10 +323,10 @@ public class ActivityData {
     /**
      * Returns the last layout entry found, or null if none is found
      */
-    private AppUsageDataEntry findLastEntryOfType(Class<?> classType) {
-        Iterator<AppUsageDataEntry> it = this.dataEntries.descendingIterator();
+    private ActivityDataEntry findLastEntryOfType(Class<?> classType) {
+        Iterator<ActivityDataEntry> it = this.dataEntries.descendingIterator();
         while (it.hasNext()) {
-            AppUsageDataEntry entry = it.next();
+            ActivityDataEntry entry = it.next();
             if (entry.getClass().equals(classType)) {
                 return entry;
             }
