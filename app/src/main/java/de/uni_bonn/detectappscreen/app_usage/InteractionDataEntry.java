@@ -62,6 +62,7 @@ public class InteractionDataEntry extends ActivityDataEntry {
 
             c.moveToNext();
         }
+        c.close();
 
         InteractionDataEntry dataEntry = new InteractionDataEntry(timestamp, activity, interaction, type);
         dataEntry.count = count;
@@ -138,7 +139,6 @@ public class InteractionDataEntry extends ActivityDataEntry {
         long dataEntryID = super.writeToSQLiteDB(db, activityID);
         for (InteractionEventData data : this.detectedInteraction) {
             ContentValues values = data.toContentValues(dataEntryID);
-            Log.d("InteractionDataEntry", "Adding values: " + values.toString());
             long rowId = db.insert(AppUsageContract.InteractionDetailsTable.TABLE_NAME, null, values);
             if (rowId == -1)
                 throw new SQLiteException("Unable to add row to " + AppUsageContract.InteractionDetailsTable.TABLE_NAME + ": "

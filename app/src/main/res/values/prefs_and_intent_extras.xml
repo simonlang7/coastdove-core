@@ -13,6 +13,7 @@
     <!-- Intent Extras -->
     <string name="extras_package_name">appPackageName</string>
     <string name="extras_filename">filename</string>
+    <string name="extras_timestamp">timestamp</string>
     <string name="extras_app_id">appID</string>
 
 </resources>

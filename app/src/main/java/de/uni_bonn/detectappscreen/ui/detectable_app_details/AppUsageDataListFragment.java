@@ -31,11 +31,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 
 import de.uni_bonn.detectappscreen.R;
 import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageDbHelper;
+import de.uni_bonn.detectappscreen.app_usage.sql.SQLiteDataRemover;
 import de.uni_bonn.detectappscreen.ui.SQLiteTableLoader;
 import de.uni_bonn.detectappscreen.ui.app_usage_data_details.AppUsageDataDetailsActivity;
 import de.uni_bonn.detectappscreen.ui.LoadableListFragment;
@@ -50,6 +54,7 @@ public class AppUsageDataListFragment extends LoadableListFragment<Pair<Integer,
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+        this.loaderID = 100;
 
         ListView listView = getListView();
         listView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE_MODAL);
@@ -77,10 +82,16 @@ public class AppUsageDataListFragment extends LoadableListFragment<Pair<Integer,
             public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
                 switch (item.getItemId()) {
                     case R.id.item_context_delete:
+                        List<Pair<Integer, String>> selectedItems = listAdapter().getSelectedItems();
+                        List<Integer> selectedItemsPrimaryKeys = new LinkedList<>();
+                        for (Pair<Integer, String> selectedItem : selectedItems)
+                            selectedItemsPrimaryKeys.add(selectedItem.first);
+                        new SQLiteDataRemover(getActivity(), selectedItemsPrimaryKeys).run();
+                        Toast toast = Toast.makeText(getActivity(), getString(R.string.toast_data_removed), Toast.LENGTH_SHORT);
+                        toast.show();
                         mode.finish();
-                        return true;
-                    case R.id.item_context_export_to_txt:
-                        mode.finish();
+                        getLoaderManager().restartLoader(loaderID, getArguments(), AppUsageDataListFragment.this);
+                        getListView().invalidate();
                         return true;
                     default:
                         return false;
@@ -114,7 +125,9 @@ public class AppUsageDataListFragment extends LoadableListFragment<Pair<Integer,
 
         Intent intent = new Intent(getActivity(), AppUsageDataDetailsActivity.class);
         intent.putExtra(getString(R.string.extras_package_name), appPackageName);
+        intent.putExtra(getString(R.string.extras_timestamp), item.second);
         intent.putExtra(getString(R.string.extras_app_id), item.first);
+
         startActivity(intent);
     }
 

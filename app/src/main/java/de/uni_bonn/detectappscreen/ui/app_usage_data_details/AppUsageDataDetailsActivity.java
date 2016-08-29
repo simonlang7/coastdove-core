@@ -32,6 +32,7 @@ import java.util.List;
 import de.uni_bonn.detectappscreen.analyze.AppUsageDataProcessor;
 import de.uni_bonn.detectappscreen.analyze.MetaEntry;
 import de.uni_bonn.detectappscreen.app_usage.AppUsageData;
+import de.uni_bonn.detectappscreen.app_usage.sql.SQLiteDataRemover;
 import de.uni_bonn.detectappscreen.utility.FileHelper;
 import de.uni_bonn.detectappscreen.R;
 
@@ -40,6 +41,7 @@ import de.uni_bonn.detectappscreen.R;
  */
 public class AppUsageDataDetailsActivity extends AppCompatActivity {
     private String appPackageName;
+    private String timestamp;
     private int appID;
     private AppUsageDataProcessor appUsageDataProcessor;
 
@@ -53,16 +55,19 @@ public class AppUsageDataDetailsActivity extends AppCompatActivity {
             Bundle extras = getIntent().getExtras();
             if (extras == null) {
                 this.appPackageName = null;
+                this.timestamp = null;
                 this.appID = -1;
             }
             else {
                 this.appPackageName = extras.getString(getString(R.string.extras_package_name));
+                this.timestamp = extras.getString(getString(R.string.extras_timestamp));
                 this.appID = extras.getInt(getString(R.string.extras_app_id));
             }
         }
         else {
-            this.appPackageName = (String) savedInstanceState.getSerializable(getString(R.string.extras_package_name));
-            this.appID = (int) savedInstanceState.getSerializable(getString(R.string.extras_app_id));
+            this.appPackageName = (String)savedInstanceState.getSerializable(getString(R.string.extras_package_name));
+            this.timestamp = (String)savedInstanceState.getSerializable(getString(R.string.extras_timestamp));
+            this.appID = (int)savedInstanceState.getSerializable(getString(R.string.extras_app_id));
         }
 
         // Set support action bar
@@ -81,25 +86,25 @@ public class AppUsageDataDetailsActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         // Store options regarding layout / click detection
         switch (item.getItemId()) {
-//            case R.id.item_export_to_txt:
-//                String txtFilename = this.filename.replace(".json", ".txt");
-//                if (!FileHelper.fileExists(this, FileHelper.Directory.APP_USAGE_DATA_EXPORT, this.appPackageName, txtFilename) &&
-//                        this.appUsageDataProcessor != null) {
-//                    FileHelper.writeTxtFile(this, this.appUsageDataProcessor.toStrings(), FileHelper.Directory.APP_USAGE_DATA_EXPORT, this.appPackageName, txtFilename);
-//                    Toast toast = Toast.makeText(this, getString(R.string.toast_saved_to_txt), Toast.LENGTH_SHORT);
-//                    toast.show();
-//                }
-//                else {
-//                    Toast toast = Toast.makeText(this, getString(R.string.toast_file_exists), Toast.LENGTH_SHORT);
-//                    toast.show();
-//                }
-//                return true;
-//            case R.id.item_delete:
-//                FileHelper.deleteFile(this, FileHelper.Directory.APP_USAGE_DATA, this.appPackageName, this.filename);
-//                Toast toast = Toast.makeText(this, getString(R.string.toast_file_deleted), Toast.LENGTH_SHORT);
-//                toast.show();
-//                finish();
-//                return true;
+            case R.id.item_export_to_txt:
+                String txtFilename = this.timestamp + ".txt";
+                if (!FileHelper.fileExists(this, FileHelper.Directory.APP_USAGE_DATA_EXPORT, this.appPackageName, txtFilename) &&
+                        this.appUsageDataProcessor != null) {
+                    FileHelper.writeTxtFile(this, this.appUsageDataProcessor.toStrings(), FileHelper.Directory.APP_USAGE_DATA_EXPORT, this.appPackageName, txtFilename);
+                    Toast toast = Toast.makeText(this, getString(R.string.toast_saved_to_txt), Toast.LENGTH_SHORT);
+                    toast.show();
+                }
+                else {
+                    Toast toast = Toast.makeText(this, getString(R.string.toast_file_exists), Toast.LENGTH_SHORT);
+                    toast.show();
+                }
+                return true;
+            case R.id.item_delete:
+                new SQLiteDataRemover(this, this.appID).run();
+                Toast toast = Toast.makeText(this, getString(R.string.toast_data_removed), Toast.LENGTH_SHORT);
+                toast.show();
+                finish();
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }

@@ -30,6 +30,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+import de.uni_bonn.detectappscreen.R;
 import de.uni_bonn.detectappscreen.utility.FileHelper;
 
 /**
@@ -61,8 +62,8 @@ public class AppUsageDataWriter implements Runnable {
      */
     @Override
     public void run() {
-        // todo: outsource "DetectAppScreen"
-        File directory = new File(Environment.getExternalStoragePublicDirectory("DetectAppScreen"), data.getAppPackageName() + "/" + subDirectory + "/");
+        // todo: needed?
+        File directory = new File(Environment.getExternalStoragePublicDirectory(context.getString(R.string.app_name)), data.getAppPackageName() + "/" + subDirectory + "/");
         directory.mkdirs();
         File file = new File(directory, data.getFilename());
         try (FileWriter fw = new FileWriter(file, false);

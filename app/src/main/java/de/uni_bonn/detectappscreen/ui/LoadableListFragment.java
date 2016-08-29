@@ -46,9 +46,12 @@ public abstract class LoadableListFragment<T> extends ListFragment
 
     protected ProgressBar progressBar;
 
+    protected int loaderID;
+
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+        this.loaderID = 0;
 
         // Progress bar while the list loads
         this.progressBar = new ProgressBar(getActivity());
@@ -65,7 +68,7 @@ public abstract class LoadableListFragment<T> extends ListFragment
         getListView().setEmptyView(this.progressBar);
         addProgressBarToViewGroup();
 
-        getLoaderManager().initLoader(0, null, this);
+        getLoaderManager().initLoader(loaderID, null, this);
     }
 
     @Override

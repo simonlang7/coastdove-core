@@ -43,6 +43,7 @@ public class DataEntryListFragment extends Fragment
 
     private DataEntryListAdapter adapter;
     private ProgressBar progressBar;
+    private int loaderID;
 
     private String appPackageName;
     private int appID;
@@ -50,6 +51,7 @@ public class DataEntryListFragment extends Fragment
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+        this.loaderID = 300;
 
         // Progress bar while the list loads
         this.progressBar = new ProgressBar(getActivity());
@@ -74,7 +76,7 @@ public class DataEntryListFragment extends Fragment
 
         elv.setGroupIndicator(null);
 
-        getLoaderManager().initLoader(0, null, this);
+        getLoaderManager().initLoader(this.loaderID, null, this);
     }
 
     @Override

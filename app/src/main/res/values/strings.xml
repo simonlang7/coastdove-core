@@ -30,6 +30,7 @@
     <string name="toast_saved_to_txt">Saved</string>
     <string name="toast_file_exists">File exists</string>
     <string name="toast_file_deleted">File deleted</string>
+    <string name="toast_data_removed">Data removed</string>
 
     <string name="meta_entry_activity">Activity</string>
     <string name="data_entry_layout">Layout</string>

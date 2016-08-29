@@ -72,6 +72,7 @@ public class AppUsageData {
 
             c.moveToNext();
         }
+        c.close();
 
         return result;
     }

@@ -59,6 +59,7 @@ public class LayoutDataEntry extends ActivityDataEntry {
 
             c.moveToNext();
         }
+        c.close();
 
         LayoutDataEntry dataEntry = new LayoutDataEntry(timestamp, activity, layouts);
         dataEntry.count = count;

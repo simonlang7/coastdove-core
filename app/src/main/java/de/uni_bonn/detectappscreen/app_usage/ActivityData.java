@@ -72,6 +72,7 @@ public class ActivityData {
 
             c.moveToNext();
         }
+        c.close();
 
         return result;
     }

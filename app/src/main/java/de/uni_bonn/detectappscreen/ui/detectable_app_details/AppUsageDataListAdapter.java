@@ -9,6 +9,9 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import de.uni_bonn.detectappscreen.R;
 
 /**
@@ -38,6 +41,16 @@ public class AppUsageDataListAdapter extends ArrayAdapter<Pair<Integer, String>>
 
     public int selectedCount() {
         return selectedIDs.size();
+    }
+
+    public List<Pair<Integer, String>> getSelectedItems() {
+        List<Pair<Integer, String>> result = new LinkedList<>();
+        for (int i = 0; i < selectedIDs.size(); ++i) {
+            if (selectedIDs.valueAt(i)) {
+                result.add(getItem(selectedIDs.keyAt(i)));
+            }
+        }
+        return result;
     }
 
     @Override
