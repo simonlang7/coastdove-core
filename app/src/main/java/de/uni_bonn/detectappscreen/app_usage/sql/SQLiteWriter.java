@@ -8,7 +8,7 @@ import android.util.Log;
 import de.uni_bonn.detectappscreen.app_usage.AppUsageData;
 
 /**
- * Es ist zu heiss fuer Doku todo: zu heiss fuer todos
+ * Writes an AppUsageData object into the SQLite database
  */
 public class SQLiteWriter implements Runnable {
     private Context context;
