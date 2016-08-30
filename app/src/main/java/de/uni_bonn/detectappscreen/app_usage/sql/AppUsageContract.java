@@ -12,6 +12,7 @@ public final class AppUsageContract {
         public static final String TABLE_NAME = "app";
         public static final String COLUMN_NAME_TIMESTAMP = "timestamp";
         public static final String COLUMN_NAME_PACKAGE = "package";
+        public static final String COLUMN_NAME_DURATION = "duration";
     }
 
     public static abstract class ActivityTable implements BaseColumns {
@@ -19,6 +20,8 @@ public final class AppUsageContract {
         public static final String COLUMN_NAME_TIMESTAMP = "timestamp";
         public static final String COLUMN_NAME_APP_ID = "app_id";
         public static final String COLUMN_NAME_ACTIVITY = "activity";
+        public static final String COLUMN_NAME_LEVEL = "level";
+        public static final String COLUMN_NAME_DURATION = "duration";
     }
 
     public static abstract class DataEntryTable implements BaseColumns {
@@ -57,7 +60,8 @@ public final class AppUsageContract {
             "CREATE TABLE " + AppTable.TABLE_NAME + " (" +
                     AppTable._ID + " INTEGER PRIMARY KEY," +
                     AppTable.COLUMN_NAME_TIMESTAMP + TEXT_TYPE + COMMA_SEP +
-                    AppTable.COLUMN_NAME_PACKAGE + TEXT_TYPE
+                    AppTable.COLUMN_NAME_PACKAGE + TEXT_TYPE + COMMA_SEP +
+                    AppTable.COLUMN_NAME_DURATION + " INTEGER"
                     + " )";
 
     public static final String SQL_DELETE_APPS =
@@ -69,6 +73,8 @@ public final class AppUsageContract {
                     ActivityTable.COLUMN_NAME_TIMESTAMP + TEXT_TYPE + COMMA_SEP +
                     ActivityTable.COLUMN_NAME_APP_ID + " INTEGER" + COMMA_SEP +
                     ActivityTable.COLUMN_NAME_ACTIVITY + TEXT_TYPE + COMMA_SEP +
+                    ActivityTable.COLUMN_NAME_LEVEL + " INTEGER" + COMMA_SEP +
+                    ActivityTable.COLUMN_NAME_DURATION + " INTEGER" + COMMA_SEP +
                     "FOREIGN KEY (" + ActivityTable.COLUMN_NAME_APP_ID + ") REFERENCES " + AppTable.TABLE_NAME + "(" + AppTable._ID + ")"
                     + " )";
 

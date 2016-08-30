@@ -98,7 +98,7 @@ public class AppDetectionData {
         this.reverseMapToLoad = reverseMap;
         this.layoutIdentificationMap = null;
         this.reverseMap = null;
-        this.currentAppUsageData = new AppUsageData(appPackageName);
+        this.currentAppUsageData = null;
         this.context = context;
         this.hashMapLoadingInfo = new LoadingInfo();
     }
@@ -120,7 +120,7 @@ public class AppDetectionData {
                 context, FileHelper.Directory.PACKAGE, appPackageName, "reverseMap.json");
         this.layoutIdentificationMap = null;
         this.reverseMap = null;
-        this.currentAppUsageData = new AppUsageData(appPackageName);
+        this.currentAppUsageData = null;
         this.context = context;
         this.hashMapLoadingInfo = new LoadingInfo();
     }
@@ -174,6 +174,9 @@ public class AppDetectionData {
         if (!isFinishedLoading())
             return;
 
+        if (this.currentAppUsageData == null)
+            newAppUsageData();
+
         if (shallPerformActivityChecks(event)) {
             boolean shallLog = currentAppUsageData.addActivityData(activity);
             if (shallLog)
@@ -226,7 +229,14 @@ public class AppDetectionData {
      * shall be called whenever the app to be detected is exited
      */
     public void saveAppUsageData() {
+        currentAppUsageData.finish();
         writeAppUsageData();
+    }
+
+    /**
+     * Creates a new app usage data
+     */
+    private void newAppUsageData() {
         currentAppUsageData = new AppUsageData(this.appPackageName);
     }
 

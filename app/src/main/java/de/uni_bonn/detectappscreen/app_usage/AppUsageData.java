@@ -47,7 +47,8 @@ public class AppUsageData {
                 AppUsageContract.ActivityTable._ID,
                 AppUsageContract.ActivityTable.COLUMN_NAME_TIMESTAMP,
                 AppUsageContract.ActivityTable.COLUMN_NAME_APP_ID,
-                AppUsageContract.ActivityTable.COLUMN_NAME_ACTIVITY
+                AppUsageContract.ActivityTable.COLUMN_NAME_ACTIVITY,
+                AppUsageContract.ActivityTable.COLUMN_NAME_DURATION
         };
         String selection = AppUsageContract.ActivityTable.COLUMN_NAME_APP_ID + "=?";
         String[] selectionArgs = { ""+appID };
@@ -65,10 +66,11 @@ public class AppUsageData {
                 throw new RuntimeException("Cannot parse date: " + c.getString(1));
             }
             String activity = c.getString(3);
+            long duration = c.getLong(4);
 
             // add activity data
             result.activityDataList.add(ActivityData.fromSQLiteDB(db, appPackageName, timestamp,
-                    activity, activityID));
+                    activity, activityID, duration));
 
             c.moveToNext();
         }
@@ -82,6 +84,8 @@ public class AppUsageData {
     private String appPackageName;
     /** Activity data, each object containing data entries with detailed information */
     private LinkedList<ActivityData> activityDataList;
+    /** Duration of this session, in milliseconds */
+    private long duration;
 
     /**
      * Constructs an AppUsageData object with the given package name and an empty list
@@ -91,6 +95,7 @@ public class AppUsageData {
     public AppUsageData(String appPackageName) {
         this.appPackageName = appPackageName;
         this.activityDataList = new LinkedList<>();
+        start();
     }
 
     /**
@@ -125,6 +130,8 @@ public class AppUsageData {
             ActivityData previousData = activityDataList.peekLast();
             if (previousData.getActivity().contains(activity))
                 return false;
+            else
+                previousData.finish();
         }
         ActivityData data = new ActivityData(this.appPackageName, timestamp, activity);
         this.activityDataList.add(data);
@@ -195,6 +202,20 @@ public class AppUsageData {
     }
 
     /**
+     * Stopwatch-like function to start measuring duration for this session
+     */
+    public void start() {
+        this.duration = System.currentTimeMillis();
+    }
+
+    /**
+     * Stopwatch-like function to stop measuring duration for this session
+     */
+    public void finish() {
+        this.duration = System.currentTimeMillis() - this.duration;
+    }
+
+    /**
      * Converts the AppUsageData object to JSON and returns the according JSONObject
      */
     public JSONObject toJSON() {
@@ -227,6 +248,7 @@ public class AppUsageData {
         ContentValues values = new ContentValues();
         values.put(AppUsageContract.AppTable.COLUMN_NAME_PACKAGE, this.appPackageName);
         values.put(AppUsageContract.AppTable.COLUMN_NAME_TIMESTAMP, timestamp);
+        values.put(AppUsageContract.AppTable.COLUMN_NAME_DURATION, this.duration);
 
         long rowId = db.insert(AppUsageContract.AppTable.TABLE_NAME, null, values);
         for (ActivityData data : this.activityDataList)

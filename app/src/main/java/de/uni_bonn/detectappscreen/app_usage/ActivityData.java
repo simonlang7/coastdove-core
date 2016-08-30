@@ -28,8 +28,10 @@ public class ActivityData {
     public static final String DATE_DETAILED = "yyyy-MM-dd HH:mm:ss:SSS";
 
     public static ActivityData fromSQLiteDB(SQLiteDatabase db, String appPackageName,
-                                            Date timestamp, String activity, int activityID) {
+                                            Date timestamp, String activity, int activityID,
+                                            long duration) {
         ActivityData result = new ActivityData(appPackageName, timestamp, activity);
+        result.duration = duration;
 
         String[] projection = {
                 AppUsageContract.DataEntryTable._ID,
@@ -85,6 +87,8 @@ public class ActivityData {
     private String activity;
     /** List of data entries that were collected during this activity */
     private LinkedList<ActivityDataEntry> dataEntries;
+    /** Duration of this activity, in milliseconds */
+    private long duration;
 
     /**
      * Creates a new activity data object
@@ -97,6 +101,7 @@ public class ActivityData {
         this.timestamp = timestamp;
         this.activity = activity;
         this.dataEntries = new LinkedList<>();
+        start();
     }
 
     /**
@@ -252,6 +257,20 @@ public class ActivityData {
             result[i++] = entry.toString(padding);
         }
         return result;
+    }
+
+    /**
+     * Stopwatch-like function to start measuring duration for this activity
+     */
+    public void start() {
+        this.duration = System.currentTimeMillis();
+    }
+
+    /**
+     * Stopwatch-like function to stop measuring duration for this activity
+     */
+    public void finish() {
+        this.duration = System.currentTimeMillis() - this.duration;
     }
 
     @Override
