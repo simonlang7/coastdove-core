@@ -231,6 +231,7 @@ public class AppDetectionData {
     public void saveAppUsageData() {
         currentAppUsageData.finish();
         writeAppUsageData();
+        this.currentAppUsageData = null;
     }
 
     /**

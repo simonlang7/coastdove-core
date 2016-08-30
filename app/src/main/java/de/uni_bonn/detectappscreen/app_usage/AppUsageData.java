@@ -205,14 +205,14 @@ public class AppUsageData {
      * Stopwatch-like function to start measuring duration for this session
      */
     public void start() {
-        this.duration = System.currentTimeMillis();
+        this.duration = new Date().getTime();
     }
 
     /**
      * Stopwatch-like function to stop measuring duration for this session
      */
     public void finish() {
-        this.duration = System.currentTimeMillis() - this.duration;
+        this.duration = new Date().getTime() - this.duration;
     }
 
     /**

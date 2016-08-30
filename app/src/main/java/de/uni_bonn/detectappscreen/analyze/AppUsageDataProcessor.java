@@ -32,7 +32,7 @@ import de.uni_bonn.detectappscreen.app_usage.AppUsageData;
 import de.uni_bonn.detectappscreen.utility.FileHelper;
 
 /**
- * Processes app usage data by formatting it and replacing parts of it for reading convenience
+ * Processes activity data by trying to deduct an activity hierarchy
  */
 public class AppUsageDataProcessor {
     /** Package name of the app */
