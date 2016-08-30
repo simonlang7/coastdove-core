@@ -29,7 +29,7 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.List;
 
-import de.uni_bonn.detectappscreen.analyze.MetaEntry;
+import de.uni_bonn.detectappscreen.app_usage.ActivityData;
 import de.uni_bonn.detectappscreen.app_usage.ActivityDataEntry;
 import de.uni_bonn.detectappscreen.R;
 
@@ -43,66 +43,66 @@ public class DataEntryListAdapter extends BaseExpandableListAdapter {
     private LayoutInflater inflater;
 
     private String appPackageName;
-    protected List<MetaEntry> metaEntries;
+    protected List<ActivityData> activityDataList;
 
     public DataEntryListAdapter(Context context, String appPackageName) {
         this.context = context;
         this.inflater = LayoutInflater.from(context);
         this.appPackageName = appPackageName;
-        this.metaEntries = new ArrayList<>();
+        this.activityDataList = new ArrayList<>();
     }
 
-    public DataEntryListAdapter(Context context, String appPackageName, List<MetaEntry> metaEntries) {
+    public DataEntryListAdapter(Context context, String appPackageName, List<ActivityData> activityDataList) {
         this.context = context;
         this.inflater = LayoutInflater.from(context);
         this.appPackageName = appPackageName;
-        this.metaEntries = metaEntries;
+        this.activityDataList = activityDataList;
     }
 
     public void clear() {
-        this.metaEntries.clear();
+        this.activityDataList.clear();
         notifyDataSetChanged();
     }
 
-    public void addAll(List<MetaEntry> entries) {
-        this.metaEntries.addAll(entries);
+    public void addAll(List<ActivityData> entries) {
+        this.activityDataList.addAll(entries);
         notifyDataSetChanged();
     }
 
     @Override
     public int getGroupCount() {
-        return metaEntries.size();
+        return activityDataList.size();
     }
 
     @Override
     public int getChildrenCount(int groupPosition) {
-        MetaEntry metaEntry = metaEntries.get(groupPosition);
-        return metaEntry.getActivityData().getDataEntries().size();
+        ActivityData activityData = activityDataList.get(groupPosition);
+        return activityData.getDataEntries().size();
     }
 
     @Override
     public Object getGroup(int groupPosition) {
-        return metaEntries.get(groupPosition);
+        return activityDataList.get(groupPosition);
     }
 
     @Override
     public Object getChild(int groupPosition, int childPosition) {
-        MetaEntry metaEntry = metaEntries.get(groupPosition);
-        return metaEntry.getActivityData().getDataEntries().get(childPosition);
+        ActivityData activityData = activityDataList.get(groupPosition);
+        return activityData.getDataEntries().get(childPosition);
     }
 
     @Override
     public long getGroupId(int groupPosition) {
         // Use timestamp as ID
-        MetaEntry metaEntry = metaEntries.get(groupPosition);
-        return metaEntry.getActivityData().getTimestamp().getTime();
+        ActivityData activityData = activityDataList.get(groupPosition);
+        return activityData.getTimestamp().getTime();
     }
 
     @Override
     public long getChildId(int groupPosition, int childPosition) {
         // Use timestamp as ID
-        MetaEntry metaEntry = metaEntries.get(groupPosition);
-        ActivityDataEntry entry = metaEntry.getActivityData().getDataEntries().get(childPosition);
+        ActivityData activityData = activityDataList.get(groupPosition);
+        ActivityDataEntry entry = activityData.getDataEntries().get(childPosition);
         return entry.getTimestamp().getTime();
     }
 
@@ -128,10 +128,10 @@ public class DataEntryListAdapter extends BaseExpandableListAdapter {
             holder = (GroupViewHolder)convertView.getTag();
 
         // Set the actual data
-        MetaEntry metaEntry = (MetaEntry)getGroup(groupPosition);
+        ActivityData activityData = (ActivityData)getGroup(groupPosition);
 
-        holder.innerContainer.setPadding(metaEntry.getLevel()*32, 0, 0, 0);
-        holder.activityContent.setText(metaEntry.getActivityData().getShortenedActivity());
+        holder.innerContainer.setPadding(activityData.getLevel()*32, 0, 0, 0);
+        holder.activityContent.setText(activityData.getShortenedActivity());
 
         return convertView;
     }
@@ -155,10 +155,10 @@ public class DataEntryListAdapter extends BaseExpandableListAdapter {
             holder = (ChildViewHolder)convertView.getTag();
 
         // Set the actual data
-        MetaEntry metaEntry = (MetaEntry)getGroup(groupPosition);
+        ActivityData activityData = (ActivityData)getGroup(groupPosition);
         ActivityDataEntry dataEntry = (ActivityDataEntry)getChild(groupPosition, childPosition);
 
-        holder.innerContainer.setPadding(metaEntry.getLevel()*32, 0, 0, 0);
+        holder.innerContainer.setPadding(activityData.getLevel()*32, 0, 0, 0);
         holder.entryType.setText(dataEntry.getTypePretty());
         holder.entryCount.setText("(" + dataEntry.getCount() + "x)");
         holder.entryContent.setText(dataEntry.getContent());

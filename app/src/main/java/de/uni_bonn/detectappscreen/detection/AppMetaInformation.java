@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package de.uni_bonn.detectappscreen.analyze;
+package de.uni_bonn.detectappscreen.detection;
 
 import android.util.Log;
 

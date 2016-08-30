@@ -31,6 +31,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageContract;
@@ -48,6 +49,7 @@ public class AppUsageData {
                 AppUsageContract.ActivityTable.COLUMN_NAME_TIMESTAMP,
                 AppUsageContract.ActivityTable.COLUMN_NAME_APP_ID,
                 AppUsageContract.ActivityTable.COLUMN_NAME_ACTIVITY,
+                AppUsageContract.ActivityTable.COLUMN_NAME_LEVEL,
                 AppUsageContract.ActivityTable.COLUMN_NAME_DURATION
         };
         String selection = AppUsageContract.ActivityTable.COLUMN_NAME_APP_ID + "=?";
@@ -66,11 +68,12 @@ public class AppUsageData {
                 throw new RuntimeException("Cannot parse date: " + c.getString(1));
             }
             String activity = c.getString(3);
-            long duration = c.getLong(4);
+            int level = c.getInt(4);
+            long duration = c.getLong(5);
 
             // add activity data
             result.activityDataList.add(ActivityData.fromSQLiteDB(db, appPackageName, timestamp,
-                    activity, activityID, duration));
+                    activity, activityID, level, duration));
 
             c.moveToNext();
         }
@@ -253,6 +256,22 @@ public class AppUsageData {
         long rowId = db.insert(AppUsageContract.AppTable.TABLE_NAME, null, values);
         for (ActivityData data : this.activityDataList)
             data.writeToSQLiteDB(db, rowId);
+    }
+
+    /**
+     * Converts all data contained to strings with padding appropriate to the activities' levels
+     * @return All ActivityData as strings
+     */
+    public String[] toStrings() {
+        List<String> strings = new LinkedList<>();
+        for (ActivityData activityData : activityDataList) {
+            int level = activityData.getLevel();
+            String[] activityDataStrings = activityData.toStrings(2*level);
+            for (String string : activityDataStrings) {
+                strings.add(string);
+            }
+        }
+        return strings.toArray(new String[strings.size()]);
     }
 
     /**

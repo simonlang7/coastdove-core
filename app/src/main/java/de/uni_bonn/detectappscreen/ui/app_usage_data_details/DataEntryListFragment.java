@@ -31,15 +31,15 @@ import android.widget.ExpandableListView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 
-import de.uni_bonn.detectappscreen.analyze.AppUsageDataProcessor;
-import de.uni_bonn.detectappscreen.app_usage.AppUsageDataProcessorLoader;
+import de.uni_bonn.detectappscreen.app_usage.AppUsageData;
+import de.uni_bonn.detectappscreen.app_usage.AppUsageDataLoader;
 import de.uni_bonn.detectappscreen.R;
 
 /**
  * ListFragment that displays a progress bar while loading its contents
  */
 public class DataEntryListFragment extends Fragment
-        implements LoaderManager.LoaderCallbacks<AppUsageDataProcessor> {
+        implements LoaderManager.LoaderCallbacks<AppUsageData> {
 
     private DataEntryListAdapter adapter;
     private ProgressBar progressBar;
@@ -85,21 +85,21 @@ public class DataEntryListFragment extends Fragment
     }
 
     @Override
-    public Loader<AppUsageDataProcessor> onCreateLoader(int id, Bundle args) {
-        return new AppUsageDataProcessorLoader(getActivity(), this.appPackageName, this.appID);
+    public Loader<AppUsageData> onCreateLoader(int id, Bundle args) {
+        return new AppUsageDataLoader(getActivity(), this.appPackageName, this.appID);
     }
 
     @Override
-    public void onLoadFinished(Loader<AppUsageDataProcessor> loader, AppUsageDataProcessor data) {
+    public void onLoadFinished(Loader<AppUsageData> loader, AppUsageData data) {
         this.adapter.clear();
-        this.adapter.addAll(data.getAppUsageMetaData());
+        this.adapter.addAll(data.getActivityDataList());
         this.progressBar.setVisibility(View.GONE);
         AppUsageDataDetailsActivity activity = (AppUsageDataDetailsActivity)getActivity();
-        activity.setAppUsageDataProcessor(data);
+        activity.setAppUsageData(data);
     }
 
     @Override
-    public void onLoaderReset(Loader<AppUsageDataProcessor> loader) {
+    public void onLoaderReset(Loader<AppUsageData> loader) {
     }
 
     protected void addProgressBarToViewGroup() {

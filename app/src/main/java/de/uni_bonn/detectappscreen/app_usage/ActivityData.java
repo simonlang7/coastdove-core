@@ -29,9 +29,10 @@ public class ActivityData {
 
     public static ActivityData fromSQLiteDB(SQLiteDatabase db, String appPackageName,
                                             Date timestamp, String activity, int activityID,
-                                            long duration) {
+                                            int level, long duration) {
         ActivityData result = new ActivityData(appPackageName, timestamp, activity);
         result.duration = duration;
+        result.level = level;
 
         String[] projection = {
                 AppUsageContract.DataEntryTable._ID,
@@ -87,6 +88,8 @@ public class ActivityData {
     private String activity;
     /** List of data entries that were collected during this activity */
     private LinkedList<ActivityDataEntry> dataEntries;
+    /** Indicates this activity's level on the stack, above a main activity (those started from a launcher) */
+    private int level;
     /** Duration of this activity, in milliseconds */
     private long duration;
 
@@ -101,6 +104,7 @@ public class ActivityData {
         this.timestamp = timestamp;
         this.activity = activity;
         this.dataEntries = new LinkedList<>();
+        this.level = 0;
         start();
     }
 
@@ -196,6 +200,8 @@ public class ActivityData {
         values.put(AppUsageContract.ActivityTable.COLUMN_NAME_TIMESTAMP, getTimestampString());
         values.put(AppUsageContract.ActivityTable.COLUMN_NAME_APP_ID, appID);
         values.put(AppUsageContract.ActivityTable.COLUMN_NAME_ACTIVITY, this.activity);
+        values.put(AppUsageContract.ActivityTable.COLUMN_NAME_LEVEL, this.level);
+        values.put(AppUsageContract.ActivityTable.COLUMN_NAME_DURATION, this.duration);
 
         long rowId = db.insert(AppUsageContract.ActivityTable.TABLE_NAME, null, values);
         if (rowId == -1)
@@ -329,5 +335,13 @@ public class ActivityData {
             }
         }
         return null;
+    }
+
+    public int getLevel() {
+        return level;
+    }
+
+    public void setLevel(int level) {
+        this.level = level;
     }
 }

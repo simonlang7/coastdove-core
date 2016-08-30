@@ -21,16 +21,10 @@ package de.uni_bonn.detectappscreen.ui.app_usage_data_details;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
-import java.util.Iterator;
-import java.util.List;
-
-import de.uni_bonn.detectappscreen.analyze.AppUsageDataProcessor;
-import de.uni_bonn.detectappscreen.analyze.MetaEntry;
 import de.uni_bonn.detectappscreen.app_usage.AppUsageData;
 import de.uni_bonn.detectappscreen.app_usage.sql.SQLiteDataRemover;
 import de.uni_bonn.detectappscreen.utility.FileHelper;
@@ -43,7 +37,7 @@ public class AppUsageDataDetailsActivity extends AppCompatActivity {
     private String appPackageName;
     private String timestamp;
     private int appID;
-    private AppUsageDataProcessor appUsageDataProcessor;
+    private AppUsageData appUsageData;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,8 +83,8 @@ public class AppUsageDataDetailsActivity extends AppCompatActivity {
             case R.id.item_export_to_txt:
                 String txtFilename = this.timestamp + ".txt";
                 if (!FileHelper.fileExists(this, FileHelper.Directory.APP_USAGE_DATA_EXPORT, this.appPackageName, txtFilename) &&
-                        this.appUsageDataProcessor != null) {
-                    FileHelper.writeTxtFile(this, this.appUsageDataProcessor.toStrings(), FileHelper.Directory.APP_USAGE_DATA_EXPORT, this.appPackageName, txtFilename);
+                        this.appUsageData != null) {
+                    FileHelper.writeTxtFile(this, this.appUsageData.toStrings(), FileHelper.Directory.APP_USAGE_DATA_EXPORT, this.appPackageName, txtFilename);
                     Toast toast = Toast.makeText(this, getString(R.string.toast_saved_to_txt), Toast.LENGTH_SHORT);
                     toast.show();
                 }
@@ -127,7 +121,7 @@ public class AppUsageDataDetailsActivity extends AppCompatActivity {
     /**
      * Sets the app usage data for this activity
      */
-    public void setAppUsageDataProcessor(AppUsageDataProcessor appUsageDataProcessor) {
-        this.appUsageDataProcessor = appUsageDataProcessor;
+    public void setAppUsageData(AppUsageData appUsageData) {
+        this.appUsageData = appUsageData;
     }
 }

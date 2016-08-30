@@ -29,6 +29,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -37,7 +38,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import de.uni_bonn.detectappscreen.R;
 import de.uni_bonn.detectappscreen.app_usage.ActivityDataEntry;
 import de.uni_bonn.detectappscreen.app_usage.AppUsageData;
-import de.uni_bonn.detectappscreen.app_usage.AppUsageDataWriter;
+import de.uni_bonn.detectappscreen.app_usage.AppUsageDataProcessor;
 import de.uni_bonn.detectappscreen.app_usage.InteractionEventData;
 import de.uni_bonn.detectappscreen.app_usage.sql.SQLiteWriter;
 import de.uni_bonn.detectappscreen.ui.LoadingInfo;
@@ -279,20 +280,6 @@ public class AppDetectionData {
     }
 
     /**
-     * Returns true iff a scroll check shall be performed
-     */
-    private boolean shallPerformScrollChecks(AccessibilityEvent event) {
-        if (event.getEventType() != AccessibilityEvent.TYPE_VIEW_SCROLLED)
-            return false;
-        if (event.getSource() == null)
-            return false;
-        if (!performLayoutChecks)
-            return false;
-
-        return true;
-    }
-
-    /**
      * Returns true iff an interaction event check shall be performed
      */
     private boolean shallPerformInteractionChecks(AccessibilityEvent event) {
@@ -316,18 +303,6 @@ public class AppDetectionData {
         Set<String> androidIDsOnScreen = androidIDsOnScreen(rootNodeInfo);
         Set<String> possibleLayouts = possibleLayouts(androidIDsOnScreen);
         return recognizedLayouts(androidIDsOnScreen, possibleLayouts);
-    }
-
-    /**
-     * Creates a data entry showing which element was scrolled
-     * @return Data regarding the scroll event
-     */
-    private String checkScrollEvent(AccessibilityNodeInfo source, AccessibilityNodeInfo rootNodeInfo) {
-        AccessibilityNodeInfo nodeInfo = findNodeInfo(source, rootNodeInfo);
-        if (nodeInfo == null)
-            nodeInfo = source;
-        String scrolledElement = nodeInfo.getViewIdResourceName();
-        return scrolledElement != null ? scrolledElement : "-";
     }
 
     /**
@@ -359,7 +334,7 @@ public class AppDetectionData {
                         return nodeInfo != null &&
                                 (nodeInfo.getViewIdResourceName() != null || nodeInfo.getText() != null) &&
                                 (nodeInfo.getViewIdResourceName() == null ||
-                                        nodeInfo.getViewIdResourceName().endsWith("id/list"));
+                                        !nodeInfo.getViewIdResourceName().endsWith("id/list"));
                     }
                 });
 
@@ -427,7 +402,8 @@ public class AppDetectionData {
      */
     private void writeAppUsageData() {
         AppUsageData appUsageData = currentAppUsageData;
-        new Thread(new AppUsageDataWriter("AppUsageData", appUsageData, this.context)).start();
+        AppUsageDataProcessor processor = new AppUsageDataProcessor(new AppMetaInformation(this.appPackageName, new LinkedList<String>()), appUsageData);
+        processor.process();
         new Thread(new SQLiteWriter(this.context, appUsageData)).start();
     }
 

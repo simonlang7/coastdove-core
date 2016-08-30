@@ -22,13 +22,12 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.v4.content.Loader;
 
-import de.uni_bonn.detectappscreen.analyze.AppUsageDataProcessor;
 import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageDbHelper;
 
 /**
- * Loader for app usage data and an according processor
+ * Loader for app usage data object
  */
-public class AppUsageDataProcessorLoader extends Loader<AppUsageDataProcessor> {
+public class AppUsageDataLoader extends Loader<AppUsageData> {
 
     /** Package name of the app */
     private String appPackageName;
@@ -36,18 +35,18 @@ public class AppUsageDataProcessorLoader extends Loader<AppUsageDataProcessor> {
     private int appID;
 
     /**
-     * Creates a new AppUsageDataProcessorLoader using the given data
+     * Creates a new AppUsageDataLoader using the given data
      * @param context        Application context
      * @param appID          Primary key of the app
      */
-    public AppUsageDataProcessorLoader(Context context, String appPackageName, int appID) {
+    public AppUsageDataLoader(Context context, String appPackageName, int appID) {
         super(context);
         this.appPackageName = appPackageName;
         this.appID = appID;
     }
 
     /**
-     * Loads the app usage data + processor for the given appID
+     * Loads the app usage data for the given appID
      */
     @Override
     public void onStartLoading() {
@@ -55,10 +54,7 @@ public class AppUsageDataProcessorLoader extends Loader<AppUsageDataProcessor> {
         SQLiteDatabase db = dbHelper.getReadableDatabase();
         AppUsageData appUsageData = AppUsageData.fromSQLiteDB(db, appPackageName, appID);
 
-        AppUsageDataProcessor processor = new AppUsageDataProcessor(getContext(), this.appPackageName,
-                appUsageData);
-
         dbHelper.close();
-        deliverResult(processor);
+        deliverResult(appUsageData);
     }
 }
