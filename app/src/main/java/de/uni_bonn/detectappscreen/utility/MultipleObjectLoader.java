@@ -13,6 +13,12 @@ import de.uni_bonn.detectappscreen.ui.LoadingInfo;
  * Loading processes can be cancelled and the current status of each object can be retrieved.
  */
 public class MultipleObjectLoader<T> {
+    public enum Status {
+        LOADED,
+        LOADING,
+        NONE
+    }
+
     /** Map of Threads currently loading objects */
     private Map<String, Thread> loadingObjects;
     /** Map of LoadingInfos for loading objects */
@@ -36,6 +42,21 @@ public class MultipleObjectLoader<T> {
      */
     public T get(String key) {
         return loadedObjects.get(key);
+    }
+
+    /**
+     * Returns the loading status of an object
+     * @param key    Key of the object to look for
+     * @return LOADED if the object has finished loading, LOADING if it is loading,
+     *         NONE if it does not exist
+     */
+    public Status getStatus(String key) {
+        if (this.loadingObjects.containsKey(key))
+            return Status.LOADING;
+        if (this.loadedObjects.containsKey(key))
+            return Status.LOADED;
+
+        return Status.NONE;
     }
 
     /**

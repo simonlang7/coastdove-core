@@ -19,10 +19,14 @@
 package de.uni_bonn.detectappscreen.detection;
 
 import android.content.Context;
-import android.widget.ProgressBar;
+import android.content.SharedPreferences;
+import android.util.Log;
 
-import org.json.JSONObject;
+import java.io.File;
+import java.io.IOException;
+import java.util.zip.ZipFile;
 
+import de.uni_bonn.detectappscreen.setup.AppDetectionDataSetup;
 import de.uni_bonn.detectappscreen.ui.LoadingInfo;
 import de.uni_bonn.detectappscreen.utility.FileHelper;
 import de.uni_bonn.detectappscreen.utility.MultipleObjectLoader;
@@ -37,8 +41,10 @@ public class AppDetectionDataLoader extends ObjectLoader<AppDetectionData> {
     private String appPackageName;
     /** Whether to compare current layouts with layout definitions */
     private boolean performLayoutChecks;
-    /** Whether to listen to OnClick events */
-    private boolean performOnClickChecks;
+    /** Whether to listen to interaction events */
+    private boolean performInteractionChecks;
+    /** Full path to the APK file */
+    private String fullApkPath;
 
     /** Application context */
     private Context context;
@@ -51,14 +57,26 @@ public class AppDetectionDataLoader extends ObjectLoader<AppDetectionData> {
      * @param appPackageName          Name of the package associated
      */
     public AppDetectionDataLoader(String appPackageName, MultipleObjectLoader<AppDetectionData> multipleObjectLoader,
-                                  boolean performLayoutChecks, boolean performOnClickChecks, Context context,
+                                  boolean performLayoutChecks, boolean performInteractionChecks, Context context,
                                   LoadingInfo loadingInfo) {
         super(appPackageName, multipleObjectLoader);
         this.appPackageName = appPackageName;
         this.performLayoutChecks = performLayoutChecks;
-        this.performOnClickChecks = performOnClickChecks;
+        this.performInteractionChecks = performInteractionChecks;
         this.context = context;
         this.loadingInfo = loadingInfo;
+        this.fullApkPath = null;
+    }
+
+    public AppDetectionDataLoader(String appPackageName, MultipleObjectLoader<AppDetectionData> multipleObjectLoader,
+                                  String fullApkPath, Context context, LoadingInfo loadingInfo) {
+        super(appPackageName, multipleObjectLoader);
+        this.appPackageName = appPackageName;
+        this.performLayoutChecks = true;
+        this.performInteractionChecks = true;
+        this.context = context;
+        this.loadingInfo = loadingInfo;
+        this.fullApkPath = fullApkPath;
     }
 
     /**
@@ -66,17 +84,23 @@ public class AppDetectionDataLoader extends ObjectLoader<AppDetectionData> {
      */
     @Override
     protected AppDetectionData load() {
-        JSONObject layouts;
-        JSONObject reverseMap;
-        layouts = FileHelper.readJSONFile(
-                this.context, FileHelper.Directory.PACKAGE, this.appPackageName, "layouts.json");
-        reverseMap = FileHelper.readJSONFile(
-                this.context, FileHelper.Directory.PACKAGE, this.appPackageName, "reverseMap.json");
+        AppDetectionData detectableApp;
+        if (this.fullApkPath != null) {
+            File apkFile = new File(this.fullApkPath);
+            try {
+                ZipFile apk = new ZipFile(apkFile);
+                detectableApp = AppDetectionDataSetup.fromAPK(this.context, apk, appPackageName, 1.0f, loadingInfo);
+                FileHelper.writeAppDetectionData(this.context, detectableApp, FileHelper.Directory.PACKAGE, this.appPackageName, "AppDetectionData.bin");
+            } catch (IOException e) {
+                Log.e("AppDetectionDataLoader", "Cannot read APK file (" + this.fullApkPath + "): " + e.getMessage());
+                throw new RuntimeException("Cannot load AppDetectionData: " + e.getMessage());
+            }
+        }
+        else {
+            detectableApp = FileHelper.readAppDetectionData(this.context, FileHelper.Directory.PACKAGE, this.appPackageName, "AppDetectionData.bin");
+        }
 
-        AppDetectionData detectableApp = new AppDetectionData(this.appPackageName, layouts, reverseMap, context);
-        detectableApp.setHashMapLoadingInfo(this.loadingInfo);
-        detectableApp.load(this.performLayoutChecks, this.performOnClickChecks);
-        
+        detectableApp.init(this.performLayoutChecks, this.performInteractionChecks, this.context);
         return detectableApp;
     }
 }

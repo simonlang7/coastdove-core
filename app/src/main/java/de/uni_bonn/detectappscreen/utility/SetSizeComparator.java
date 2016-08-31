@@ -18,13 +18,16 @@
 
 package de.uni_bonn.detectappscreen.utility;
 
+import java.io.Serializable;
 import java.util.Comparator;
 import java.util.Set;
 
 /**
  * A simple comparator that orders two Sets by size, ascending.
  */
-public class SetSizeComparator implements Comparator<Set> {
+public class SetSizeComparator implements Comparator<Set>, Serializable {
+    private static final long serialVersionUID = 3719842943031305565L;
+
     @Override
     public int compare(Set o1, Set o2) {
         return (o1.size() < o2.size()) ? -1 : 1;

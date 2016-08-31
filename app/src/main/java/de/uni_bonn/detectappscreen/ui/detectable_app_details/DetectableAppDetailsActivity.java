@@ -19,6 +19,7 @@
 package de.uni_bonn.detectappscreen.ui.detectable_app_details;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -28,13 +29,16 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.CompoundButton;
+import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 import android.widget.Switch;
+import android.widget.TextView;
 
 import de.uni_bonn.detectappscreen.detection.AppDetectionData;
 import de.uni_bonn.detectappscreen.detection.AppDetectionDataLoader;
 import de.uni_bonn.detectappscreen.detection.DetectAppScreenAccessibilityService;
 import de.uni_bonn.detectappscreen.ui.LoadingInfo;
+import de.uni_bonn.detectappscreen.ui.add_app.AddAppActivity;
 import de.uni_bonn.detectappscreen.utility.FileHelper;
 import de.uni_bonn.detectappscreen.R;
 import de.uni_bonn.detectappscreen.utility.MultipleObjectLoader;
@@ -82,6 +86,7 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
         } catch (NullPointerException e) {
         }
         final Switch activateSwitch = (Switch)findViewById(R.id.detectable_app_activate_switch);
+        boolean cacheExists = FileHelper.fileExists(this, FileHelper.Directory.PACKAGE, getAppPackageName(), "AppDetectionData.bin");
         activateSwitch.setChecked(detectionDataLoadedOrLoading);
         activateSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -90,7 +95,7 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
                     // Check whether to load layout and click detection
                     SharedPreferences preferences = getPreferences(MODE_PRIVATE);
                     boolean detectLayouts = preferences.getBoolean(appPackageName + getString(R.string.pref_detect_layouts), false);
-                    boolean detectClicks = preferences.getBoolean(appPackageName + getString(R.string.pref_detect_clicks), false);
+                    boolean detectClicks = preferences.getBoolean(appPackageName + getString(R.string.pref_detect_interactions), false);
 
                     // Loading info UI elements
                     int uid = appPackageName.hashCode();
@@ -107,6 +112,8 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
                     DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader().remove(appPackageName);
             }
         });
+
+        setUpActivationBar(cacheExists);
     }
 
     @Override
@@ -114,8 +121,16 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
         getMenuInflater().inflate(R.menu.detectable_app_details_menu, menu);
 
         // Set up the menu checkboxes
+        AppDetectionData detectionData = DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader().get(this.appPackageName);
+        if (detectionData != null) {
+            boolean detectingLayouts = detectionData.getPerformLayoutChecks();
+            boolean detectingInteractions = detectionData.getPerformInteractionChecks();
+            setSharedPreference(appPackageName + getString(R.string.pref_detect_layouts), detectingLayouts);
+            setSharedPreference(appPackageName + getString(R.string.pref_detect_interactions), detectingInteractions);
+        }
+
         setUpCheckbox(menu.findItem(R.id.checkbox_detect_layouts), getString(R.string.pref_detect_layouts));
-        setUpCheckbox(menu.findItem(R.id.checkbox_detect_interactions), getString(R.string.pref_detect_clicks));
+        setUpCheckbox(menu.findItem(R.id.checkbox_detect_interactions), getString(R.string.pref_detect_interactions));
 
         return super.onCreateOptionsMenu(menu);
     }
@@ -126,19 +141,19 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
         MenuItem checkboxDetectClicks = menu.findItem(R.id.checkbox_detect_interactions);
         MenuItem itemDeleteCache = menu.findItem(R.id.item_delete_cache);
         try {
-            boolean cacheExists = FileHelper.fileExists(this, FileHelper.Directory.PACKAGE, getAppPackageName(), "layouts.bin")
-                    && FileHelper.fileExists(this, FileHelper.Directory.PACKAGE, getAppPackageName(), "reverseMap.bin");
+            boolean cacheExists = FileHelper.fileExists(this, FileHelper.Directory.PACKAGE, getAppPackageName(), "AppDetectionData.bin");
 
             // If the detection data is currently in use, the menu items are disabled
-            boolean detectionDataInUse = DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader().contains(this.appPackageName);
-            checkboxDetectLayouts.setEnabled(!detectionDataInUse);
-            checkboxDetectClicks.setEnabled(!detectionDataInUse);
-            itemDeleteCache.setEnabled(cacheExists && !detectionDataInUse);
+            boolean detectionDataLoading = DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader().getStatus(this.appPackageName)
+                    == MultipleObjectLoader.Status.LOADING;
+            checkboxDetectLayouts.setEnabled(!detectionDataLoading);
+            checkboxDetectClicks.setEnabled(!detectionDataLoading);
+            itemDeleteCache.setEnabled(cacheExists && !detectionDataLoading);
         } catch (NullPointerException e) {
             checkboxDetectLayouts.setEnabled(false);
             checkboxDetectClicks.setEnabled(false);
             itemDeleteCache.setEnabled(false);
-            Log.i("DetectableAppDetailsAc.", "Error creating menu: " + e.getMessage());
+            Log.e("DetectableAppDetailsAc.", "Error creating menu: " + e.getMessage());
         }
 
         return super.onPrepareOptionsMenu(menu);
@@ -147,30 +162,32 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Store options regarding layout / click detection
+        AppDetectionData detectionData = DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader().get(this.appPackageName);
         switch (item.getItemId()) {
             case R.id.checkbox_detect_layouts:
                 item.setChecked(!item.isChecked());
                 setSharedPreference(appPackageName + getString(R.string.pref_detect_layouts), item.isChecked());
+                if (detectionData != null)
+                    detectionData.setPerformLayoutChecks(item.isChecked());
                 return true;
             case R.id.checkbox_detect_interactions:
                 item.setChecked(!item.isChecked());
-                setSharedPreference(appPackageName + getString(R.string.pref_detect_clicks), item.isChecked());
+                setSharedPreference(appPackageName + getString(R.string.pref_detect_interactions), item.isChecked());
+                if (detectionData != null)
+                    detectionData.setPerformInteractionChecks(item.isChecked());
                 return true;
             case R.id.item_delete_cache:
-                FileHelper.deleteFile(this, FileHelper.Directory.PACKAGE, this.appPackageName, "layouts.bin");
-                FileHelper.deleteFile(this, FileHelper.Directory.PACKAGE, this.appPackageName, "reverseMap.bin");
+                FileHelper.deleteFile(this, FileHelper.Directory.PACKAGE, this.appPackageName, "AppDetectionData.bin");
+                final TextView activateText = (TextView)findViewById(R.id.detectable_app_activate_text);
+                final Switch activateSwitch = (Switch)findViewById(R.id.detectable_app_activate_switch);
+                activateSwitch.setChecked(false);
+                setUpActivationBar(false);
+                activateText.invalidate();
+                activateSwitch.invalidate();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
-    }
-
-    /**
-     * Activates the detectable app specified by the package name
-     */
-    public void activateDetectableApp(View view) {
-        Switch activateSwitch = (Switch)findViewById(R.id.detectable_app_activate_switch);
-        activateSwitch.setChecked(!activateSwitch.isChecked());
     }
 
     /**
@@ -187,6 +204,10 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
      */
     private void setSharedPreference(String preference, boolean value) {
         SharedPreferences preferences = getPreferences(MODE_PRIVATE);
+        boolean actualValue = preferences.getBoolean(preference, false);
+        if (actualValue == value)
+            return;
+
         SharedPreferences.Editor editor = preferences.edit();
         editor.putBoolean(preference, value);
         editor.commit();
@@ -202,4 +223,43 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
         boolean checked = preferences.getBoolean(appPackageName + prefString, false);
         item.setChecked(checked);
     }
+
+    /**
+     * Sets up the "Activate" text and switch
+     * @param cacheExists    Whether the serialized AppDetectionData exists or not
+     */
+    private void setUpActivationBar(boolean cacheExists) {
+        final TextView activateText = (TextView)findViewById(R.id.detectable_app_activate_text);
+        final Switch activateSwitch = (Switch)findViewById(R.id.detectable_app_activate_switch);
+        final FrameLayout activationBar = (FrameLayout)findViewById(R.id.detectable_app_activation_bar);
+
+        activateSwitch.setEnabled(cacheExists);
+        activateSwitch.setVisibility(cacheExists ? View.VISIBLE : View.INVISIBLE);
+        if (cacheExists) {
+            View.OnClickListener listener = new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    activateSwitch.setChecked(!activateSwitch.isChecked());
+                }
+            };
+
+            activateText.setOnClickListener(listener);
+            activationBar.setOnClickListener(listener);
+        }
+        else {
+            activateText.setText(getString(R.string.activate_no_cache));
+
+            View.OnClickListener listener = new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    finish(); // todo: find a way to update activation bar
+                    startActivity(new Intent(DetectableAppDetailsActivity.this, AddAppActivity.class));
+                }
+            };
+
+            activateText.setOnClickListener(listener);
+            activationBar.setOnClickListener(listener);
+        }
+    }
+
 }

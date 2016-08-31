@@ -45,6 +45,7 @@ import java.util.HashMap;
 import java.util.zip.ZipFile;
 
 import de.uni_bonn.detectappscreen.R;
+import de.uni_bonn.detectappscreen.detection.AppDetectionData;
 
 /**
  * A collection of functions to help with reading from and writing to files
@@ -144,6 +145,49 @@ public class FileHelper {
                 Log.v("Media scanner", "Scanned file: " + path);
             }
         });
+    }
+
+    public static void writeAppDetectionData(Context context, AppDetectionData data, Directory directory, String appPackageName, String filename) {
+        File file = getFile(context, directory, appPackageName, filename);
+        if (file == null)
+            throw new RuntimeException("Cannot write to " + file.getAbsolutePath());
+
+        makeParentDir(file);
+
+        try (FileOutputStream fos = new FileOutputStream(file);
+             ObjectOutputStream oos = new ObjectOutputStream(fos)) {
+            oos.writeObject(data);
+        } catch (FileNotFoundException e) {
+            Log.e("FileHelper", "File not found: " + file.getAbsolutePath());
+            Log.e("FileHelper", e.getMessage());
+        } catch (IOException e) {
+            Log.e("FileHelper", "Input/Output error (" + file.getAbsoluteFile() + "): " + e.getMessage());
+        }
+        scanFile(context, file.getAbsolutePath());
+    }
+
+    public static AppDetectionData readAppDetectionData(Context context, Directory directory, String appPackageName, String filename) {
+        File file = getFile(context, directory, appPackageName, filename);
+        if (file == null)
+            throw new RuntimeException("Cannot read from " + file.getAbsolutePath());
+
+        AppDetectionData result = null;
+        try (FileInputStream fis = new FileInputStream(file);
+             ObjectInputStream ois = new ObjectInputStream(fis)) {
+            result = (AppDetectionData)ois.readObject();
+        } catch (FileNotFoundException e) {
+            Log.e("FileHelper", "File not found: " + file.getAbsolutePath());
+            Log.e("FileHelper", e.getMessage());
+        } catch (StreamCorruptedException e) {
+            Log.e("FileHelper", "Stream corrupted: " + file.getAbsolutePath());
+            Log.e("FileHelper", e.getMessage());
+        } catch (IOException e) {
+            Log.e("FileHelper", "Input/Output error (" + file.getAbsoluteFile() + "): " + e.getMessage());
+        } catch (ClassNotFoundException e) {
+            Log.e("FileHelper", "Class not found (" + file.getAbsoluteFile() + "): " + e.getMessage());
+        }
+
+        return result;
     }
 
     public static void writeHashMap(Context context, HashMap hashMap, Directory directory, String appPackageName, String filename) {

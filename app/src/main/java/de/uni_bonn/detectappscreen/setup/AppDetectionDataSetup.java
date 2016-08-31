@@ -25,21 +25,26 @@ import android.util.Log;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
 import brut.androlib.res.decoder.AXmlResourceParser;
 import de.uni_bonn.detectappscreen.R;
+import de.uni_bonn.detectappscreen.detection.AppDetectionData;
+import de.uni_bonn.detectappscreen.detection.AppMetaInformation;
 import de.uni_bonn.detectappscreen.detection.LayoutIdentification;
 import de.uni_bonn.detectappscreen.ui.LoadingInfo;
-import de.uni_bonn.detectappscreen.utility.MultipleObjectLoader;
+import de.uni_bonn.detectappscreen.utility.CollatorWrapper;
 import de.uni_bonn.detectappscreen.utility.PowerSet;
 import de.uni_bonn.detectappscreen.utility.XMLHelper;
 import soot.jimple.infoflow.android.resources.ARSCFileParser;
 
-import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.Collator;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -57,63 +62,42 @@ import java.util.zip.ZipFile;
  * Collection of LayoutIdentification objects, intended for all layouts of one app, needed
  * to determine unique identifiers for layouts
  */
-public class LayoutCollection {
-    private static final String JSON_TYPE = "LayoutCollection";
-    private static final int JSON_VERSION_MAJOR = 0;
-    private static final int JSON_VERSION_MINOR = 4;
-
-    /** Context for UI stuff */
-    private Context context;
-
-    /** MultipleObjectLoader for layout collections, used in AddAppActivity */
-    private static MultipleObjectLoader<LayoutCollection> layoutCollectionMultipleObjectLoader = new MultipleObjectLoader<>();
-
-    /** MultipleObjectLoader for layout collections, used in AddAppActivity, todo: find better place? */
-    public static MultipleObjectLoader<LayoutCollection> getLayoutCollectionMultipleObjectLoader() {
-        return layoutCollectionMultipleObjectLoader;
-    }
-
-    /** Each layout identification object represents one of the app's layouts */
-    private List<LayoutIdentification> layoutIdentificationList;
-    /** Set of all "android:id" attributes that occur throughout all layouts */
-    private Set<String> allAndroidIDs;
-    /** Map that maps from android IDs to possibly recognizable layouts */
-    private ReverseMap reverseMap;
-
-    /**
-     * Constructs a new layout collection from the given list
-     * @param layoutIdentificationList    Layouts to process
-     */
-    public LayoutCollection(List<LayoutIdentification> layoutIdentificationList) {
-        this.layoutIdentificationList = layoutIdentificationList;
-    }
-
+public class AppDetectionDataSetup {
     /**
      * Constructs a new layout collection from the given .apk file
      * @param apk                 APK file to process
      * @param minDetectionRate    minimal target detection rate (i.e. (#detectable layouts)/(#layouts)),
      *                            value between 0f and 1f
      */
-    public LayoutCollection(Context context, ZipFile apk, String appPackageName, float minDetectionRate, LoadingInfo loadingInfo) {
-        Log.d("LayoutCollection", "Constructor");
-        this.layoutIdentificationList = new LinkedList<>();
-        this.allAndroidIDs = new TreeSet<>(Collator.getInstance());
-        this.context = context;
+    public static AppDetectionData fromAPK(Context context, ZipFile apk, String appPackageName, float minDetectionRate, LoadingInfo loadingInfo) {
+        // Map (Layout -> Android IDs contained)
+        Map<String, LayoutIdentification> layoutIdentificationMap = new HashMap<>();
+        // Map (Android ID -> layouts in which it occurs)
+        Map<String, Set<String>> reverseMap;
+        // Set of all "android:id" attributes that occur throughout all layouts
+        Set<String> allAndroidIDs = new TreeSet<>(Collator.getInstance());
+        // Set of activities available from the Android launcher
+        Set<String> mainActivities = new TreeSet<>(new CollatorWrapper());
 
         loadingInfo.setNotificationData(context.getString(R.string.add_app_notification_loading),
                 appPackageName, R.drawable.notification_template_icon_bg);
         loadingInfo.start(true);
 
-        Log.d("LayoutCollection", "Parsing resources.arsc");
+        Log.d("LayoutCollection", "Parsing resources.arsc and AndroidManifest.xml");
         ARSCFileParser resourceParser = new ARSCFileParser();
         ZipEntry arscEntry = apk.getEntry("resources.arsc");
+        ZipEntry androidManifestEntry = apk.getEntry("AndroidManifest.xml");
         try {
             resourceParser.parse(apk.getInputStream(arscEntry));
+//            mainActivities = extractMainActivities(apk.getInputStream(androidManifestEntry));
         } catch (IOException e) {
-            e.printStackTrace();
+            Log.e("AppDetectionDataSetup", "Cannot get InputStream: " + e.getMessage());
         }
 
-        Log.d("LayoutCollection", "Reading zip file");
+        AppMetaInformation appMetaInformation = new AppMetaInformation(appPackageName, mainActivities);
+
+        // Read APK file
+        Log.d("LayoutCollection", "Reading APK file");
         Enumeration<?> zipEntries = apk.entries();
         List<LayoutIdentificationContainer> containers = new LinkedList<>();
         while (zipEntries.hasMoreElements()) {
@@ -128,10 +112,10 @@ public class LayoutCollection {
                     Set<String> androidIDs = parseAndroidIDs(parser, resourceParser);
 
                     LayoutIdentificationContainer container = new LayoutIdentificationContainer(name, androidIDs);
-                    this.layoutIdentificationList.add(container.getLayoutIdentification());
+                    layoutIdentificationMap.put(name, container.getLayoutIdentification());
                     containers.add(container);
 
-                    this.allAndroidIDs.addAll(container.getAndroidIDs());
+                    allAndroidIDs.addAll(container.getAndroidIDs());
                 }
             } catch (IOException e) {
                 Log.e("LayoutCollection", "Error reading APK file: " + e.getMessage());
@@ -141,45 +125,13 @@ public class LayoutCollection {
         // get unique IDs and reverse map
         List<LayoutIdentificationContainer> containersCopy = new LinkedList<>(containers);
         lookupUniqueIDs(containersCopy);
-        this.reverseMap = new ReverseMap(containers, this.allAndroidIDs);
+        reverseMap = buildReverseMap(containers, allAndroidIDs);
 
         loadingInfo.setNotificationData(context.getString(R.string.add_app_notification_finished_loading),
                 null, null);
         loadingInfo.end();
-    }
 
-    /**
-     * Converts this object to JSON
-     * @return JSONObject containing the layout identifications of this collection
-     */
-    public JSONObject toJSON() {
-        JSONObject result = new JSONObject();
-        try {
-            result.put("_type", JSON_TYPE);
-            result.put("_versionMajor", JSON_VERSION_MAJOR);
-            result.put("_versionMinor", JSON_VERSION_MINOR);
-            JSONArray layoutDefinitionsAsJSON = new JSONArray();
-            for (LayoutIdentification layoutIdentification : layoutIdentificationList)
-                layoutDefinitionsAsJSON.put(layoutIdentification.toJSON());
-            result.put("layoutDefinitions", layoutDefinitionsAsJSON);
-
-        } catch (JSONException e) {
-            System.err.println("Error converting LayoutCollection to JSON: " + e.getMessage());
-            e.printStackTrace();
-            System.exit(1);
-        }
-
-        return result;
-    }
-
-    /** Map that maps from android IDs to possibly recognizable layouts */
-    public ReverseMap getReverseMap() {
-        return this.reverseMap;
-    }
-
-    /** Each layout identification object represents one of the app's layouts */
-    public List<LayoutIdentification> getLayoutIdentificationList() {
-        return this.layoutIdentificationList;
+        return new AppDetectionData(appPackageName, layoutIdentificationMap, reverseMap, appMetaInformation);
     }
 
     /**
@@ -190,7 +142,7 @@ public class LayoutCollection {
      *                          If null, resource strings are not replaced.
      * @return Set of all "android:id" values occurring in the XML file
      */
-    private Set<String> parseAndroidIDs(XmlPullParser parser, @Nullable ARSCFileParser resourceParser) {
+    private static Set<String> parseAndroidIDs(XmlPullParser parser, @Nullable ARSCFileParser resourceParser) {
         Set<String> result = new TreeSet<>(Collator.getInstance());
         try {
             while (parser.next() != XmlPullParser.END_DOCUMENT) {
@@ -220,13 +172,51 @@ public class LayoutCollection {
     }
 
     /**
+     * Extracts activities available from the Android Launcher
+     * @param inputStream    InputStream of AndroidManifest.xml
+     * @return Set of main activities
+     */
+    private static Set<String> extractMainActivities(InputStream inputStream) {
+        // todo: Use XML pull parser instead
+        Set<String> mainActivites = new TreeSet<>(new CollatorWrapper());
+        Document doc = XMLHelper.parseXMLFile(inputStream);
+
+        Element rootElement = doc.getDocumentElement();
+        rootElement.normalize();
+
+        NodeList activities = rootElement.getElementsByTagName("activity");
+        for (int i = 0; i < activities.getLength(); ++i) {
+            Node node = activities.item(i);
+            String activityName = node.getAttributes().getNamedItem("android:name").getTextContent();
+
+            if (node.hasChildNodes()) {
+                outer: for (int j = 0; j < node.getChildNodes().getLength(); ++j) {
+                    Node childNode = node.getChildNodes().item(j);
+                    if (childNode.getNodeName().equals("intent-filter") && childNode.hasChildNodes()) {
+                        for (int k = 0; k < childNode.getChildNodes().getLength(); ++k) {
+                            Node grandChildNode = childNode.getChildNodes().item(k);
+                            if (grandChildNode.getNodeName().equals("action") &&
+                                    grandChildNode.getAttributes().getNamedItem("android:name").getTextContent().contains("android.intent.action.MAIN")) {
+                                mainActivites.add(activityName);
+                                break outer;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return mainActivites;
+    }
+
+    /**
      * Given a set of layouts (containers), this function looks at all "android:id" attributes in
      * each of them, and finds sets of androidIDs that are best suited for recognizing the layout,
      * i.e. sets that uniquely identify a layout. The final data is saved in each LayoutIdentification
      * which is held in its own container
      * @param containers    Layouts (containers) to process
      */
-    private void lookupUniqueIDs(List<LayoutIdentificationContainer> containers) {
+    private static void lookupUniqueIDs(List<LayoutIdentificationContainer> containers) {
         int layoutsCount = containers.size();
 
         // The fewer androidIDs we need to identify a layout, the better, hence start with size 1
@@ -281,8 +271,8 @@ public class LayoutCollection {
      * @param currentSize    Size of subsets to consider (i.e. every subset with #currentSize IDs)
      * @return A map with sets of IDs (combined into Strings) as keys, and the number of times they occur together (in layouts) as values
      */
-    private HashMap<String, Integer> idOccurrenceCounts(List<LayoutIdentificationContainer> containers, int currentSize) {
-        HashMap<String, Integer> result = new HashMap<>(this.allAndroidIDs.size() * 50); // only approximate size
+    private static HashMap<String, Integer> idOccurrenceCounts(List<LayoutIdentificationContainer> containers, int currentSize) {
+        HashMap<String, Integer> result = new HashMap<>();
         // How often does each set of androidIDs occur in total?
         for (LayoutIdentificationContainer container : containers) {
             PowerSet<String> powerSet = container.getPowerSet();
@@ -309,9 +299,9 @@ public class LayoutCollection {
      * @param container             Container of the layout for which to update the best ID sets
      * @param currentSize           Size of subsets to consider (i.e. every subset with #currentSize IDs)
      * @param idOccurrenceCounts    The ID occurrence counts map, as retrieved
-     *                              from {@link LayoutCollection#idOccurrenceCounts(List, int)}
+     *                              from {@link AppDetectionDataSetup#idOccurrenceCounts(List, int)}
      */
-    private void updateBestIDSets(LayoutIdentificationContainer container, int currentSize,
+    private static void updateBestIDSets(LayoutIdentificationContainer container, int currentSize,
                                   Map<String, Integer> idOccurrenceCounts) {
         PowerSet<String> powerSet = container.getPowerSet();
         powerSet.startOver(currentSize);
@@ -355,7 +345,7 @@ public class LayoutCollection {
      * @param currentSize    Size of subsets to consider (i.e. every subset with #currentSize IDs)
      * @return True if the layout is suited for identification (can be removed), false if not
      */
-    private boolean checkRemoveContainer(LayoutIdentificationContainer container, int currentSize) {
+    private static boolean checkRemoveContainer(LayoutIdentificationContainer container, int currentSize) {
         PowerSet<String> powerSet = container.getPowerSet();
         if (container.ambiguity == 1) {
             int bestSize = currentSize;
@@ -380,6 +370,27 @@ public class LayoutCollection {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Builds the reverse map, mapping from (android ID -> possible Layouts)
+     * @param containers    Layout identification containers, as found after calling lookupUniqueIDs
+     * @param allIDs        All Android IDs from all layouts
+     * @return Reverse map, mapping from Android IDs to a list of layouts that can possibly be detected
+     */
+    private static Map<String, Set<String>> buildReverseMap(List<LayoutIdentificationContainer> containers, Set<String> allIDs) {
+        Map<String, Set<String>> result = new HashMap<>(allIDs.size());
+
+        for (String id : allIDs) {
+            Set<String> possibleLayouts = new TreeSet<>(new CollatorWrapper());
+            for (LayoutIdentificationContainer container : containers) {
+                if (container.getAndroidIDs().contains(id))
+                    possibleLayouts.add(container.getName());
+            }
+            result.put(id, possibleLayouts);
+        }
+
+        return result;
     }
 
 }

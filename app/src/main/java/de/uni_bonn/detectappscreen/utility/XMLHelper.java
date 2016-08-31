@@ -18,6 +18,8 @@
 
 package de.uni_bonn.detectappscreen.utility;
 
+import android.util.Log;
+
 import org.w3c.dom.Document;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -34,44 +36,21 @@ public class XMLHelper {
 
     /**
      * Parses an XML file
-     * @param filename    Full path (including directories) to the XML file
+     * @param inputStream    Input stream to parse from
      * @return The XML as a Document
      */
-    public static Document parseXMLFile(String filename) {
-        File file = new File(filename);
-        return parseXMLFile(file);
-    }
-
-    /**
-     * Parses an XML file
-     * @param basePath    Path to the directory that contains the XML file
-     * @param filename    Filename (without directory) of the XML file
-     * @return The XML as a Document
-     */
-    public static Document parseXMLFile(String basePath, String filename) {
-        File file = new File(basePath, filename);
-        return parseXMLFile(file);
-    }
-
-    /**
-     * Parses an XML file
-     * @param file    File to parse from
-     * @return The XML as a Document
-     */
-    public static Document parseXMLFile(File file) {
-        Document result = null;
-
-        if (!file.exists())
-            return null;
+    public static Document parseXMLFile(InputStream inputStream) {
+        Document result;
 
         // I just want to parse a file...
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 
         try {
             DocumentBuilder db = dbf.newDocumentBuilder();
-            result = db.parse(file);
+            result = db.parse(inputStream);
         } catch (Exception e) {
-            System.err.println("Error parsing file (" + file.getAbsolutePath() + "): " + e.getMessage());
+            Log.e("XMLHelper", "Cannot parse XML: " + e.getMessage());
+            throw new RuntimeException(e.getMessage());
         }
 
         return result;

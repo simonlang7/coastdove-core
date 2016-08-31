@@ -6,13 +6,14 @@ import android.support.v4.content.Loader;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
-import android.widget.ProgressBar;
 
 import java.util.ArrayList;
 
 import de.uni_bonn.detectappscreen.R;
-import de.uni_bonn.detectappscreen.setup.LayoutCollection;
-import de.uni_bonn.detectappscreen.setup.LayoutCollectionLoader;
+import de.uni_bonn.detectappscreen.detection.AppDetectionData;
+import de.uni_bonn.detectappscreen.detection.AppDetectionDataLoader;
+import de.uni_bonn.detectappscreen.detection.DetectAppScreenAccessibilityService;
+import de.uni_bonn.detectappscreen.setup.AppDetectionDataSetup;
 import de.uni_bonn.detectappscreen.ui.LoadableListFragment;
 import de.uni_bonn.detectappscreen.ui.LoadingInfo;
 import de.uni_bonn.detectappscreen.utility.MultipleObjectLoader;
@@ -44,9 +45,9 @@ public class AppListFragment extends LoadableListFragment<ApplicationInfo> {
 
         LoadingInfo loadingInfo = new LoadingInfo(getActivity(), item.publicSourceDir.hashCode());
 
-        MultipleObjectLoader<LayoutCollection> multiLoader = LayoutCollection.getLayoutCollectionMultipleObjectLoader();
-        LayoutCollectionLoader loader = new LayoutCollectionLoader(getActivity(), item.packageName, item.publicSourceDir,
-                multiLoader, 1.0f, loadingInfo);
+        MultipleObjectLoader<AppDetectionData> multiLoader = DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader();
+        AppDetectionDataLoader loader = new AppDetectionDataLoader(item.packageName, multiLoader, item.publicSourceDir, getActivity(), loadingInfo);
+
         multiLoader.startLoading(item.packageName, loader, loadingInfo);
     }
 

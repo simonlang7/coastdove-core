@@ -26,10 +26,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 
 import de.uni_bonn.detectappscreen.R;
-import de.uni_bonn.detectappscreen.setup.LayoutCollectionLoader;
 import de.uni_bonn.detectappscreen.ui.add_app.AddAppActivity;
 
 

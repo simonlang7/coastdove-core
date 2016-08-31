@@ -8,13 +8,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import de.uni_bonn.detectappscreen.R;
-import de.uni_bonn.detectappscreen.setup.LayoutCollection;
-import de.uni_bonn.detectappscreen.ui.LoadingInfo;
-import de.uni_bonn.detectappscreen.utility.MultipleObjectLoader;
 
 /**
  * Adapter for app usage data - an array adapter that tracks which items are selected

@@ -18,48 +18,36 @@
 
 package de.uni_bonn.detectappscreen.detection;
 
-import android.util.Log;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.util.LinkedList;
-import java.util.List;
+import java.io.Serializable;
+import java.util.Collection;
 
 import de.uni_bonn.detectappscreen.app_usage.ActivityData;
 
 /**
  * Contains meta information regarding a detectable app, such as entry activities
  */
-public class AppMetaInformation {
+public class AppMetaInformation implements Serializable {
+    private static final long serialVersionUID = 974164654965624505L;
+
     /** Package name of the app */
     private String appPackageName;
     /** Activities that are entry points to the app from a launcher */
-    private List<String> mainActivities;
+    private Collection<String> mainActivities;
 
     /**
      * Creates AppMetaInformation with the given data
      */
-    public AppMetaInformation(String appPackageName, List<String> mainActivities) {
+    public AppMetaInformation(String appPackageName, Collection<String> mainActivities) {
         this.appPackageName = appPackageName;
         this.mainActivities = mainActivities;
     }
 
     /**
-     * Creates AppMetaInformation from a JSONObject
+     * Tells whether the given activity is a possible entry point from a launcher
+     * @param activity    Activity to check
+     * @return True if the activity is a main activity
      */
-    public AppMetaInformation(JSONObject appMetaInformationJSON) {
-        this.mainActivities = new LinkedList<>();
-        try {
-            JSONArray mainActivitiesJSON = appMetaInformationJSON.getJSONArray("mainActivities");
-            for (int i = 0; i < mainActivitiesJSON.length(); ++i)
-                this.mainActivities.add(mainActivitiesJSON.getString(i));
-        } catch (JSONException e) {
-            Log.e("AppMetaInformation", "Error reading from JSONObject: " + e.getMessage());
-        }
-    }
-
     public boolean isMainActivity(String activity) {
         for (String mainActivity : this.mainActivities) {
             if (mainActivity.replaceAll("/", "").contains(activity))
@@ -68,6 +56,11 @@ public class AppMetaInformation {
         return false;
     }
 
+    /**
+     * Tells whether the given activity is a possible entry point from a launcher
+     * @param data    Activity to check
+     * @return True if the activity is a main activity
+     */
     public boolean isMainActivity(ActivityData data) {
         return isMainActivity(data.getShortenedActivity());
     }
@@ -78,7 +71,7 @@ public class AppMetaInformation {
     }
 
     /** Activities that are entry points to the app from a launcher */
-    public List<String> getMainActivities() {
+    public Collection<String> getMainActivities() {
         return mainActivities;
     }
 }
