@@ -87,14 +87,8 @@ public class AppDetectionDataLoader extends ObjectLoader<AppDetectionData> {
         AppDetectionData detectableApp;
         if (this.fullApkPath != null) {
             File apkFile = new File(this.fullApkPath);
-            try {
-                ZipFile apk = new ZipFile(apkFile);
-                detectableApp = AppDetectionDataSetup.fromAPK(this.context, apk, appPackageName, 1.0f, loadingInfo);
-                FileHelper.writeAppDetectionData(this.context, detectableApp, FileHelper.Directory.PACKAGE, this.appPackageName, "AppDetectionData.bin");
-            } catch (IOException e) {
-                Log.e("AppDetectionDataLoader", "Cannot read APK file (" + this.fullApkPath + "): " + e.getMessage());
-                throw new RuntimeException("Cannot load AppDetectionData: " + e.getMessage());
-            }
+            detectableApp = AppDetectionDataSetup.fromAPK(this.context, apkFile, appPackageName, 1.0f, loadingInfo);
+            FileHelper.writeAppDetectionData(this.context, detectableApp, FileHelper.Directory.PACKAGE, this.appPackageName, "AppDetectionData.bin");
         }
         else {
             detectableApp = FileHelper.readAppDetectionData(this.context, FileHelper.Directory.PACKAGE, this.appPackageName, "AppDetectionData.bin");

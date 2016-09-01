@@ -38,11 +38,14 @@ import de.uni_bonn.detectappscreen.detection.AppDetectionData;
 import de.uni_bonn.detectappscreen.detection.AppMetaInformation;
 import de.uni_bonn.detectappscreen.detection.LayoutIdentification;
 import de.uni_bonn.detectappscreen.ui.LoadingInfo;
+import de.uni_bonn.detectappscreen.utility.APKToolHelper;
 import de.uni_bonn.detectappscreen.utility.CollatorWrapper;
 import de.uni_bonn.detectappscreen.utility.PowerSet;
 import de.uni_bonn.detectappscreen.utility.XMLHelper;
 import soot.jimple.infoflow.android.resources.ARSCFileParser;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.Collator;
@@ -69,7 +72,7 @@ public class AppDetectionDataSetup {
      * @param minDetectionRate    minimal target detection rate (i.e. (#detectable layouts)/(#layouts)),
      *                            value between 0f and 1f
      */
-    public static AppDetectionData fromAPK(Context context, ZipFile apk, String appPackageName, float minDetectionRate, LoadingInfo loadingInfo) {
+    public static AppDetectionData fromAPK(Context context, File apkFile, String appPackageName, float minDetectionRate, LoadingInfo loadingInfo) {
         // Map (Layout -> Android IDs contained)
         Map<String, LayoutIdentification> layoutIdentificationMap = new HashMap<>();
         // Map (Android ID -> layouts in which it occurs)
@@ -83,13 +86,25 @@ public class AppDetectionDataSetup {
                 appPackageName, R.drawable.notification_template_icon_bg);
         loadingInfo.start(true);
 
-        Log.d("LayoutCollection", "Parsing resources.arsc and AndroidManifest.xml");
+        ZipFile apk = null;
+        try {
+            apk = new ZipFile(apkFile);
+        } catch (IOException e) {
+            Log.e("AppDetectionDataSetup", "Cannot open ZipFile: " + e.getMessage());
+            throw new RuntimeException(e.getMessage());
+        }
+        Log.d("AppDetectionDataSetup", "Parsing resources.arsc and AndroidManifest.xml");
         ARSCFileParser resourceParser = new ARSCFileParser();
         ZipEntry arscEntry = apk.getEntry("resources.arsc");
-        ZipEntry androidManifestEntry = apk.getEntry("AndroidManifest.xml");
+        byte[] manifestBuf = APKToolHelper.decodeManifestWithResources(apkFile);
+        ByteArrayInputStream manifestInputStream = new ByteArrayInputStream(manifestBuf);
+
+        //ZipEntry androidManifestEntry = apk.getEntry("AndroidManifest.xml");
         try {
             resourceParser.parse(apk.getInputStream(arscEntry));
-//            mainActivities = extractMainActivities(apk.getInputStream(androidManifestEntry));
+            AXmlResourceParser parser = new AXmlResourceParser();
+            parser.open(manifestInputStream);
+            mainActivities = parseMainActivities(parser);
         } catch (IOException e) {
             Log.e("AppDetectionDataSetup", "Cannot get InputStream: " + e.getMessage());
         }
@@ -97,7 +112,7 @@ public class AppDetectionDataSetup {
         AppMetaInformation appMetaInformation = new AppMetaInformation(appPackageName, mainActivities);
 
         // Read APK file
-        Log.d("LayoutCollection", "Reading APK file");
+        Log.d("AppDetectionDataSetup", "Reading APK file");
         Enumeration<?> zipEntries = apk.entries();
         List<LayoutIdentificationContainer> containers = new LinkedList<>();
         while (zipEntries.hasMoreElements()) {
@@ -118,7 +133,7 @@ public class AppDetectionDataSetup {
                     allAndroidIDs.addAll(container.getAndroidIDs());
                 }
             } catch (IOException e) {
-                Log.e("LayoutCollection", "Error reading APK file: " + e.getMessage());
+                Log.e("AppDetectionDataSetup", "Error reading APK file: " + e.getMessage());
             }
         }
 
@@ -164,46 +179,47 @@ public class AppDetectionDataSetup {
                 }
             }
         } catch (XmlPullParserException e) {
-            Log.e("LayoutCollection", "Unable to parse from XML file: " + e.getMessage());
+            Log.e("AppDetectionDataSetup", "Unable to parse from XML file: " + e.getMessage());
         } catch (IOException e) {
-            Log.e("LayoutCollection", "IO error: " + e.getMessage());
+            Log.e("AppDetectionDataSetup", "IO error: " + e.getMessage());
         }
         return result;
     }
 
     /**
      * Extracts activities available from the Android Launcher
-     * @param inputStream    InputStream of AndroidManifest.xml
+     * @param parser    Parser to parse the data from
      * @return Set of main activities
      */
-    private static Set<String> extractMainActivities(InputStream inputStream) {
-        // todo: Use XML pull parser instead
+    private static Set<String> parseMainActivities(XmlPullParser parser) {
         Set<String> mainActivites = new TreeSet<>(new CollatorWrapper());
-        Document doc = XMLHelper.parseXMLFile(inputStream);
-
-        Element rootElement = doc.getDocumentElement();
-        rootElement.normalize();
-
-        NodeList activities = rootElement.getElementsByTagName("activity");
-        for (int i = 0; i < activities.getLength(); ++i) {
-            Node node = activities.item(i);
-            String activityName = node.getAttributes().getNamedItem("android:name").getTextContent();
-
-            if (node.hasChildNodes()) {
-                outer: for (int j = 0; j < node.getChildNodes().getLength(); ++j) {
-                    Node childNode = node.getChildNodes().item(j);
-                    if (childNode.getNodeName().equals("intent-filter") && childNode.hasChildNodes()) {
-                        for (int k = 0; k < childNode.getChildNodes().getLength(); ++k) {
-                            Node grandChildNode = childNode.getChildNodes().item(k);
-                            if (grandChildNode.getNodeName().equals("action") &&
-                                    grandChildNode.getAttributes().getNamedItem("android:name").getTextContent().contains("android.intent.action.MAIN")) {
-                                mainActivites.add(activityName);
-                                break outer;
-                            }
+        try {
+            String lastActivity = null;
+            while (parser.next() != XmlPullParser.END_DOCUMENT) {
+                if (parser.getEventType() != XmlPullParser.START_TAG)
+                    continue;
+                if (parser.getName().equals("activity")) {
+                    for (int i = 0; i < parser.getAttributeCount(); ++i) {
+                        if (parser.getAttributeName(i).equals("name"))
+                            lastActivity = parser.getAttributeValue(i);
+                    }
+                }
+                else if (parser.getName().equals("action")) {
+                    for (int i = 0; i < parser.getAttributeCount(); ++i) {
+                        Log.d("Setup", "Attribute: " + parser.getAttributeName(i));
+                        Log.d("Setup", "Value: " + (parser.getAttributeValue(i) == null ? "null" : parser.getAttributeValue(i)));
+                        if (parser.getAttributeName(i).equals("name") &&
+                                parser.getAttributeValue(i) != null &&
+                                parser.getAttributeValue(i).contains("android.intent.action.MAIN") &&
+                                lastActivity != null) {
+                            Log.d("AppDetectionDataSetup", "Main activity: " + lastActivity);
+                            mainActivites.add(lastActivity);
                         }
                     }
                 }
             }
+        } catch (IOException | XmlPullParserException e) {
+            Log.e("AppDetectionDataSetup", "Unable to parse from XML file: " + e.getMessage());
         }
 
         return mainActivites;
@@ -221,7 +237,7 @@ public class AppDetectionDataSetup {
 
         // The fewer androidIDs we need to identify a layout, the better, hence start with size 1
         for (int currentSize = 1; currentSize < 16 && containers.size() > 0; ++currentSize) {
-            Log.d("LayoutCollection", "Size: " + currentSize);
+            Log.d("AppDetectionDataSetup", "Size: " + currentSize);
             Map<String, Integer> idOccurrenceCounts = idOccurrenceCounts(containers, currentSize);
 
             int count = 1;
@@ -230,7 +246,7 @@ public class AppDetectionDataSetup {
             Iterator<LayoutIdentificationContainer> it = containers.iterator();
             while (it.hasNext()) {
                 if (currentSize >= 5)
-                    Log.d("LayoutCollection", count + " / " + currentMax);
+                    Log.d("AppDetectionDataSetup", count + " / " + currentMax);
 
                 LayoutIdentificationContainer container = it.next();
 
@@ -243,7 +259,7 @@ public class AppDetectionDataSetup {
             }
 
             //System.out.println("\nidOccurrenceCounts size: " + idOccurrenceCounts.size());
-            Log.d("LayoutCollection", "Accuracy: " + (layoutsCount - containers.size())/(float)layoutsCount);
+            Log.d("AppDetectionDataSetup", "Accuracy: " + (layoutsCount - containers.size())/(float)layoutsCount);
         }
 
         // Check the leftovers
