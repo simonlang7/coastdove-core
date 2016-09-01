@@ -21,6 +21,7 @@ package de.uni_bonn.detectappscreen.ui.detectable_app_details;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
@@ -28,8 +29,10 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.animation.AccelerateInterpolator;
 import android.widget.CompoundButton;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.Switch;
 import android.widget.TextView;
@@ -41,6 +44,7 @@ import de.uni_bonn.detectappscreen.ui.LoadingInfo;
 import de.uni_bonn.detectappscreen.ui.add_app.AddAppActivity;
 import de.uni_bonn.detectappscreen.utility.FileHelper;
 import de.uni_bonn.detectappscreen.R;
+import de.uni_bonn.detectappscreen.utility.Misc;
 import de.uni_bonn.detectappscreen.utility.MultipleObjectLoader;
 
 /**
@@ -78,16 +82,7 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
         final ProgressBar progressBar = (ProgressBar)findViewById(R.id.detectable_app_progress_bar);
         final Context context = this;
 
-        // Switch to activate detection of the specified app
-        boolean detectionDataLoadedOrLoading = false;
-
-        try {
-            detectionDataLoadedOrLoading = DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader().contains(this.appPackageName);
-        } catch (NullPointerException e) {
-        }
         final Switch activateSwitch = (Switch)findViewById(R.id.detectable_app_activate_switch);
-        boolean cacheExists = FileHelper.fileExists(this, FileHelper.Directory.PACKAGE, getAppPackageName(), "AppDetectionData.bin");
-        activateSwitch.setChecked(detectionDataLoadedOrLoading);
         activateSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -110,10 +105,28 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
                 }
                 else
                     DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader().remove(appPackageName);
+                setUpASActivationBar();
             }
         });
+    }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        boolean detectionDataLoadedOrLoading = false;
+        try {
+            detectionDataLoadedOrLoading = DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader().contains(this.appPackageName);
+        } catch (NullPointerException e) {
+        }
+
+        // Switch to activate detection of the specified app
+        final Switch activateSwitch = (Switch)findViewById(R.id.detectable_app_activate_switch);
+        activateSwitch.setChecked(detectionDataLoadedOrLoading);
+
+        boolean cacheExists = FileHelper.fileExists(this, FileHelper.Directory.PACKAGE, getAppPackageName(), "AppDetectionData.bin");
         setUpActivationBar(cacheExists);
+        setUpASActivationBar();
     }
 
     @Override
@@ -236,6 +249,8 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
         activateSwitch.setEnabled(cacheExists);
         activateSwitch.setVisibility(cacheExists ? View.VISIBLE : View.INVISIBLE);
         if (cacheExists) {
+            activateText.setText(getString(R.string.activate));
+
             View.OnClickListener listener = new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -252,7 +267,6 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
             View.OnClickListener listener = new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    finish(); // todo: find a way to update activation bar
                     startActivity(new Intent(DetectableAppDetailsActivity.this, AddAppActivity.class));
                 }
             };
@@ -262,4 +276,30 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Sets up a bar to remind the user to activate the accessibility service
+     */
+    private void setUpASActivationBar() {
+        final LinearLayout activateASBar = (LinearLayout)findViewById(R.id.detectable_app_accessibility_activation_bar);
+        boolean detectionDataLoadedOrLoading = false;
+        try {
+            detectionDataLoadedOrLoading = DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader().contains(this.appPackageName);
+        } catch (NullPointerException e) {
+        }
+
+        boolean asActive = Misc.isAccessibilityServiceActive(this);
+
+        if (detectionDataLoadedOrLoading && !asActive)
+            activateASBar.setVisibility(View.VISIBLE);
+        else
+            activateASBar.setVisibility(View.GONE);
+    }
+
+    /**
+     * Opens the accessibility services menu
+     * @param view    View that triggered the function
+     */
+    public void openAccessibilityServicesMenu(View view) {
+        startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+    }
 }

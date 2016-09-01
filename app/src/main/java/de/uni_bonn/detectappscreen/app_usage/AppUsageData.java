@@ -19,6 +19,7 @@
 package de.uni_bonn.detectappscreen.app_usage;
 
 import android.content.ContentValues;
+import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
@@ -33,8 +34,13 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageContract;
+import de.uni_bonn.detectappscreen.detection.AppDetectionData;
+import de.uni_bonn.detectappscreen.detection.AppMetaInformation;
+import de.uni_bonn.detectappscreen.utility.CollatorWrapper;
+import de.uni_bonn.detectappscreen.utility.FileHelper;
 
 /**
  * Data collected from app usage, typically contains a list of timestamps associated
@@ -99,27 +105,6 @@ public class AppUsageData {
         this.appPackageName = appPackageName;
         this.activityDataList = new LinkedList<>();
         start();
-    }
-
-    /**
-     * Constructs an AppUsageData object from a JSONObject and fills it with the included
-     * data
-     * @param dataJSON    JSONObject containing the data
-     */
-    public AppUsageData(JSONObject dataJSON) {
-        this.appPackageName = "";
-        this.activityDataList = new LinkedList<>();
-        try {
-            this.appPackageName = dataJSON.getString("package");
-            JSONArray activityDataListJSON = dataJSON.getJSONArray("activityDataList");
-            for (int i = 0; i < activityDataListJSON.length(); ++i) {
-                JSONObject activityDataJSON = activityDataListJSON.getJSONObject(i);
-                ActivityData activityData = new ActivityData(activityDataJSON);
-                this.activityDataList.add(activityData);
-            }
-        } catch (JSONException e) {
-            Log.e("AppUsageData", "Unable to read from JSONObject: " + e.getMessage());
-        }
     }
 
     /**

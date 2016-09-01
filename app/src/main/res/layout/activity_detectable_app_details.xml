@@ -5,7 +5,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".ui.detectable_app_details.DetectableAppDetailsActivity"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:animateLayoutChanges="true">
 
     <android.support.v7.widget.Toolbar
         android:id="@+id/detectable_app_toolbar"
@@ -44,6 +45,28 @@
             android:layout_marginBottom="8dp"
             android:layout_marginRight="8dp" />
     </FrameLayout>
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/detectable_app_accessibility_activation_bar"
+        android:background="@color/accent_material_dark"
+        android:clickable="true"
+        android:onClick="openAccessibilityServicesMenu"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/activate_accessibility"
+            android:id="@+id/activate_accessibility_service_text"
+            android:layout_marginLeft="16dp"
+            android:layout_marginTop="6dp"
+            android:layout_marginBottom="6dp"
+            android:onClick="openAccessibilityServicesMenu"
+            android:clickable="true" />
+    </LinearLayout>
 
     <ProgressBar
         style="?android:attr/progressBarStyleHorizontal"

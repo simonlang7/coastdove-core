@@ -3,6 +3,7 @@
 
 package de.uni_bonn.detectappscreen.utility;
 
+import android.content.Context;
 import android.util.Log;
 
 import java.io.File;
@@ -15,7 +16,9 @@ import brut.androlib.res.decoder.AXmlResourceParser;
 import brut.androlib.res.decoder.ResAttrDecoder;
 import brut.androlib.res.decoder.ResFileDecoder;
 import brut.androlib.res.util.ExtFile;
+import brut.directory.Directory;
 import brut.directory.DirectoryException;
+import brut.directory.FileDirectory;
 import brut.util.Duo;
 
 /**
@@ -27,13 +30,16 @@ public class APKToolHelper {
      * @param apkFile    APK file from which to parse AndroidManifest.xml
      * @return Contents of AndroidManifest.xml (non-binary) for further processing
      */
-    public static byte[] decodeManifestWithResources(File apkFile) {
+    public static byte[] decodeManifestWithResources(Context context, File apkFile) {
         AndrolibResources androlibResources = new AndrolibResources();
         androlibResources.apkOptions = new ApkOptions();
         ExtFile apkExtFile = new ExtFile(apkFile);
         FakeDirectory fakeDirectory = new FakeDirectory();
+        File testOut = FileHelper.getFile(context, FileHelper.Directory.PUBLIC, null, "");
+
 
         try {
+            FileDirectory fileDir = new FileDirectory(testOut);
             boolean hasManifest = apkExtFile.getDirectory().containsFile("AndroidManifest.xml");
             boolean hasResources = apkExtFile.getDirectory().containsFile("resources.arsc");
             if (hasManifest) {

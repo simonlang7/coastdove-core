@@ -19,6 +19,8 @@
 package de.uni_bonn.detectappscreen.detection;
 
 
+import android.util.Log;
+
 import java.io.Serializable;
 import java.util.Collection;
 
@@ -50,7 +52,7 @@ public class AppMetaInformation implements Serializable {
      */
     public boolean isMainActivity(String activity) {
         for (String mainActivity : this.mainActivities) {
-            if (mainActivity.replaceAll("/", "").contains(activity))
+            if (mainActivity.contains(activity))
                 return true;
         }
         return false;

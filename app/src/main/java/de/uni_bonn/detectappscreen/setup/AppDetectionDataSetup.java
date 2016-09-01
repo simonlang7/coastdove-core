@@ -22,15 +22,9 @@ import android.content.Context;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
+import org.xmlpull.v1.XmlPullParserFactory;
 
 import brut.androlib.res.decoder.AXmlResourceParser;
 import de.uni_bonn.detectappscreen.R;
@@ -41,13 +35,12 @@ import de.uni_bonn.detectappscreen.ui.LoadingInfo;
 import de.uni_bonn.detectappscreen.utility.APKToolHelper;
 import de.uni_bonn.detectappscreen.utility.CollatorWrapper;
 import de.uni_bonn.detectappscreen.utility.PowerSet;
-import de.uni_bonn.detectappscreen.utility.XMLHelper;
+import de.uni_bonn.detectappscreen.utility.Misc;
 import soot.jimple.infoflow.android.resources.ARSCFileParser;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.text.Collator;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -68,7 +61,7 @@ import java.util.zip.ZipFile;
 public class AppDetectionDataSetup {
     /**
      * Constructs a new layout collection from the given .apk file
-     * @param apk                 APK file to process
+     * @param apkFile             APK file to process
      * @param minDetectionRate    minimal target detection rate (i.e. (#detectable layouts)/(#layouts)),
      *                            value between 0f and 1f
      */
@@ -86,7 +79,7 @@ public class AppDetectionDataSetup {
                 appPackageName, R.drawable.notification_template_icon_bg);
         loadingInfo.start(true);
 
-        ZipFile apk = null;
+        ZipFile apk;
         try {
             apk = new ZipFile(apkFile);
         } catch (IOException e) {
@@ -96,17 +89,20 @@ public class AppDetectionDataSetup {
         Log.d("AppDetectionDataSetup", "Parsing resources.arsc and AndroidManifest.xml");
         ARSCFileParser resourceParser = new ARSCFileParser();
         ZipEntry arscEntry = apk.getEntry("resources.arsc");
-        byte[] manifestBuf = APKToolHelper.decodeManifestWithResources(apkFile);
+        byte[] manifestBuf = APKToolHelper.decodeManifestWithResources(context, apkFile);
         ByteArrayInputStream manifestInputStream = new ByteArrayInputStream(manifestBuf);
 
-        //ZipEntry androidManifestEntry = apk.getEntry("AndroidManifest.xml");
         try {
             resourceParser.parse(apk.getInputStream(arscEntry));
-            AXmlResourceParser parser = new AXmlResourceParser();
-            parser.open(manifestInputStream);
-            mainActivities = parseMainActivities(parser);
+
+            XmlPullParserFactory fac = XmlPullParserFactory.newInstance();
+            XmlPullParser p = fac.newPullParser();
+            p.setInput(manifestInputStream, "UTF-8");
+            mainActivities = parseMainActivities(p);
         } catch (IOException e) {
             Log.e("AppDetectionDataSetup", "Cannot get InputStream: " + e.getMessage());
+        } catch (XmlPullParserException e) {
+            Log.e("AppDetectionDataSetup", "Cannot get XmlPullParser: " + e.getMessage());
         }
 
         AppMetaInformation appMetaInformation = new AppMetaInformation(appPackageName, mainActivities);
@@ -119,7 +115,7 @@ public class AppDetectionDataSetup {
             ZipEntry zipEntry = (ZipEntry)zipEntries.nextElement();
             try {
                 String entryName = zipEntry.getName();
-                if (entryName.contains("res/layout/") && XMLHelper.isBinaryXML(apk.getInputStream(zipEntry))) {
+                if (entryName.contains("res/layout/") && Misc.isBinaryXML(apk.getInputStream(zipEntry))) {
                     String name = entryName.replaceAll(".*/", "").replace(".xml", "");
 
                     AXmlResourceParser parser = new AXmlResourceParser();
@@ -200,19 +196,16 @@ public class AppDetectionDataSetup {
                     continue;
                 if (parser.getName().equals("activity")) {
                     for (int i = 0; i < parser.getAttributeCount(); ++i) {
-                        if (parser.getAttributeName(i).equals("name"))
+                        if (parser.getAttributeName(i).equals("android:name"))
                             lastActivity = parser.getAttributeValue(i);
                     }
                 }
                 else if (parser.getName().equals("action")) {
                     for (int i = 0; i < parser.getAttributeCount(); ++i) {
-                        Log.d("Setup", "Attribute: " + parser.getAttributeName(i));
-                        Log.d("Setup", "Value: " + (parser.getAttributeValue(i) == null ? "null" : parser.getAttributeValue(i)));
-                        if (parser.getAttributeName(i).equals("name") &&
+                        if (parser.getAttributeName(i).equals("android:name") &&
                                 parser.getAttributeValue(i) != null &&
                                 parser.getAttributeValue(i).contains("android.intent.action.MAIN") &&
                                 lastActivity != null) {
-                            Log.d("AppDetectionDataSetup", "Main activity: " + lastActivity);
                             mainActivites.add(lastActivity);
                         }
                     }

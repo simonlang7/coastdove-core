@@ -18,6 +18,8 @@
 
 package de.uni_bonn.detectappscreen.utility;
 
+import android.content.Context;
+import android.provider.Settings;
 import android.util.Log;
 
 import org.w3c.dom.Document;
@@ -29,10 +31,27 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
+import de.uni_bonn.detectappscreen.detection.DetectAppScreenAccessibilityService;
+
 /**
- * A collection of XML-related functions
+ * A collection of general utility functions
  */
-public class XMLHelper {
+public class Misc {
+
+    /**
+     * Indicated whether any of this package's accessibility services is currently active
+     * @param context    App context
+     * @return True if an accessibility service of this packge is currently active
+     */
+    public static boolean isAccessibilityServiceActive(Context context) {
+        String settingValue = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+        String[] activeAccessibilityServices = settingValue.split(":");
+        for (String service : activeAccessibilityServices) {
+            if (service.contains(DetectAppScreenAccessibilityService.class.getName()))
+                return true;
+        }
+        return false;
+    }
 
     /**
      * Parses an XML file

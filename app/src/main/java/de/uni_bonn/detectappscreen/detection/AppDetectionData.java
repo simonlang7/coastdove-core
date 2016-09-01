@@ -314,7 +314,7 @@ public class AppDetectionData implements Serializable {
      */
     private void writeAppUsageData() {
         AppUsageData appUsageData = currentAppUsageData;
-        AppUsageDataProcessor processor = new AppUsageDataProcessor(new AppMetaInformation(this.appPackageName, new LinkedList<String>()), appUsageData);
+        AppUsageDataProcessor processor = new AppUsageDataProcessor(this.appMetaInformation, appUsageData);
         processor.process();
         new Thread(new SQLiteWriter(this.context, appUsageData)).start();
     }
