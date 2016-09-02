@@ -19,6 +19,7 @@
 package de.uni_bonn.detectappscreen.utility;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.provider.Settings;
 import android.util.Log;
 
@@ -37,6 +38,35 @@ import de.uni_bonn.detectappscreen.detection.DetectAppScreenAccessibilityService
  * A collection of general utility functions
  */
 public class Misc {
+    public static final boolean DEFAULT_DETECT_LAYOUTS = true;
+    public static final boolean DEFAULT_DETECT_INTERACTIONS = true;
+
+    /**
+     * Sets and commits the given preference (appPackageName+preference) with the given value
+     * @param preferences       Shared preferences to commit to
+     * @param appPackageName    Package name for which to set the preference
+     * @param preference        Preference name to set
+     * @param value             Desired value of the preference
+     */
+    public static void setPreference(SharedPreferences preferences, String appPackageName, String preference,
+                                     boolean value) {
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean(appPackageName + preference, value);
+        editor.commit();
+    }
+
+    /**
+     * Retrieves the given preference (appPackageName+preference)
+     * @param preferences       Shared preferences to retrieve from
+     * @param appPackageName    Package name for which to retrieve the preference
+     * @param preference        Preference name to get
+     * @param defaultValue      Default value if the preference is not set
+     * @return The preference's value
+     */
+    public static boolean getPreferenceBoolean(SharedPreferences preferences, String appPackageName, String preference,
+                                               boolean defaultValue) {
+        return preferences.getBoolean(appPackageName + preference, defaultValue);
+    }
 
     /**
      * Indicated whether any of this package's accessibility services is currently active
@@ -61,9 +91,7 @@ public class Misc {
     public static Document parseXMLFile(InputStream inputStream) {
         Document result;
 
-        // I just want to parse a file...
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-
         try {
             DocumentBuilder db = dbf.newDocumentBuilder();
             result = db.parse(inputStream);

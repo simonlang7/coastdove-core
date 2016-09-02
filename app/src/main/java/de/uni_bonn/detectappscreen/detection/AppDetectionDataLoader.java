@@ -29,6 +29,7 @@ import java.util.zip.ZipFile;
 import de.uni_bonn.detectappscreen.setup.AppDetectionDataSetup;
 import de.uni_bonn.detectappscreen.ui.LoadingInfo;
 import de.uni_bonn.detectappscreen.utility.FileHelper;
+import de.uni_bonn.detectappscreen.utility.Misc;
 import de.uni_bonn.detectappscreen.utility.MultipleObjectLoader;
 import de.uni_bonn.detectappscreen.utility.ObjectLoader;
 
@@ -72,8 +73,8 @@ public class AppDetectionDataLoader extends ObjectLoader<AppDetectionData> {
                                   String fullApkPath, Context context, LoadingInfo loadingInfo) {
         super(appPackageName, multipleObjectLoader);
         this.appPackageName = appPackageName;
-        this.performLayoutChecks = true;
-        this.performInteractionChecks = true;
+        this.performLayoutChecks = Misc.DEFAULT_DETECT_LAYOUTS;
+        this.performInteractionChecks = Misc.DEFAULT_DETECT_INTERACTIONS;
         this.context = context;
         this.loadingInfo = loadingInfo;
         this.fullApkPath = fullApkPath;

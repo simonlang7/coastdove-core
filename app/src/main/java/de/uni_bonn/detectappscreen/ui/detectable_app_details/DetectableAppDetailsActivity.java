@@ -29,7 +29,6 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.animation.AccelerateInterpolator;
 import android.widget.CompoundButton;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
@@ -138,12 +137,14 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
         if (detectionData != null) {
             boolean detectingLayouts = detectionData.getPerformLayoutChecks();
             boolean detectingInteractions = detectionData.getPerformInteractionChecks();
-            setSharedPreference(appPackageName + getString(R.string.pref_detect_layouts), detectingLayouts);
-            setSharedPreference(appPackageName + getString(R.string.pref_detect_interactions), detectingInteractions);
+            SharedPreferences preferences = getPreferences(MODE_PRIVATE);
+            if (Misc.getPreferenceBoolean(preferences, appPackageName, getString(R.string.pref_detect_layouts), Misc.DEFAULT_DETECT_LAYOUTS))
+                Misc.setPreference(preferences, appPackageName, getString(R.string.pref_detect_layouts), detectingLayouts);
+            if (Misc.getPreferenceBoolean(preferences, appPackageName, getString(R.string.pref_detect_interactions), Misc.DEFAULT_DETECT_INTERACTIONS))
+                Misc.setPreference(preferences, appPackageName, getString(R.string.pref_detect_interactions), detectingInteractions);
         }
 
-        setUpCheckbox(menu.findItem(R.id.checkbox_detect_layouts), getString(R.string.pref_detect_layouts));
-        setUpCheckbox(menu.findItem(R.id.checkbox_detect_interactions), getString(R.string.pref_detect_interactions));
+        setUpCheckboxes(menu);
 
         return super.onCreateOptionsMenu(menu);
     }
@@ -179,13 +180,13 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
         switch (item.getItemId()) {
             case R.id.checkbox_detect_layouts:
                 item.setChecked(!item.isChecked());
-                setSharedPreference(appPackageName + getString(R.string.pref_detect_layouts), item.isChecked());
+                Misc.setPreference(getPreferences(MODE_PRIVATE), appPackageName, getString(R.string.pref_detect_layouts), item.isChecked());
                 if (detectionData != null)
                     detectionData.setPerformLayoutChecks(item.isChecked());
                 return true;
             case R.id.checkbox_detect_interactions:
                 item.setChecked(!item.isChecked());
-                setSharedPreference(appPackageName + getString(R.string.pref_detect_interactions), item.isChecked());
+                Misc.setPreference(getPreferences(MODE_PRIVATE), appPackageName, getString(R.string.pref_detect_interactions), item.isChecked());
                 if (detectionData != null)
                     detectionData.setPerformInteractionChecks(item.isChecked());
                 return true;
@@ -211,30 +212,16 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
     }
 
     /**
-     * Sets and commits the given preference in this app's SharedPreferences with the given value
-     * @param preference    Preference name to set
-     * @param value         Desired value of the preference
+     * Sets up this view's menu checkboxes according to the saved preferences
      */
-    private void setSharedPreference(String preference, boolean value) {
+    private void setUpCheckboxes(Menu menu) {
+        MenuItem checkboxLayouts = menu.findItem(R.id.checkbox_detect_layouts);
+        MenuItem checkboxInteractions = menu.findItem(R.id.checkbox_detect_interactions);
         SharedPreferences preferences = getPreferences(MODE_PRIVATE);
-        boolean actualValue = preferences.getBoolean(preference, false);
-        if (actualValue == value)
-            return;
-
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putBoolean(preference, value);
-        editor.commit();
-    }
-
-    /**
-     * Sets up this view's menu's checkbox according to the saved preferences
-     * @param item          Menu item to set up
-     * @param prefString    Name of the preference to look up
-     */
-    private void setUpCheckbox(MenuItem item, String prefString) {
-        SharedPreferences preferences = getPreferences(MODE_PRIVATE);
-        boolean checked = preferences.getBoolean(appPackageName + prefString, false);
-        item.setChecked(checked);
+        boolean detectLayouts = Misc.getPreferenceBoolean(preferences, this.appPackageName, getString(R.string.pref_detect_layouts), true);
+        boolean detectInteractions = Misc.getPreferenceBoolean(preferences, this.appPackageName, getString(R.string.pref_detect_interactions), true);
+        checkboxLayouts.setChecked(detectLayouts);
+        checkboxInteractions.setChecked(detectInteractions);
     }
 
     /**

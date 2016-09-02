@@ -6,7 +6,10 @@ package de.uni_bonn.detectappscreen.utility;
 import android.content.Context;
 import android.util.Log;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 
 import brut.androlib.AndrolibException;
 import brut.androlib.ApkOptions;
@@ -15,6 +18,7 @@ import brut.androlib.res.data.ResTable;
 import brut.androlib.res.decoder.AXmlResourceParser;
 import brut.androlib.res.decoder.ResAttrDecoder;
 import brut.androlib.res.decoder.ResFileDecoder;
+import brut.androlib.res.decoder.XmlPullStreamDecoder;
 import brut.androlib.res.util.ExtFile;
 import brut.directory.Directory;
 import brut.directory.DirectoryException;
@@ -34,29 +38,33 @@ public class APKToolHelper {
         AndrolibResources androlibResources = new AndrolibResources();
         androlibResources.apkOptions = new ApkOptions();
         ExtFile apkExtFile = new ExtFile(apkFile);
-        FakeDirectory fakeDirectory = new FakeDirectory();
-        File testOut = FileHelper.getFile(context, FileHelper.Directory.PUBLIC, null, "");
-
+        byte[] result = null;
 
         try {
-            FileDirectory fileDir = new FileDirectory(testOut);
             boolean hasManifest = apkExtFile.getDirectory().containsFile("AndroidManifest.xml");
             boolean hasResources = apkExtFile.getDirectory().containsFile("resources.arsc");
             if (hasManifest) {
-                ResTable resTable = androlibResources.getResTable(apkExtFile, hasResources);
-                Duo<ResFileDecoder, AXmlResourceParser> duo = androlibResources.getResFileDecoder();
-                ResFileDecoder fileDecoder = duo.m1;
-                ResAttrDecoder attrDecoder = duo.m2.getAttrDecoder();
+                InputStream in = apkExtFile.getDirectory().getFileInput("AndroidManifest.xml");
+                ByteArrayOutputStream out = new ByteArrayOutputStream(in.available());
 
+                AXmlResourceParser axmlParser = new AXmlResourceParser();
+                axmlParser.setAttrDecoder(new ResAttrDecoder());
+                XmlPullStreamDecoder xmlPullStreamDecoder = new XmlPullStreamDecoder(axmlParser, androlibResources.getResXmlSerializer());
+                ResTable resTable = androlibResources.getResTable(apkExtFile, hasResources);
+                ResAttrDecoder attrDecoder = axmlParser.getAttrDecoder();
                 attrDecoder.setCurrentPackage(resTable.listMainPackages().iterator().next());
-                fileDecoder.decodeManifest(apkExtFile.getDirectory(), "AndroidManifest.xml", fakeDirectory, "AndroidManifest.xml");
+
+                xmlPullStreamDecoder.decodeManifest(in, out);
+                result = out.toByteArray();
             }
         } catch (AndrolibException e) {
             Log.e("APKToolHelper", "Error in Androlib: " + e.toString());
         } catch (DirectoryException e) {
             Log.e("APKToolHelper", "Directory exception: " + e.toString());
+        } catch (IOException e) {
+            Log.e("APKToolHelper", "IO error: " + e.toString());
         }
 
-        return fakeDirectory.toByteArray();
+        return result;
     }
 }

@@ -1,5 +1,7 @@
 package de.uni_bonn.detectappscreen.ui.add_app;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.os.Bundle;
 import android.support.v4.content.Loader;
@@ -16,6 +18,7 @@ import de.uni_bonn.detectappscreen.detection.DetectAppScreenAccessibilityService
 import de.uni_bonn.detectappscreen.setup.AppDetectionDataSetup;
 import de.uni_bonn.detectappscreen.ui.LoadableListFragment;
 import de.uni_bonn.detectappscreen.ui.LoadingInfo;
+import de.uni_bonn.detectappscreen.utility.Misc;
 import de.uni_bonn.detectappscreen.utility.MultipleObjectLoader;
 
 /**
