@@ -141,6 +141,7 @@ public class MultipleObjectLoader<T> {
     void deliverResult(String key, T object) {
         loadedObjects.put(key, object);
         loadingObjects.remove(key);
+        loadingInfos.remove(key);
         Log.d("MultipleObjectLoader", "Removed loader thread for " + key);
     }
 }
