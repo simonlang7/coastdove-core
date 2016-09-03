@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
-    android:layout_width="match_parent" android:layout_height="wrap_content">
+    android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:animateLayoutChanges="true">
 
 
     <LinearLayout
@@ -23,20 +24,32 @@
             android:contentDescription="App Icon"
             android:layout_marginLeft="4dp" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="App Name"
-            android:id="@+id/appName"
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
             android:layout_gravity="center_vertical"
-            android:textColor="@color/abc_primary_text_material_light"
-            android:textSize="16sp" />
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="App Name"
+                android:id="@+id/appName"
+                android:layout_gravity="center_vertical"
+                android:textColor="@color/abc_primary_text_material_light"
+                android:textSize="16sp" />
+
+            <ProgressBar
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/appProgressBar"
+                android:visibility="gone"
+                android:layout_gravity="bottom" />
+
+        </LinearLayout>
+
     </LinearLayout>
 
-    <ProgressBar
-        style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/appProgressBar"
-        android:visibility="gone" />
 </LinearLayout>

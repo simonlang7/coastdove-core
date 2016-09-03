@@ -61,27 +61,35 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detectable_app_details);
 
-        // Get package name
-        if (savedInstanceState == null) {
-            Bundle extras = getIntent().getExtras();
-            if (extras == null)
-                this.appPackageName = null;
-            else
-                this.appPackageName = extras.getString(getString(R.string.extras_package_name));
-        }
-        else
-            this.appPackageName = (String)savedInstanceState.getSerializable(getString(R.string.extras_package_name));
-
+        retrieveAppPackageName(savedInstanceState);
 
         // Set support action bar
         Toolbar toolbar = (Toolbar)findViewById(R.id.detectable_app_toolbar);
         toolbar.setTitle(this.appPackageName);
         setSupportActionBar(toolbar);
 
+
+        final Switch activateSwitch = (Switch)findViewById(R.id.detectable_app_activate_switch);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        retrieveAppPackageName(null);
+
+        boolean detectionDataLoadedOrLoading = false;
+        try {
+            detectionDataLoadedOrLoading = DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader().contains(this.appPackageName);
+        } catch (NullPointerException e) {
+        }
+
         final ProgressBar progressBar = (ProgressBar)findViewById(R.id.detectable_app_progress_bar);
         final Context context = this;
 
+        // Switch to activate detection of the specified app
         final Switch activateSwitch = (Switch)findViewById(R.id.detectable_app_activate_switch);
+        activateSwitch.setChecked(detectionDataLoadedOrLoading);
         activateSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -107,21 +115,6 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
                 setUpASActivationBar();
             }
         });
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-        boolean detectionDataLoadedOrLoading = false;
-        try {
-            detectionDataLoadedOrLoading = DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader().contains(this.appPackageName);
-        } catch (NullPointerException e) {
-        }
-
-        // Switch to activate detection of the specified app
-        final Switch activateSwitch = (Switch)findViewById(R.id.detectable_app_activate_switch);
-        activateSwitch.setChecked(detectionDataLoadedOrLoading);
 
         boolean cacheExists = FileHelper.fileExists(this, FileHelper.Directory.PACKAGE, getAppPackageName(), "AppDetectionData.bin");
         setUpActivationBar(cacheExists);
@@ -202,6 +195,19 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    private void retrieveAppPackageName(Bundle savedInstanceState) {
+        // Get package name
+        if (savedInstanceState == null) {
+            Bundle extras = getIntent().getExtras();
+            if (extras == null)
+                this.appPackageName = null;
+            else
+                this.appPackageName = extras.getString(getString(R.string.extras_package_name));
+        }
+        else
+            this.appPackageName = (String)savedInstanceState.getSerializable(getString(R.string.extras_package_name));
     }
 
     /**

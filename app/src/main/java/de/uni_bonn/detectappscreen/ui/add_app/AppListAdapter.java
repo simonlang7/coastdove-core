@@ -3,6 +3,7 @@ package de.uni_bonn.detectappscreen.ui.add_app;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -34,6 +35,7 @@ public class AppListAdapter extends ArrayAdapter<ApplicationInfo> {
         return true;
     }
 
+
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         ViewHolder holder;
@@ -56,11 +58,12 @@ public class AppListAdapter extends ArrayAdapter<ApplicationInfo> {
         String text = appInfo.loadLabel(pm).toString();
         holder.appName.setText(text);
 
+        // Update progress bar
         MultipleObjectLoader<AppDetectionData> multiLoader = DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader();
         LoadingInfo loadingInfo = multiLoader.getLoadingInfo(appInfo.packageName);
         ProgressBar progressBar = holder.progressBar;
         if (loadingInfo != null) {
-            if (!loadingInfo.isFinished() && loadingInfo.isUpdated()) {
+            if (!loadingInfo.isFinished()) {
                 progressBar.setVisibility(View.VISIBLE);
                 progressBar.setIndeterminate(loadingInfo.getMaxProgress() == 0);
                 progressBar.setMax(loadingInfo.getMaxProgress());

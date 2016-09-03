@@ -44,30 +44,18 @@ public class AppUsageDataDetailsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_app_usage_data_details);
 
-        // Get package name
-        if (savedInstanceState == null) {
-            Bundle extras = getIntent().getExtras();
-            if (extras == null) {
-                this.appPackageName = null;
-                this.timestamp = null;
-                this.appID = -1;
-            }
-            else {
-                this.appPackageName = extras.getString(getString(R.string.extras_package_name));
-                this.timestamp = extras.getString(getString(R.string.extras_timestamp));
-                this.appID = extras.getInt(getString(R.string.extras_app_id));
-            }
-        }
-        else {
-            this.appPackageName = (String)savedInstanceState.getSerializable(getString(R.string.extras_package_name));
-            this.timestamp = (String)savedInstanceState.getSerializable(getString(R.string.extras_timestamp));
-            this.appID = (int)savedInstanceState.getSerializable(getString(R.string.extras_app_id));
-        }
+        retrieveDetails(null);
 
         // Set support action bar
         Toolbar toolbar = (Toolbar)findViewById(R.id.detectable_app_toolbar);
         toolbar.setTitle(this.appPackageName);
         setSupportActionBar(toolbar);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        retrieveDetails(null);
     }
 
     @Override
@@ -123,5 +111,30 @@ public class AppUsageDataDetailsActivity extends AppCompatActivity {
      */
     public void setAppUsageData(AppUsageData appUsageData) {
         this.appUsageData = appUsageData;
+    }
+
+    /**
+     * Retrieves details needed for this activity
+     * @param savedInstanceState
+     */
+    private void retrieveDetails(Bundle savedInstanceState) {// Get details
+        if (savedInstanceState == null) {
+            Bundle extras = getIntent().getExtras();
+            if (extras == null) {
+                this.appPackageName = null;
+                this.timestamp = null;
+                this.appID = -1;
+            }
+            else {
+                this.appPackageName = extras.getString(getString(R.string.extras_package_name));
+                this.timestamp = extras.getString(getString(R.string.extras_timestamp));
+                this.appID = extras.getInt(getString(R.string.extras_app_id));
+            }
+        }
+        else {
+            this.appPackageName = (String)savedInstanceState.getSerializable(getString(R.string.extras_package_name));
+            this.timestamp = (String)savedInstanceState.getSerializable(getString(R.string.extras_timestamp));
+            this.appID = (int)savedInstanceState.getSerializable(getString(R.string.extras_app_id));
+        }
     }
 }

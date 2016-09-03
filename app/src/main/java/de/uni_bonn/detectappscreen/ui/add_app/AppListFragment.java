@@ -1,10 +1,9 @@
 package de.uni_bonn.detectappscreen.ui.add_app;
 
-import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.os.Bundle;
 import android.support.v4.content.Loader;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
@@ -15,10 +14,8 @@ import de.uni_bonn.detectappscreen.R;
 import de.uni_bonn.detectappscreen.detection.AppDetectionData;
 import de.uni_bonn.detectappscreen.detection.AppDetectionDataLoader;
 import de.uni_bonn.detectappscreen.detection.DetectAppScreenAccessibilityService;
-import de.uni_bonn.detectappscreen.setup.AppDetectionDataSetup;
 import de.uni_bonn.detectappscreen.ui.LoadableListFragment;
 import de.uni_bonn.detectappscreen.ui.LoadingInfo;
-import de.uni_bonn.detectappscreen.utility.Misc;
 import de.uni_bonn.detectappscreen.utility.MultipleObjectLoader;
 
 /**
@@ -52,6 +49,8 @@ public class AppListFragment extends LoadableListFragment<ApplicationInfo> {
         AppDetectionDataLoader loader = new AppDetectionDataLoader(item.packageName, multiLoader, item.publicSourceDir, getActivity(), loadingInfo);
 
         multiLoader.startLoading(item.packageName, loader, loadingInfo);
+
+        adapter.notifyDataSetChanged();
     }
 
     @Override
