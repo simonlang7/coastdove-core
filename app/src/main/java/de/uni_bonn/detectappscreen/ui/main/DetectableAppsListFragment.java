@@ -31,7 +31,6 @@ import java.util.ArrayList;
 import de.uni_bonn.detectappscreen.R;
 import de.uni_bonn.detectappscreen.ui.detectable_app_details.DetectableAppDetailsActivity;
 import de.uni_bonn.detectappscreen.ui.LoadableListFragment;
-import de.uni_bonn.detectappscreen.ui.FileListLoader;
 
 /**
  * ListFragment containing all available apps that can be detected by the accessibility service
@@ -40,7 +39,7 @@ public class DetectableAppsListFragment extends LoadableListFragment<String> {
 
     @Override
     public Loader<ArrayList<String>> onCreateLoader(int id, Bundle args) {
-        return new FileListLoader(getActivity(), getString(R.string.external_folder_name), null, null);
+        return new DetectableAppListLoader(getActivity());
     }
 
     @Override

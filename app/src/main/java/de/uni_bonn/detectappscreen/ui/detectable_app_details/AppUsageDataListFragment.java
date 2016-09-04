@@ -38,12 +38,10 @@ import java.util.LinkedList;
 import java.util.List;
 
 import de.uni_bonn.detectappscreen.R;
-import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageDbHelper;
 import de.uni_bonn.detectappscreen.app_usage.sql.SQLiteDataRemover;
 import de.uni_bonn.detectappscreen.ui.SQLiteTableLoader;
 import de.uni_bonn.detectappscreen.ui.app_usage_data_details.AppUsageDataDetailsActivity;
 import de.uni_bonn.detectappscreen.ui.LoadableListFragment;
-import de.uni_bonn.detectappscreen.ui.FileListLoader;
 
 /**
  * ListFragment displayed in the DetectableAppDetailsActivity,
