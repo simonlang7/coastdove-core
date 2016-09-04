@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.support.v4.content.AsyncTaskLoader;
 import android.support.v4.content.Loader;
 
 import java.util.ArrayList;
@@ -14,7 +15,7 @@ import java.util.List;
 /**
  * Loader for the list of installed apps on the device
  */
-public class AppListLoader extends Loader<ArrayList<ApplicationInfo>> {
+public class AppListLoader extends AsyncTaskLoader<ArrayList<ApplicationInfo>> {
 
     /**
      * Creates a new AppListLoader
@@ -24,11 +25,8 @@ public class AppListLoader extends Loader<ArrayList<ApplicationInfo>> {
         super(context);
     }
 
-    /**
-     * Loads the list of installed apps on the device
-     */
     @Override
-    public void onStartLoading() {
+    public ArrayList<ApplicationInfo> loadInBackground() {
         final PackageManager packageManager = getContext().getPackageManager();
         List<PackageInfo> packageInfos = packageManager.getInstalledPackages(PackageManager.GET_ACTIVITIES);
 
@@ -47,6 +45,15 @@ public class AppListLoader extends Loader<ArrayList<ApplicationInfo>> {
             }
         });
 
-        deliverResult(data);
+        return data;
+    }
+
+    /**
+     * Loads the list of installed apps on the device
+     */
+    @Override
+    public void onStartLoading() {
+        forceLoad();
+//        deliverResult(data);
     }
 }

@@ -20,6 +20,7 @@ package de.uni_bonn.detectappscreen.app_usage;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
+import android.support.v4.content.AsyncTaskLoader;
 import android.support.v4.content.Loader;
 
 import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageDbHelper;
@@ -27,7 +28,7 @@ import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageDbHelper;
 /**
  * Loader for app usage data object
  */
-public class AppUsageDataLoader extends Loader<AppUsageData> {
+public class AppUsageDataLoader extends AsyncTaskLoader<AppUsageData> {
 
     /** Package name of the app */
     private String appPackageName;
@@ -50,11 +51,16 @@ public class AppUsageDataLoader extends Loader<AppUsageData> {
      */
     @Override
     public void onStartLoading() {
+        forceLoad();
+    }
+
+    @Override
+    public AppUsageData loadInBackground() {
         AppUsageDbHelper dbHelper = new AppUsageDbHelper(getContext());
         SQLiteDatabase db = dbHelper.getReadableDatabase();
         AppUsageData appUsageData = AppUsageData.fromSQLiteDB(db, appPackageName, appID);
 
         dbHelper.close();
-        deliverResult(appUsageData);
+        return appUsageData;
     }
 }

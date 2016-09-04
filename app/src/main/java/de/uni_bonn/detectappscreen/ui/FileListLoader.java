@@ -19,6 +19,7 @@
 package de.uni_bonn.detectappscreen.ui;
 
 import android.content.Context;
+import android.support.v4.content.AsyncTaskLoader;
 import android.support.v4.content.Loader;
 import android.os.Environment;
 
@@ -34,7 +35,7 @@ import de.uni_bonn.detectappscreen.utility.CollatorWrapper;
 /**
  * Loader for a list of files in a directory
  */
-public class FileListLoader extends Loader<ArrayList<String>> {
+public class FileListLoader extends AsyncTaskLoader<ArrayList<String>> {
 
     /** Name of the app, needed for the external storage public directory */
     private String appPackageName;
@@ -79,12 +80,8 @@ public class FileListLoader extends Loader<ArrayList<String>> {
         this.extension = extension == null ? "" : extension;
     }
 
-    /**
-     * Loads the list of files in the external storage public directory of the given app name, usually
-     * /sdcard/{appPackageName}/{subDirectory}/, and delivers the result
-     */
     @Override
-    public void onStartLoading() {
+    public ArrayList<String> loadInBackground() {
         File directory = new File(Environment.getExternalStoragePublicDirectory(appPackageName), subDirectory);
         String[] files = directory.exists() ? directory.list(new FilenameFilter() {
             @Override
@@ -99,6 +96,12 @@ public class FileListLoader extends Loader<ArrayList<String>> {
         }
 
         Collections.sort(data, new CollatorWrapper());
-        deliverResult(data);
+
+        return data;
+    }
+
+    @Override
+    protected void onStartLoading() {
+        forceLoad();
     }
 }
