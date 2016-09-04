@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.zip.ZipFile;
 
+import de.uni_bonn.detectappscreen.R;
 import de.uni_bonn.detectappscreen.setup.AppDetectionDataSetup;
 import de.uni_bonn.detectappscreen.ui.LoadingInfo;
 import de.uni_bonn.detectappscreen.utility.FileHelper;
@@ -92,7 +93,15 @@ public class AppDetectionDataLoader extends ObjectLoader<AppDetectionData> {
             FileHelper.writeAppDetectionData(this.context, detectableApp, FileHelper.Directory.PACKAGE, this.appPackageName, "AppDetectionData.bin");
         }
         else {
+            loadingInfo.setNotificationData(context.getString(R.string.add_app_notification_loading),
+                    appPackageName, R.drawable.notification_template_icon_bg);
+            loadingInfo.start(true);
+
             detectableApp = FileHelper.readAppDetectionData(this.context, FileHelper.Directory.PACKAGE, this.appPackageName, "AppDetectionData.bin");
+
+            loadingInfo.setNotificationData(context.getString(R.string.add_app_notification_finished_loading),
+                    null, null);
+            loadingInfo.end();
         }
 
         detectableApp.init(this.performLayoutChecks, this.performInteractionChecks, this.context);

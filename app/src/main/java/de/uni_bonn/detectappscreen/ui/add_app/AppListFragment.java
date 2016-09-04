@@ -2,6 +2,7 @@ package de.uni_bonn.detectappscreen.ui.add_app;
 
 import android.content.pm.ApplicationInfo;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.v4.content.Loader;
 import android.util.Log;
 import android.view.View;
@@ -24,6 +25,14 @@ import de.uni_bonn.detectappscreen.utility.MultipleObjectLoader;
 public class AppListFragment extends LoadableListFragment<ApplicationInfo> {
 
     @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        MultipleObjectLoader<AppDetectionData> multiLoader = DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader();
+        multiLoader.updateLoadingInfoUIElements(AddAppActivity.ORIGIN,
+                getActivity(), this.adapter);
+    }
+
+    @Override
     public Loader<ArrayList<ApplicationInfo>> onCreateLoader(int id, Bundle args) {
         return new AppListLoader(getActivity());
     }
@@ -43,14 +52,14 @@ public class AppListFragment extends LoadableListFragment<ApplicationInfo> {
         super.onListItemClick(listView, view, position, id);
         final ApplicationInfo item = (ApplicationInfo)listView.getItemAtPosition(position);
 
-        LoadingInfo loadingInfo = new LoadingInfo(getActivity(), item.publicSourceDir.hashCode());
+        LoadingInfo loadingInfo = new LoadingInfo(getActivity().getApplicationContext(),
+                item.publicSourceDir.hashCode(), AddAppActivity.ORIGIN);
+        loadingInfo.setUIElements(getActivity(), adapter);
 
         MultipleObjectLoader<AppDetectionData> multiLoader = DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader();
         AppDetectionDataLoader loader = new AppDetectionDataLoader(item.packageName, multiLoader, item.publicSourceDir, getActivity(), loadingInfo);
 
         multiLoader.startLoading(item.packageName, loader, loadingInfo);
-
-        adapter.notifyDataSetChanged();
     }
 
     @Override

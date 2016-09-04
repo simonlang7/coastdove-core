@@ -1,6 +1,9 @@
 package de.uni_bonn.detectappscreen.utility;
 
+import android.app.Activity;
 import android.util.Log;
+import android.widget.ArrayAdapter;
+import android.widget.ProgressBar;
 
 import java.util.Collection;
 import java.util.Map;
@@ -128,8 +131,46 @@ public class MultipleObjectLoader<T> {
         return loadedObjects.containsKey(key) || loadingObjects.containsKey(key);
     }
 
+    /** Retrieves LoadingInfo for the given key */
     public LoadingInfo getLoadingInfo(String key) {
         return loadingInfos.get(key);
+    }
+
+    /**
+     * Clears all UI elements of all loading infos - to be used when an activity is destroyed
+     * @param origin    Origin of loading info
+     */
+    public void clearLoadingInfoUIElements(String origin) {
+        for (LoadingInfo loadingInfo : loadingInfos.values()) {
+            if (loadingInfo.getOrigin().equals(origin))
+                loadingInfo.clearUIElements();
+        }
+    }
+
+    /**
+     * Updates the UI elements of all loading infos with the given origin
+     * @param origin         Origin of loading infos
+     * @param activity       Activity that contains the UI elements
+     * @param listAdapter    ListAdapter to update
+     */
+    public void updateLoadingInfoUIElements(String origin, Activity activity, ArrayAdapter listAdapter) {
+        for (LoadingInfo loadingInfo : loadingInfos.values()) {
+            if (loadingInfo.getOrigin().equals(origin))
+                loadingInfo.setUIElements(activity, listAdapter);
+        }
+    }
+
+    /**
+     * Updates the UI elements of all loading infos with the given origin
+     * @param origin         Origin of loading infos
+     * @param activity       Activity that contains the UI elements
+     * @param progressBar    ProgressBar to update
+     */
+    public void updateLoadingInfoUIElements(String origin, Activity activity, ProgressBar progressBar) {
+        for (LoadingInfo loadingInfo : loadingInfos.values()) {
+            if (loadingInfo.getOrigin().equals(origin))
+                loadingInfo.setUIElements(activity, progressBar);
+        }
     }
 
     /**

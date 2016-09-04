@@ -53,6 +53,9 @@ import de.uni_bonn.detectappscreen.utility.MultipleObjectLoader;
  */
 public class DetectableAppDetailsActivity extends AppCompatActivity {
 
+    /** Origin for loading infos */
+    public static final String ORIGIN = "DETECTABLE_APP_DETAILS";
+
     /** Package name of the app to be detected */
     private String appPackageName;
 
@@ -68,8 +71,18 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
         toolbar.setTitle(this.appPackageName);
         setSupportActionBar(toolbar);
 
+        final ProgressBar progressBar = (ProgressBar)findViewById(R.id.detectable_app_progress_bar);
+        DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader()
+                .updateLoadingInfoUIElements(ORIGIN, this, progressBar);
 
         final Switch activateSwitch = (Switch)findViewById(R.id.detectable_app_activate_switch);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader()
+                .clearLoadingInfoUIElements(ORIGIN);
     }
 
     @Override
@@ -101,14 +114,16 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
 
                     // Loading info UI elements
                     int uid = appPackageName.hashCode();
-                    LoadingInfo loadingInfo = new LoadingInfo(DetectableAppDetailsActivity.this,
-                            uid, progressBar, true);
+                    LoadingInfo loadingInfo = new LoadingInfo(getApplicationContext(), uid, ORIGIN);
+                    loadingInfo.setUIElements(DetectableAppDetailsActivity.this,
+                            progressBar);
 
                     // Start the loading process and add
                     MultipleObjectLoader<AppDetectionData> multiLoader = DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader();
                     AppDetectionDataLoader loader = new AppDetectionDataLoader(appPackageName, multiLoader,
                             detectLayouts, detectClicks, context, loadingInfo);
-                    multiLoader.startLoading(appPackageName, loader);
+                    multiLoader.startLoading(appPackageName, loader, loadingInfo);
+                    Log.d("DetAppDetails", "Started loading with " + loadingInfo.isFinished() + " finished loadingInfo");
                 }
                 else
                     DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader().remove(appPackageName);

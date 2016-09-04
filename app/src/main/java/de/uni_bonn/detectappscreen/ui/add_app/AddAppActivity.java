@@ -23,8 +23,12 @@ import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 
 import de.uni_bonn.detectappscreen.R;
+import de.uni_bonn.detectappscreen.detection.DetectAppScreenAccessibilityService;
 
 public class AddAppActivity extends AppCompatActivity {
+
+    /** Origin for LoadingInfo */
+    public static final String ORIGIN = "ADD_APP";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,5 +38,12 @@ public class AddAppActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar)findViewById(R.id.add_app_toolbar);
         toolbar.setTitle(getString(R.string.add_detectable_app));
         setSupportActionBar(toolbar);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader()
+                .clearLoadingInfoUIElements(ORIGIN);
     }
 }

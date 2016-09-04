@@ -3,113 +3,159 @@ package de.uni_bonn.detectappscreen.ui;
 import android.app.Activity;
 import android.app.NotificationManager;
 import android.content.Context;
-import android.graphics.drawable.Drawable;
-import android.support.annotation.NonNull;
 import android.support.v7.app.NotificationCompat;
+import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.ProgressBar;
 
 /**
  * UI elements for displaying progress
+ * TODO: overhaul class or re-implement
  */
 public class LoadingInfo {
+    private String origin;
     private NotificationManager notificationManager;
     private NotificationCompat.Builder builder;
-    private ProgressBar progressBar;
-    private Activity activity;
     private int uid;
+    private volatile boolean indeterminate;
     private volatile int progress;
     private volatile int maxProgress;
-    private volatile boolean updated;
+    private volatile boolean started;
     private volatile boolean finished;
 
-    public LoadingInfo(@NonNull Activity activity, int uid,
-                       @NonNull ProgressBar progressBar, boolean notification) {
-        this.activity = activity;
+    private Activity activity;
+    private ArrayAdapter listAdapter;
+    private ProgressBar progressBar;
+
+    public LoadingInfo(Context context, int uid, String origin) {
+        this.origin = origin;
         this.uid = uid;
-        this.progressBar = progressBar;
-        if (notification)
-            initNotification();
-        else {
-            this.notificationManager = null;
-            this.builder = null;
-        }
+        initNotification(context);
         this.progress = 0;
         this.maxProgress = 0;
-        this.updated = false;
+        this.started = false;
         this.finished = false;
     }
 
-    public LoadingInfo(@NonNull Activity activity, int uid) {
-        this.activity = activity;
-        this.uid = uid;
-        this.progressBar = null;
-        initNotification();
-        this.progress = 0;
-        this.maxProgress = 0;
-        this.updated = false;
-        this.finished = false;
-    }
-
-    public LoadingInfo() {
+    public LoadingInfo(String origin) {
+        this.origin = origin;
         this.notificationManager = null;
         this.builder = null;
         this.progressBar = null;
         this.progress = 0;
         this.maxProgress = 0;
-        this.updated = false;
+        this.started = false;
         this.finished = false;
     }
+
+    public void clearUIElements() {
+        synchronized (this) {
+            this.activity = null;
+            this.listAdapter = null;
+            this.progressBar = null;
+        }
+    }
+
+    public void setUIElements(Activity activity, ArrayAdapter listAdapter) {
+        synchronized (this) {
+            this.activity = activity;
+            this.listAdapter = listAdapter;
+            if (started)
+                this.listAdapter.notifyDataSetChanged();
+        }
+    }
+
+    public void setUIElements(Activity activity, ProgressBar progressBar) {
+        synchronized (this) {
+            this.activity = activity;
+            this.progressBar = progressBar;
+            if (started) {
+                // Todo: un-hardcore
+                progressBar.setVisibility(View.VISIBLE);
+                progressBar.setIndeterminate(true);
+            }
+        }
+    }
+
+    public void setUIElements(Activity activity, ArrayAdapter listAdapter, ProgressBar progressBar) {
+        synchronized (this) {
+            this.activity = activity;
+            this.listAdapter = listAdapter;
+            this.progressBar = progressBar;
+        }
+    }
+
 
     public void cancel() {
         if (notificationManager != null)
             notificationManager.cancel(this.uid);
-        if (progressBar != null) {
-            activity.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    progressBar.setIndeterminate(false);
-                    progressBar.setVisibility(View.GONE);
-                }
-            });
+        synchronized (this) {
+            if (activity != null) {
+                activity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        finished = true;
+                        if (progressBar != null) {
+                            progressBar.setIndeterminate(false);
+                            progressBar.setVisibility(View.GONE);
+                        }
+                        if (listAdapter != null) {
+                            listAdapter.notifyDataSetChanged();
+                        }
+                    }
+                });
+            }
         }
     }
 
     public void start(boolean indeterminate) {
         if (builder != null && indeterminate)
             builder.setProgress(0, 0, true);
-        if (progressBar != null) {
-            activity.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    progressBar.setVisibility(View.VISIBLE);
-                    progressBar.setIndeterminate(true);
-                }
-            });
+        synchronized (this) {
+            this.started = true;
+            if (activity != null) {
+                activity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (progressBar != null) {
+                            progressBar.setVisibility(View.VISIBLE);
+                            progressBar.setIndeterminate(true);
+                        }
+                        if (listAdapter != null) {
+                            listAdapter.notifyDataSetChanged();
+                        }
+                    }
+                });
+            }
         }
         update();
         this.progress = 0;
         this.maxProgress = 0;
-        this.updated = true;
         this.finished = false;
     }
 
     public void update(final int maxProgress, final int progress) {
         if (builder != null)
             builder.setProgress(maxProgress, progress, false);
-        if (progressBar != null) {
-            activity.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    progressBar.setIndeterminate(false);
-                    progressBar.setMax(maxProgress);
-                    progressBar.setProgress(progress);
-                }
-            });
+        synchronized (this) {
+            if (activity != null) {
+                activity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (progressBar != null) {
+                            progressBar.setIndeterminate(false);
+                            progressBar.setMax(maxProgress);
+                            progressBar.setProgress(progress);
+                        }
+                        if (listAdapter != null)
+                            listAdapter.notifyDataSetChanged();
+                    }
+                });
+            }
         }
         this.progress = progress;
         this.maxProgress = maxProgress;
-        this.updated = true;
         update();
     }
 
@@ -119,19 +165,27 @@ public class LoadingInfo {
     }
 
     public void end() {
+        this.finished = true;
         if (builder != null)
             builder.setProgress(0, 0, false);
-        if (progressBar != null) {
-            activity.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    progressBar.setIndeterminate(false);
-                    progressBar.setVisibility(View.GONE);
-                }
-            });
+        synchronized (this) {
+            if (activity != null) {
+                activity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (progressBar != null) {
+                            progressBar.setIndeterminate(false);
+                            progressBar.setVisibility(View.GONE);
+                        }
+                        if (listAdapter != null) {
+                            listAdapter.notifyDataSetChanged();
+                        }
+                    }
+                });
+            }
+            this.started = false;
         }
         update();
-        this.finished = true;
     }
 
     public void setNotificationData(String title, String contentText, Integer smallIcon) {
@@ -153,16 +207,16 @@ public class LoadingInfo {
         return maxProgress;
     }
 
-    public boolean isUpdated() {
-        return updated;
+    public String getOrigin() {
+        return origin;
     }
 
     public boolean isFinished() {
         return this.finished;
     }
 
-    private void initNotification() {
-        this.notificationManager = (NotificationManager)activity.getSystemService(Context.NOTIFICATION_SERVICE);
-        this.builder = new NotificationCompat.Builder(activity);
+    private void initNotification(Context context) {
+        this.notificationManager = (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
+        this.builder = new NotificationCompat.Builder(context);
     }
 }

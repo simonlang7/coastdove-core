@@ -44,6 +44,17 @@
             android:layout_marginTop="8dp"
             android:layout_marginBottom="8dp"
             android:layout_marginRight="8dp" />
+
+        <ProgressBar
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/detectable_app_progress_bar"
+            android:visibility="gone"
+            android:layout_gravity="center_horizontal|bottom"
+            android:layout_marginBottom="-8dp"
+            android:layout_marginTop="-4dp" />
+
     </FrameLayout>
 
     <LinearLayout
@@ -67,13 +78,6 @@
             android:onClick="openAccessibilityServicesMenu"
             android:clickable="true" />
     </LinearLayout>
-
-    <ProgressBar
-        style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/detectable_app_progress_bar"
-        android:visibility="gone" />
 
     <fragment
         android:layout_width="match_parent"
