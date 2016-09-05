@@ -42,7 +42,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.StreamCorruptedException;
 import java.util.HashMap;
-import java.util.zip.ZipFile;
 
 import de.uni_bonn.detectappscreen.R;
 import de.uni_bonn.detectappscreen.detection.AppDetectionData;
@@ -59,12 +58,10 @@ public class FileHelper {
     public enum Directory {
         /** The external storage public directory of this app */
         PUBLIC,
-        /** The detectable app's package name as a sub-directory of the public directory */
-        PACKAGE,
-        /** The package's sub-directory for app usage data (JSON files) */
-        APP_USAGE_DATA,
-        /** The package's sub-directory for exported app usage data (usually plain text files) */
-        APP_USAGE_DATA_EXPORT
+        /** The app's package name as a sub-directory of the private directory */
+        PRIVATE_PACKAGE,
+        /** The app's package name as a sub-directory of the public directory */
+        PUBLIC_PACKAGE
     }
 
 
@@ -246,43 +243,45 @@ public class FileHelper {
     }
 
     public static boolean appDetectionDataExists(Context context, String appPackageName) {
-        File detectionData = FileHelper.getFile(context, FileHelper.Directory.PACKAGE,
+        File detectionData = FileHelper.getFile(context, FileHelper.Directory.PRIVATE_PACKAGE,
                 appPackageName, FileHelper.APP_DETECTION_DATA_FILENAME);
         return detectionData != null && detectionData.exists();
     }
 
     public static File getFile(Context context, Directory directory, String appPackageName, String filename) {
-        String state = Environment.getExternalStorageState();
-        if (!Environment.MEDIA_MOUNTED.equals(state)) {
-            Log.e("FileHelper", "External storage is not mounted, failing.");
-            return null;
-        }
-
+        String publicDirectory = context.getString(R.string.external_folder_name);
+        File baseDirectory;
         String subDirectory;
         switch (directory) {
             case PUBLIC:
+                if (!Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
+                    Log.e("FileHelper", "External storage is not mounted, failing.");
+                    return null;
+                }
+                baseDirectory = Environment.getExternalStoragePublicDirectory(publicDirectory);
                 subDirectory = "";
                 break;
-            case PACKAGE:
+            case PRIVATE_PACKAGE:
+                baseDirectory = context.getFilesDir();
                 if (appPackageName == null)
                     throw new IllegalArgumentException("appPackageName must not be null");
                 subDirectory = appPackageName + "/";
                 break;
-            case APP_USAGE_DATA:
+            case PUBLIC_PACKAGE:
                 if (appPackageName == null)
                     throw new IllegalArgumentException("appPackageName must not be null");
-                subDirectory = appPackageName + "/" + context.getString(R.string.app_usage_data_folder_name) + "/";
-                break;
-            case APP_USAGE_DATA_EXPORT:
-                if (appPackageName == null)
-                    throw new IllegalArgumentException("appPackageName must not be null");
-                subDirectory = appPackageName + "/" + context.getString(R.string.app_usage_data_export_folder_name) + "/";
+                if (!Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
+                    Log.e("FileHelper", "External storage is not mounted, failing.");
+                    return null;
+                }
+                baseDirectory = Environment.getExternalStoragePublicDirectory(publicDirectory);
+                subDirectory = appPackageName + "/";
                 break;
             default:
-                subDirectory = "";
+                throw new IllegalArgumentException("directory must be specified (see FileHelper.Directory)");
         }
-        String publicDirectory = context.getString(R.string.external_folder_name);
-        File file = new File(Environment.getExternalStoragePublicDirectory(publicDirectory), subDirectory + filename);
+
+        File file = new File(baseDirectory, subDirectory + filename);
         return file;
     }
 

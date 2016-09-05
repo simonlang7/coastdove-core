@@ -1,10 +1,10 @@
 package de.uni_bonn.detectappscreen.ui.add_app;
 
+import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.content.Loader;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
@@ -17,6 +17,8 @@ import de.uni_bonn.detectappscreen.detection.AppDetectionDataLoader;
 import de.uni_bonn.detectappscreen.detection.DetectAppScreenAccessibilityService;
 import de.uni_bonn.detectappscreen.ui.LoadableListFragment;
 import de.uni_bonn.detectappscreen.ui.LoadingInfo;
+import de.uni_bonn.detectappscreen.ui.detectable_app_details.DetectableAppDetailsActivity;
+import de.uni_bonn.detectappscreen.utility.FileHelper;
 import de.uni_bonn.detectappscreen.utility.MultipleObjectLoader;
 
 /**
@@ -51,15 +53,25 @@ public class AppListFragment extends LoadableListFragment<ApplicationInfo> {
     public void onListItemClick(ListView listView, View view, int position, long id) {
         super.onListItemClick(listView, view, position, id);
         final ApplicationInfo item = (ApplicationInfo)listView.getItemAtPosition(position);
-
-        LoadingInfo loadingInfo = new LoadingInfo(getActivity().getApplicationContext(),
-                item.publicSourceDir.hashCode(), AddAppActivity.ORIGIN);
-        loadingInfo.setUIElements(getActivity(), adapter);
-
+        boolean cacheExists = FileHelper.appDetectionDataExists(getActivity(), item.packageName);
         MultipleObjectLoader<AppDetectionData> multiLoader = DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader();
-        AppDetectionDataLoader loader = new AppDetectionDataLoader(item.packageName, multiLoader, item.publicSourceDir, getActivity(), loadingInfo);
 
-        multiLoader.startLoading(item.packageName, loader, loadingInfo);
+        if (!cacheExists && multiLoader.getLoadingInfo(item.packageName) == null) {
+            // Create app detection data
+            LoadingInfo loadingInfo = new LoadingInfo(getActivity().getApplicationContext(),
+                    item.publicSourceDir.hashCode(), AddAppActivity.ORIGIN);
+            loadingInfo.setUIElements(getActivity(), adapter);
+
+            AppDetectionDataLoader loader = new AppDetectionDataLoader(item.packageName, multiLoader, item.publicSourceDir, getActivity(), loadingInfo);
+
+            multiLoader.startLoading(item.packageName, loader, loadingInfo);
+        }
+        else {
+            // Open details if data exist
+            Intent intent = new Intent(getActivity(), DetectableAppDetailsActivity.class);
+            intent.putExtra(getString(R.string.extras_package_name), item.packageName);
+            startActivity(intent);
+        }
     }
 
     @Override

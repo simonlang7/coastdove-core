@@ -74,21 +74,6 @@ public class LayoutDataEntry extends ActivityDataEntry {
         this.detectedLayouts = detectedLayouts;
     }
 
-    public LayoutDataEntry(JSONObject entryJSON) {
-        super(entryJSON);
-
-        this.detectedLayouts = new TreeSet<>(new CollatorWrapper());
-        try {
-            JSONArray detectedLayoutsJSON = entryJSON.getJSONArray("detectedLayouts");
-            for (int i = 0; i < detectedLayoutsJSON.length(); ++i) {
-                String layout = detectedLayoutsJSON.getString(i);
-                this.detectedLayouts.add(layout);
-            }
-        } catch (JSONException e) {
-            Log.e("LayoutDataEntry", "Unable to read from JSONObject: " + e.getMessage());
-        }
-    }
-
     @Override
     public boolean equals(ActivityDataEntry other) {
         if (!super.equals(other))
@@ -110,17 +95,6 @@ public class LayoutDataEntry extends ActivityDataEntry {
         }
 
         return true;
-    }
-
-    @Override
-    public JSONObject toJSON() {
-        JSONObject result = super.toJSON();
-        try {
-            result.put("detectedLayouts", new JSONArray(this.detectedLayouts));
-        } catch (JSONException e) {
-            Log.e("LayoutDataEntry", "Unable to create JSONObject: " + e.getMessage());
-        }
-        return result;
     }
 
     @Override

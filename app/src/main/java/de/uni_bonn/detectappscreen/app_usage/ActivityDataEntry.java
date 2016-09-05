@@ -33,12 +33,12 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 
 import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageContract;
+import de.uni_bonn.detectappscreen.utility.Misc;
 
 /**
  * Data entry containing information about one special event during app usage
  */
 public abstract class ActivityDataEntry {
-    public static final String DATE_DETAILED = "yyyy-MM-dd HH:mm:ss:SSS";
     public static EntryType entryTypeFromString(String type) {
         if (type.equals(EntryType.LAYOUTS.name()))
             return EntryType.LAYOUTS;
@@ -82,25 +82,6 @@ public abstract class ActivityDataEntry {
     }
 
     /**
-     * Creates a new app usage data entry from a JSONObject
-     * @param entryJSON An entry in JSON format
-     */
-    public ActivityDataEntry(JSONObject entryJSON) {
-        this.timestamp = new Date(new GregorianCalendar(0, 1, 1).getTimeInMillis());
-        this.activity = "";
-        try {
-            this.activity = entryJSON.getString("activity");
-            String timestamp = entryJSON.getString("timestamp");
-            this.timestamp = new SimpleDateFormat(DATE_DETAILED).parse(timestamp);
-            this.count = entryJSON.getInt("count");
-        } catch (JSONException e) {
-            Log.e("ActivityDataEntry", "Unable to read from JSONObject: " + e.getMessage());
-        } catch (ParseException e) {
-            Log.e("ActivityDataEntry", "Unable to parse timestamp: " + e.getMessage());
-        }
-    }
-
-    /**
      * Compares this entry with another entry, disregarding timestamp and count
      * @param other    Entry to compare with
      * @return True if the entries are equal, false otherwise
@@ -119,22 +100,6 @@ public abstract class ActivityDataEntry {
      */
     public void increaseCount() {
         ++this.count;
-    }
-
-    /**
-     * Converts the entry to JSON and returns the according JSONObject
-     */
-    public JSONObject toJSON() {
-        JSONObject result = new JSONObject();
-        try {
-            result.put("timestamp", getTimestampString());
-            result.put("activity", this.activity);
-            result.put("count", this.count);
-        } catch (JSONException e) {
-            Log.e("ActivityDataEntry", "Unable to create JSONObject: " + e.getMessage());
-        }
-
-        return result;
     }
 
     /**
@@ -184,7 +149,7 @@ public abstract class ActivityDataEntry {
 
     /** Returns the timestamp as a formatted string */
     public String getTimestampString() {
-        return new SimpleDateFormat(DATE_DETAILED).format(this.timestamp);
+        return new SimpleDateFormat(Misc.DATE_TIME_FORMAT).format(this.timestamp);
     }
 
     /** Activity detected */

@@ -38,6 +38,8 @@ import de.uni_bonn.detectappscreen.detection.DetectAppScreenAccessibilityService
  * A collection of general utility functions
  */
 public class Misc {
+    public static final String DATE_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss.SSS";
+    public static final String DATE_TIME_FILENAME = "yyyy-MM-dd_HH-mm-ss_SSS";
     public static final boolean DEFAULT_DETECT_LAYOUTS = true;
     public static final boolean DEFAULT_DETECT_INTERACTIONS = true;
 

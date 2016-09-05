@@ -69,10 +69,10 @@ public class AppUsageDataDetailsActivity extends AppCompatActivity {
         // Store options regarding layout / click detection
         switch (item.getItemId()) {
             case R.id.item_export_to_txt:
-                String txtFilename = this.timestamp + ".txt";
-                if (!FileHelper.fileExists(this, FileHelper.Directory.APP_USAGE_DATA_EXPORT, this.appPackageName, txtFilename) &&
+                String txtFilename = this.appUsageData.getTextFilename();
+                if (!FileHelper.fileExists(this, FileHelper.Directory.PUBLIC_PACKAGE, this.appPackageName, txtFilename) &&
                         this.appUsageData != null) {
-                    FileHelper.writeTxtFile(this, this.appUsageData.toStrings(), FileHelper.Directory.APP_USAGE_DATA_EXPORT, this.appPackageName, txtFilename);
+                    FileHelper.writeTxtFile(this, this.appUsageData.toStrings(), FileHelper.Directory.PUBLIC_PACKAGE, this.appPackageName, txtFilename);
                     Toast toast = Toast.makeText(this, getString(R.string.toast_saved_to_txt), Toast.LENGTH_SHORT);
                     toast.show();
                 }

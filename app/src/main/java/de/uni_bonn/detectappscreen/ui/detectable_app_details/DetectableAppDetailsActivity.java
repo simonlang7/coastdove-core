@@ -196,7 +196,7 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
                     detectionData.setPerformInteractionChecks(item.isChecked());
                 return true;
             case R.id.item_delete_cache:
-                FileHelper.deleteFile(this, FileHelper.Directory.PACKAGE, this.appPackageName, FileHelper.APP_DETECTION_DATA_FILENAME);
+                FileHelper.deleteFile(this, FileHelper.Directory.PRIVATE_PACKAGE, this.appPackageName, FileHelper.APP_DETECTION_DATA_FILENAME);
                 final TextView activateText = (TextView)findViewById(R.id.detectable_app_activate_text);
                 final Switch activateSwitch = (Switch)findViewById(R.id.detectable_app_activate_switch);
                 activateSwitch.setChecked(false);

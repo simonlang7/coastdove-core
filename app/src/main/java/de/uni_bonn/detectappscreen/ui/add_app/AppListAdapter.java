@@ -80,7 +80,7 @@ public class AppListAdapter extends ArrayAdapter<ApplicationInfo> {
         }
 
         // Text: black if cache exists, gray otherwise
-        if (FileHelper.appDetectionDataExists(getContext(), appInfo.packageName))
+        if (FileHelper.appDetectionDataExists(getContext(), appInfo.packageName) || loadingInfo != null)
             holder.appName.setTextColor(getContext().getResources().
                     getColor(R.color.primary_text_default_material_light));
         else

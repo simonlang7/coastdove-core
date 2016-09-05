@@ -19,14 +19,13 @@ import java.util.List;
 import java.util.Set;
 
 import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageContract;
+import de.uni_bonn.detectappscreen.utility.Misc;
 
 /**
  * Data collected in any one activity, usually contains several app usage data entries
  * of the types LayoutDataEntry and InteractionDataEntry
  */
 public class ActivityData {
-    public static final String DATE_DETAILED = "yyyy-MM-dd HH:mm:ss:SSS";
-
     public static ActivityData fromSQLiteDB(SQLiteDatabase db, String appPackageName,
                                             Date timestamp, String activity, int activityID,
                                             int level, long duration) {
@@ -52,7 +51,7 @@ public class ActivityData {
             int dataEntryID = c.getInt(0);
             Date entryTimestamp;
             try {
-                entryTimestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS").parse(c.getString(1));
+                entryTimestamp = new SimpleDateFormat(Misc.DATE_TIME_FORMAT).parse(c.getString(1));
             } catch (ParseException e) {
                 throw new RuntimeException("Cannot parse date: " + c.getString(1));
             }
@@ -108,39 +107,6 @@ public class ActivityData {
         start();
     }
 
-    /**
-     * Creates a new activity data object
-     * @param dataJSON Activity data in JSON format
-     */
-    public ActivityData(JSONObject dataJSON) {
-        this.appPackageName = "";
-        this.activity = "";
-        this.dataEntries = new LinkedList<>();
-        try {
-            this.appPackageName = dataJSON.getString("package");
-            this.activity = dataJSON.getString("activity");
-            String timestamp = dataJSON.getString("timestamp");
-            this.timestamp = new SimpleDateFormat(DATE_DETAILED).parse(timestamp);
-            JSONArray dataEntriesJSON = dataJSON.getJSONArray("dataEntries");
-            for (int i = 0; i < dataEntriesJSON.length(); ++i) {
-                JSONObject dataEntryJSON = dataEntriesJSON.getJSONObject(i);
-
-                ActivityDataEntry dataEntry = null;
-                if (dataEntryJSON.has("detectedLayouts"))
-                    dataEntry = new LayoutDataEntry(dataEntryJSON);
-                else if (dataEntryJSON.has("detectedClick"))
-                    dataEntry = new InteractionDataEntry(dataEntryJSON);
-
-                if (dataEntry != null)
-                    this.dataEntries.add(dataEntry);
-            }
-        } catch (JSONException e) {
-            Log.e("ActivityData", "Unable to read from JSONObject: " + e.getMessage());
-        } catch (ParseException e) {
-            Log.e("ActivityData", "Unable to parse from SimpleDateFormat: " + e.getMessage());
-        }
-    }
-
     /** Time at which this activity was activated */
     public Date getTimestamp() {
         return timestamp;
@@ -148,7 +114,7 @@ public class ActivityData {
 
     /** Returns the timestamp as a formatted string */
     public String getTimestampString() {
-        return new SimpleDateFormat(DATE_DETAILED).format(this.timestamp);
+        return new SimpleDateFormat(Misc.DATE_TIME_FORMAT).format(this.timestamp);
     }
 
     /** Activity detected */
@@ -166,29 +132,6 @@ public class ActivityData {
         return dataEntries;
     }
 
-
-    /**
-     * Converts the ActivityData object to JSON and returns the according JSONObject
-     */
-    public JSONObject toJSON() {
-        JSONObject result = new JSONObject();
-        try {
-            result.put("_type", "ActivityData");
-            result.put("package", this.appPackageName);
-            result.put("activity", this.activity);
-            result.put("timestamp", getTimestampString());
-
-            JSONArray dataEntriesJSON = new JSONArray();
-            for (ActivityDataEntry entry : dataEntries)
-                dataEntriesJSON.put(entry.toJSON());
-
-            result.put("dataEntries", dataEntriesJSON);
-        } catch (JSONException e) {
-            Log.e("ActivityData", "Unable to create JSONObject for " + this.appPackageName + ": " + e.getMessage());
-        }
-
-        return result;
-    }
 
     /**
      * Writes the contents of this object to an SQLite database

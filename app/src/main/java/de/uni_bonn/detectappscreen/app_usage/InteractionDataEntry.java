@@ -81,22 +81,6 @@ public class InteractionDataEntry extends ActivityDataEntry {
         this.type = type;
     }
 
-    public InteractionDataEntry(JSONObject entryJSON) {
-        super(entryJSON);
-
-        this.detectedInteraction = new CopyOnWriteArraySet<>();
-        try {
-            JSONArray detectedInteractionJSON = entryJSON.getJSONArray("detectedInteraction");
-            for (int i = 0; i < detectedInteractionJSON.length(); ++i) {
-                JSONObject interactionDataJSON = detectedInteractionJSON.getJSONObject(i);
-                InteractionEventData interactionData = new InteractionEventData(interactionDataJSON);
-                this.detectedInteraction.add(interactionData);
-            }
-        } catch (JSONException e) {
-            Log.e("InteractionDataEntry", "Unable to read from JSONObject: " + e.getMessage());
-        }
-    }
-
     @Override
     public boolean equals(ActivityDataEntry other) {
         if (!super.equals(other))
@@ -118,20 +102,6 @@ public class InteractionDataEntry extends ActivityDataEntry {
         }
 
         return true;
-    }
-
-    @Override
-    public JSONObject toJSON() {
-        JSONObject result = super.toJSON();
-        try {
-            JSONArray detectedClickJSON = new JSONArray();
-            for (InteractionEventData clickData : detectedInteraction)
-                detectedClickJSON.put(clickData.toJSON());
-            result.put("detectedInteraction", detectedClickJSON);
-        } catch (JSONException e) {
-            Log.e("InteractionDataEntry", "Unable to create JSONObject: " + e.getMessage());
-        }
-        return result;
     }
 
     @Override

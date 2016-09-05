@@ -35,19 +35,6 @@ public class InteractionEventData {
     private String text;
     private String className;
 
-    public InteractionEventData(JSONObject dataJSON) {
-        this.androidID = null;
-        this.text = null;
-        this.className = null;
-        try {
-            this.androidID = dataJSON.getString("androidID");
-            this.text = dataJSON.getString("text");
-            this.className = dataJSON.getString("className");
-        } catch (JSONException e) {
-            Log.e("InteractionEventData", "Unable to read from JSONObject: " + e.getMessage());
-        }
-    }
-
     public InteractionEventData(String androidID, String text, String className) {
         this.androidID = androidID;
         this.text = text;
@@ -75,20 +62,6 @@ public class InteractionEventData {
         return this.androidID.equals(other.androidID) &&
                 this.text.equals(other.text) &&
                 this.className.equals(other.className);
-    }
-
-    public JSONObject toJSON() {
-        JSONObject result = new JSONObject();
-
-        try {
-            result.put("androidID", this.androidID);
-            result.put("text", this.text);
-            result.put("className", this.className);
-        } catch (JSONException e) {
-            Log.e("InteractionEventData", "Unable to create JSONObject for " + androidID + " (" + text + "): " + e.getMessage());
-        }
-
-        return result;
     }
 
     public ContentValues toContentValues(long dataEntryID) {

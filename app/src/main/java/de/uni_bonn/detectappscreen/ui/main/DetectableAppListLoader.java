@@ -78,7 +78,7 @@ public class DetectableAppListLoader extends AsyncTaskLoader<ArrayList<String>> 
                 return usageDataExists;
             }
         }) : new String[0];
-
+        
         ArrayList<String> data = new ArrayList<>(files.length);
         for (String file : files)
             data.add(file);

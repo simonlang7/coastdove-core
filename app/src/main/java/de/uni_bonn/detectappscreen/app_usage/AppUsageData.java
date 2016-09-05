@@ -41,6 +41,7 @@ import de.uni_bonn.detectappscreen.detection.AppDetectionData;
 import de.uni_bonn.detectappscreen.detection.AppMetaInformation;
 import de.uni_bonn.detectappscreen.utility.CollatorWrapper;
 import de.uni_bonn.detectappscreen.utility.FileHelper;
+import de.uni_bonn.detectappscreen.utility.Misc;
 
 /**
  * Data collected from app usage, typically contains a list of timestamps associated
@@ -69,7 +70,7 @@ public class AppUsageData {
             int activityID = c.getInt(0);
             Date timestamp;
             try {
-                timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS").parse(c.getString(1));
+                timestamp = new SimpleDateFormat(Misc.DATE_TIME_FORMAT).parse(c.getString(1));
             } catch (ParseException e) {
                 throw new RuntimeException("Cannot parse date: " + c.getString(1));
             }
@@ -204,27 +205,6 @@ public class AppUsageData {
     }
 
     /**
-     * Converts the AppUsageData object to JSON and returns the according JSONObject
-     */
-    public JSONObject toJSON() {
-        JSONObject result = new JSONObject();
-        try {
-            result.put("_type", "AppUsageData");
-            result.put("package", this.appPackageName);
-
-            JSONArray activityDataJSON = new JSONArray();
-            for (ActivityData data : activityDataList)
-                activityDataJSON.put(data.toJSON());
-
-            result.put("activityDataList", activityDataJSON);
-        } catch (JSONException e) {
-            Log.e("AppUsageData", "Unable to create JSONObject for " + this.appPackageName + ": " + e.getMessage());
-        }
-
-        return result;
-    }
-
-    /**
      * Writes the contained data into an SQLite database
      * @param db    Database to write to
      */
@@ -262,12 +242,12 @@ public class AppUsageData {
     /**
      * Returns the filename for saving this object
      */
-    public String getFilename() {
+    public String getTextFilename() {
         if (this.activityDataList.size() == 0)
-            return "empty.json";
+            return null;
         Date first = this.activityDataList.get(0).getTimestamp();
-        String format = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(first);
-        return format + ".json";
+        String format = new SimpleDateFormat(Misc.DATE_TIME_FILENAME).format(first);
+        return format + ".txt";
     }
 
     /**

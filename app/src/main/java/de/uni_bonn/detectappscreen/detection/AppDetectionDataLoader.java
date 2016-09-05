@@ -19,12 +19,8 @@
 package de.uni_bonn.detectappscreen.detection;
 
 import android.content.Context;
-import android.content.SharedPreferences;
-import android.util.Log;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.zip.ZipFile;
 
 import de.uni_bonn.detectappscreen.R;
 import de.uni_bonn.detectappscreen.setup.AppDetectionDataSetup;
@@ -90,14 +86,14 @@ public class AppDetectionDataLoader extends ObjectLoader<AppDetectionData> {
         if (this.fullApkPath != null) {
             File apkFile = new File(this.fullApkPath);
             detectableApp = AppDetectionDataSetup.fromAPK(this.context, apkFile, appPackageName, 1.0f, loadingInfo);
-            FileHelper.writeAppDetectionData(this.context, detectableApp, FileHelper.Directory.PACKAGE, this.appPackageName, "AppDetectionData.bin");
+            FileHelper.writeAppDetectionData(this.context, detectableApp, FileHelper.Directory.PRIVATE_PACKAGE, this.appPackageName, "AppDetectionData.bin");
         }
         else {
             loadingInfo.setNotificationData(context.getString(R.string.add_app_notification_loading),
                     appPackageName, R.drawable.notification_template_icon_bg);
             loadingInfo.start(true);
 
-            detectableApp = FileHelper.readAppDetectionData(this.context, FileHelper.Directory.PACKAGE, this.appPackageName, "AppDetectionData.bin");
+            detectableApp = FileHelper.readAppDetectionData(this.context, FileHelper.Directory.PRIVATE_PACKAGE, this.appPackageName, "AppDetectionData.bin");
 
             loadingInfo.setNotificationData(context.getString(R.string.add_app_notification_finished_loading),
                     null, null);
