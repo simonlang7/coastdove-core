@@ -201,6 +201,8 @@ public class AppUsageData {
      * Stopwatch-like function to stop measuring duration for this session
      */
     public void finish() {
+        if (!activityDataList.isEmpty())
+            activityDataList.peekLast().finish();
         this.duration = new Date().getTime() - this.duration;
     }
 
