@@ -44,6 +44,7 @@ import java.io.StreamCorruptedException;
 import java.util.HashMap;
 
 import de.uni_bonn.detectappscreen.R;
+import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageDbHelper;
 import de.uni_bonn.detectappscreen.detection.AppDetectionData;
 
 /**
@@ -51,6 +52,7 @@ import de.uni_bonn.detectappscreen.detection.AppDetectionData;
  */
 public class FileHelper {
     public static final String APP_DETECTION_DATA_FILENAME = "AppDetectionData.bin";
+    public static final String EXPORTED_DB_FILENAME = "Exported.sqlite";
 
     /**
      * Type of directory, to be used when referring to a file
@@ -230,6 +232,29 @@ public class FileHelper {
         }
 
         return result;
+    }
+
+    public static void exportSQLiteDB(Context context, Directory directory, String filename) {
+        AppUsageDbHelper dbHelper = new AppUsageDbHelper(context);
+        File internalDBFile = new File(dbHelper.getReadableDatabase().getPath());
+        File exportDBFile = getFile(context, directory, null, filename);
+        makeParentDir(exportDBFile);
+
+        // Copy binary file
+        try (FileInputStream fis = new FileInputStream(internalDBFile);
+             FileOutputStream fos = new FileOutputStream(exportDBFile)) {
+            byte[] buffer = new byte[1024];
+            int numBytes = 0;
+            while ((numBytes = fis.read(buffer)) != -1)
+                fos.write(buffer, 0, numBytes);
+            FileHelper.scanFile(context, exportDBFile.getAbsolutePath());
+        } catch (FileNotFoundException e) {
+            Log.e("FileHelper", "File not found: " + e.getMessage());
+        } catch (IOException e) {
+            Log.e("FileHelper", "IO error: " + e.getMessage());
+        } finally {
+            dbHelper.close();
+        }
     }
 
     public static boolean deleteFile(Context context, Directory directory, String appPackageName, String filename) {

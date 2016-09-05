@@ -3,6 +3,8 @@
 
     <!-- Main Activity -->
     <string name="accessibility_services_menu">Accessibility services</string>
+    <string name="export_database">Export database</string>
+    <string name="database_exported">Database exported</string>
     <string name="add_app">Add</string>
 
     <!-- Add App Activity -->

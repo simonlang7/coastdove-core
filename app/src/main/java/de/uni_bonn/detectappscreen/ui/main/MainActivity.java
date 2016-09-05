@@ -26,9 +26,11 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import de.uni_bonn.detectappscreen.R;
 import de.uni_bonn.detectappscreen.ui.add_app.AddAppActivity;
+import de.uni_bonn.detectappscreen.utility.FileHelper;
 
 
 /**
@@ -56,6 +58,20 @@ public class MainActivity extends AppCompatActivity {
         switch (item.getItemId()) {
             case R.id.item_accessibility_services:
                 startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+                return true;
+            case R.id.item_export_db:
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        FileHelper.exportSQLiteDB(MainActivity.this, FileHelper.Directory.PUBLIC, FileHelper.EXPORTED_DB_FILENAME);
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                Toast.makeText(MainActivity.this, getString(R.string.database_exported), Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    }
+                }).start();
                 return true;
             case R.id.item_add_detectable_app:
                 startActivity(new Intent(this, AddAppActivity.class));
