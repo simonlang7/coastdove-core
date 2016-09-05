@@ -33,6 +33,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -70,7 +71,7 @@ public class AppUsageData {
             int activityID = c.getInt(0);
             Date timestamp;
             try {
-                timestamp = new SimpleDateFormat(Misc.DATE_TIME_FORMAT).parse(c.getString(1));
+                timestamp = new SimpleDateFormat(Misc.DATE_TIME_FORMAT, Locale.US).parse(c.getString(1));
             } catch (ParseException e) {
                 throw new RuntimeException("Cannot parse date: " + c.getString(1));
             }
@@ -248,7 +249,7 @@ public class AppUsageData {
         if (this.activityDataList.size() == 0)
             return null;
         Date first = this.activityDataList.get(0).getTimestamp();
-        String format = new SimpleDateFormat(Misc.DATE_TIME_FILENAME).format(first);
+        String format = new SimpleDateFormat(Misc.DATE_TIME_FILENAME, Locale.US).format(first);
         return format + ".txt";
     }
 

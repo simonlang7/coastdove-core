@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Color;
 import android.support.v4.util.Pair;
 import android.util.SparseBooleanArray;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -17,12 +18,15 @@ import de.uni_bonn.detectappscreen.R;
 /**
  * Adapter for app usage data - an array adapter that tracks which items are selected
  */
-public class AppUsageDataListAdapter extends ArrayAdapter<Pair<Integer, String>> {
-    private SparseBooleanArray selectedIDs;
+public class AppUsageDataListAdapter extends ArrayAdapter<AppUsageDataUIContainer> {
+    private LayoutInflater inflater;
     private int resource;
+
+    private SparseBooleanArray selectedIDs;
 
     public AppUsageDataListAdapter(Context context, int resource) {
         super(context, resource);
+        this.inflater = LayoutInflater.from(getContext());
         this.resource = resource;
         selectedIDs = new SparseBooleanArray();
     }
@@ -43,8 +47,8 @@ public class AppUsageDataListAdapter extends ArrayAdapter<Pair<Integer, String>>
         return selectedIDs.size();
     }
 
-    public List<Pair<Integer, String>> getSelectedItems() {
-        List<Pair<Integer, String>> result = new LinkedList<>();
+    public List<AppUsageDataUIContainer> getSelectedItems() {
+        List<AppUsageDataUIContainer> result = new LinkedList<>();
         for (int i = 0; i < selectedIDs.size(); ++i) {
             if (selectedIDs.valueAt(i)) {
                 result.add(getItem(selectedIDs.keyAt(i)));
@@ -55,23 +59,40 @@ public class AppUsageDataListAdapter extends ArrayAdapter<Pair<Integer, String>>
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        View view = super.getView(position, convertView, parent);
+        ViewHolder holder;
+
+        if (convertView == null) {
+            holder = new ViewHolder();
+            convertView = this.inflater.inflate(R.layout.list_item_app_usage_data, parent, false);
+
+            holder.timestamp = (TextView)convertView.findViewById(R.id.app_usage_data_timestamp);
+            holder.duration = (TextView)convertView.findViewById(R.id.app_usage_data_duration);
+
+            convertView.setTag(holder);
+        }
+        else
+            holder = (ViewHolder)convertView.getTag();
 
         boolean selected = selectedIDs.get(position, false);
         if (selected) {
-            view.setSelected(true);
-            view.setPressed(true);
-            view.setBackgroundColor(getContext().getResources().getColor(R.color.colorListItemChecked));
+            convertView.setSelected(true);
+            convertView.setPressed(true);
+            convertView.setBackgroundColor(getContext().getResources().getColor(R.color.colorListItemChecked));
         } else {
-            view.setSelected(false);
-            view.setPressed(false);
-            view.setBackgroundColor(Color.WHITE);
+            convertView.setSelected(false);
+            convertView.setPressed(false);
+            convertView.setBackgroundColor(Color.WHITE);
         }
 
-        Pair<Integer, String> item = getItem(position);
-        TextView textView = (TextView)view; // No custom view, so this view is a TextView
-        textView.setText(item.second);
+        AppUsageDataUIContainer item = getItem(position);
+        holder.timestamp.setText(item.timestamp);
+        holder.duration.setText(item.duration);
 
-        return view;
+        return convertView;
+    }
+
+    private class ViewHolder {
+        TextView timestamp;
+        TextView duration;
     }
 }

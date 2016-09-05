@@ -32,6 +32,7 @@ import java.util.List;
 import de.uni_bonn.detectappscreen.app_usage.ActivityData;
 import de.uni_bonn.detectappscreen.app_usage.ActivityDataEntry;
 import de.uni_bonn.detectappscreen.R;
+import de.uni_bonn.detectappscreen.utility.Misc;
 
 /**
  * Adapter for app usage data entries, displays the type of entry, the number of consecutive occurrences,
@@ -117,10 +118,11 @@ public class DataEntryListAdapter extends BaseExpandableListAdapter {
         if (convertView == null) {
             // Set up text views
             holder = new GroupViewHolder();
-            convertView = this.inflater.inflate(R.layout.list_item_meta_entry, parent, false);
+            convertView = this.inflater.inflate(R.layout.list_item_activity_data, parent, false);
 
-            holder.innerContainer = (LinearLayout)convertView.findViewById(R.id.metaEntryInnerContainer);
+            holder.innerContainer = (LinearLayout)convertView.findViewById(R.id.activity_data_inner_container);
             holder.activityContent = (TextView)convertView.findViewById(R.id.activity_content);
+            holder.activityDuration = (TextView)convertView.findViewById(R.id.activity_duration);
 
             convertView.setTag(holder);
         }
@@ -132,6 +134,7 @@ public class DataEntryListAdapter extends BaseExpandableListAdapter {
 
         holder.innerContainer.setPadding(activityData.getLevel()*32, 0, 0, 0);
         holder.activityContent.setText(activityData.getShortenedActivity());
+        holder.activityDuration.setText(Misc.msToDurationString(activityData.getDuration()));
 
         return convertView;
     }
@@ -174,6 +177,7 @@ public class DataEntryListAdapter extends BaseExpandableListAdapter {
     private class GroupViewHolder {
         LinearLayout innerContainer;
         TextView activityContent;
+        TextView activityDuration;
     }
 
     private class ChildViewHolder {

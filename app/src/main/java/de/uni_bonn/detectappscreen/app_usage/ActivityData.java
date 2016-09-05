@@ -16,6 +16,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageContract;
@@ -51,7 +52,7 @@ public class ActivityData {
             int dataEntryID = c.getInt(0);
             Date entryTimestamp;
             try {
-                entryTimestamp = new SimpleDateFormat(Misc.DATE_TIME_FORMAT).parse(c.getString(1));
+                entryTimestamp = new SimpleDateFormat(Misc.DATE_TIME_FORMAT, Locale.US).parse(c.getString(1));
             } catch (ParseException e) {
                 throw new RuntimeException("Cannot parse date: " + c.getString(1));
             }
@@ -114,7 +115,7 @@ public class ActivityData {
 
     /** Returns the timestamp as a formatted string */
     public String getTimestampString() {
-        return new SimpleDateFormat(Misc.DATE_TIME_FORMAT).format(this.timestamp);
+        return new SimpleDateFormat(Misc.DATE_TIME_FORMAT, Locale.US).format(this.timestamp);
     }
 
     /** Activity detected */
@@ -240,6 +241,18 @@ public class ActivityData {
         return timestamp.getTime();
     }
 
+    public int getLevel() {
+        return level;
+    }
+
+    public void setLevel(int level) {
+        this.level = level;
+    }
+
+    public long getDuration() {
+        return duration;
+    }
+
     /**
      * If the previous layout entry of the is equal to the given one, that entry's
      * count is increased. If the given entry and the last processed entry are both
@@ -278,13 +291,5 @@ public class ActivityData {
             }
         }
         return null;
-    }
-
-    public int getLevel() {
-        return level;
-    }
-
-    public void setLevel(int level) {
-        this.level = level;
     }
 }

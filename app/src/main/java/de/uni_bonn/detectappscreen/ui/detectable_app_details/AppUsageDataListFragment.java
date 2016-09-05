@@ -39,7 +39,6 @@ import java.util.List;
 
 import de.uni_bonn.detectappscreen.R;
 import de.uni_bonn.detectappscreen.app_usage.sql.SQLiteDataRemover;
-import de.uni_bonn.detectappscreen.ui.SQLiteTableLoader;
 import de.uni_bonn.detectappscreen.ui.app_usage_data_details.AppUsageDataDetailsActivity;
 import de.uni_bonn.detectappscreen.ui.LoadableListFragment;
 
@@ -47,7 +46,7 @@ import de.uni_bonn.detectappscreen.ui.LoadableListFragment;
  * ListFragment displayed in the DetectableAppDetailsActivity,
  * shows a list of collected usage data for the according app
  */
-public class AppUsageDataListFragment extends LoadableListFragment<Pair<Integer, String>> {
+public class AppUsageDataListFragment extends LoadableListFragment<AppUsageDataUIContainer> {
 
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
@@ -80,10 +79,10 @@ public class AppUsageDataListFragment extends LoadableListFragment<Pair<Integer,
             public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
                 switch (item.getItemId()) {
                     case R.id.item_context_delete:
-                        List<Pair<Integer, String>> selectedItems = listAdapter().getSelectedItems();
+                        List<AppUsageDataUIContainer> selectedItems = listAdapter().getSelectedItems();
                         List<Integer> selectedItemsPrimaryKeys = new LinkedList<>();
-                        for (Pair<Integer, String> selectedItem : selectedItems)
-                            selectedItemsPrimaryKeys.add(selectedItem.first);
+                        for (AppUsageDataUIContainer selectedItem : selectedItems)
+                            selectedItemsPrimaryKeys.add(selectedItem.id);
                         new SQLiteDataRemover(getActivity(), selectedItemsPrimaryKeys).run();
                         Toast toast = Toast.makeText(getActivity(), getString(R.string.toast_data_removed), Toast.LENGTH_SHORT);
                         toast.show();
@@ -104,27 +103,27 @@ public class AppUsageDataListFragment extends LoadableListFragment<Pair<Integer,
     }
 
     @Override
-    public Loader<ArrayList<Pair<Integer, String>>> onCreateLoader(int id, Bundle args) {
+    public Loader<ArrayList<AppUsageDataUIContainer>> onCreateLoader(int id, Bundle args) {
         String appPackageName = ((DetectableAppDetailsActivity)getActivity()).getAppPackageName();
         return new SQLiteTableLoader(getActivity(), appPackageName);
     }
 
     @Override
-    public void onLoaderReset(Loader<ArrayList<Pair<Integer, String>>> loader) {
+    public void onLoaderReset(Loader<ArrayList<AppUsageDataUIContainer>> loader) {
     }
 
 
     @Override
     public void onListItemClick(ListView listView, View view, int position, long id) {
         super.onListItemClick(listView, view, position, id);
-        final Pair<Integer, String> item = (Pair<Integer, String>)listView.getItemAtPosition(position);
+        final AppUsageDataUIContainer item = (AppUsageDataUIContainer)listView.getItemAtPosition(position);
 
         String appPackageName = ((DetectableAppDetailsActivity)getActivity()).getAppPackageName();
 
         Intent intent = new Intent(getActivity(), AppUsageDataDetailsActivity.class);
         intent.putExtra(getString(R.string.extras_package_name), appPackageName);
-        intent.putExtra(getString(R.string.extras_timestamp), item.second);
-        intent.putExtra(getString(R.string.extras_app_id), item.first);
+        intent.putExtra(getString(R.string.extras_timestamp), item.timestamp);
+        intent.putExtra(getString(R.string.extras_app_id), item.id);
 
         startActivity(intent);
     }

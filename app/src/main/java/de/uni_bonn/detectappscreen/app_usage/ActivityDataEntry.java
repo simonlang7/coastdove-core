@@ -31,6 +31,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.Locale;
 
 import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageContract;
 import de.uni_bonn.detectappscreen.utility.Misc;
@@ -149,7 +150,7 @@ public abstract class ActivityDataEntry {
 
     /** Returns the timestamp as a formatted string */
     public String getTimestampString() {
-        return new SimpleDateFormat(Misc.DATE_TIME_FORMAT).format(this.timestamp);
+        return new SimpleDateFormat(Misc.DATE_TIME_FORMAT, Locale.US).format(this.timestamp);
     }
 
     /** Activity detected */

@@ -31,6 +31,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 import de.uni_bonn.detectappscreen.detection.DetectAppScreenAccessibilityService;
 
@@ -42,6 +44,20 @@ public class Misc {
     public static final String DATE_TIME_FILENAME = "yyyy-MM-dd_HH-mm-ss_SSS";
     public static final boolean DEFAULT_DETECT_LAYOUTS = true;
     public static final boolean DEFAULT_DETECT_INTERACTIONS = true;
+
+    /**
+     * Converts milliseconds to a String of the format "[Hh ][Mm ]Ss", e.g., "1h 20m 3s", "45m 22s" or "54s"
+     * @param ms    Duration in milliseconds
+     */
+    public static String msToDurationString(long ms) {
+        long hours = TimeUnit.MILLISECONDS.toHours(ms);
+        long minutes = TimeUnit.MILLISECONDS.toMinutes(ms) - TimeUnit.HOURS.toMinutes(hours);
+        long seconds = TimeUnit.MILLISECONDS.toSeconds(ms) - TimeUnit.MINUTES.toSeconds(minutes);
+        String hoursString = hours == 0 ? "" : hours + "h ";
+        String minutesString = minutes == 0 ? "" : minutes + "m ";
+        String secondsString = seconds == 0 ? "" : seconds + "s";
+        return hoursString + minutesString + secondsString;
+    }
 
     /**
      * Sets and commits the given preference (appPackageName+preference) with the given value
