@@ -26,6 +26,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageContract;
+import de.uni_bonn.detectappscreen.detection.ReplacementData;
 
 /**
  * Data gathered when a TYPE_VIEW_CLICKED or TYPE_VIEW_SCROLLED event occurs
@@ -33,18 +34,45 @@ import de.uni_bonn.detectappscreen.app_usage.sql.AppUsageContract;
 public class InteractionEventData {
     private String androidID;
     private String text;
+    private String description;
     private String className;
 
-    public InteractionEventData(String androidID, String text, String className) {
+    public InteractionEventData(String androidID, String text, String description, String className) {
         this.androidID = androidID;
         this.text = text;
+        this.description = description;
         this.className = className;
     }
 
-    public InteractionEventData(AccessibilityNodeInfo nodeInfo) {
+    public InteractionEventData(AccessibilityNodeInfo nodeInfo, ReplacementData replacementData) {
         this.androidID = nodeInfo.getViewIdResourceName() != null ? nodeInfo.getViewIdResourceName() : "";
         this.text = nodeInfo.getText() != null ? nodeInfo.getText().toString().replaceAll("\n", " ") : "";
+        this.description = nodeInfo.getContentDescription() != null ? nodeInfo.getContentDescription().toString().replaceAll("\n", " ") : "";
         this.className = nodeInfo.getClassName() != null ? nodeInfo.getClassName().toString() : "";
+
+        if (replacementData != null && replacementData.hasReplacementRule(this.androidID)) {
+            ReplacementData.ReplacementRule rule = replacementData.getReplacementRule(this.androidID);
+            if (rule.replaceText != null) {
+                switch (rule.replaceText) {
+                    case DISCARD:
+                        this.text = "";
+                        break;
+                    case REPLACE:
+                        this.text = replacementData.getReplacement(this.text);
+                        break;
+                }
+            }
+            if (rule.replaceDescription != null) {
+                switch (rule.replaceDescription) {
+                    case DISCARD:
+                        this.text = "";
+                        break;
+                    case REPLACE:
+                        this.text = replacementData.getReplacement(this.text);
+                        break;
+                }
+            }
+        }
     }
 
     @Override
@@ -52,10 +80,12 @@ public class InteractionEventData {
         String idString = androidID == null ? "" : "ID: " + androidID;
         String textSep = idString.equals("") ? "" : ", ";
         String textString = text == null ? "" : textSep + "Text: " + text;
-        String classSep = (idString.equals("") || textString.equals("")) ? "" : ", ";
+        String descSep = (idString.equals("") && textString.equals("")) ? "" : ", ";
+        String descString = description == null ? "" : descSep + "Description: " + text;
+        String classSep = (idString.equals("") && textString.equals("") && descString.equals("")) ? "" : ", ";
         String classString = className == null ? "" : classSep + "Class: " + className;
 
-        return "(" + idString + textString + classString + ")";
+        return "(" + idString + textString + descString + classString + ")";
     }
 
     public boolean equals(InteractionEventData other) {

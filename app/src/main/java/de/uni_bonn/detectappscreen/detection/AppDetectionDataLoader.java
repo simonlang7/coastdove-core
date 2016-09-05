@@ -20,7 +20,11 @@ package de.uni_bonn.detectappscreen.detection;
 
 import android.content.Context;
 
+import org.json.JSONObject;
+
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 import de.uni_bonn.detectappscreen.R;
 import de.uni_bonn.detectappscreen.setup.AppDetectionDataSetup;
@@ -86,13 +90,25 @@ public class AppDetectionDataLoader extends ObjectLoader<AppDetectionData> {
         if (this.fullApkPath != null) {
             File apkFile = new File(this.fullApkPath);
             detectableApp = AppDetectionDataSetup.fromAPK(this.context, apkFile, appPackageName, 1.0f, loadingInfo);
-            FileHelper.writeAppDetectionData(this.context, detectableApp, FileHelper.Directory.PRIVATE_PACKAGE, this.appPackageName, "AppDetectionData.bin");
+            FileHelper.writeAppDetectionData(this.context, detectableApp, FileHelper.Directory.PRIVATE_PACKAGE, this.appPackageName, FileHelper.APP_DETECTION_DATA_FILENAME);
         }
         else {
-            detectableApp = FileHelper.readAppDetectionData(this.context, FileHelper.Directory.PRIVATE_PACKAGE, this.appPackageName, "AppDetectionData.bin");
+            detectableApp = FileHelper.readAppDetectionData(this.context, FileHelper.Directory.PRIVATE_PACKAGE, this.appPackageName, FileHelper.APP_DETECTION_DATA_FILENAME);
         }
 
-        detectableApp.init(this.performLayoutChecks, this.performInteractionChecks, this.context);
+        ReplacementData replacementData = null;
+        JSONObject replacementDataJSON = FileHelper.readJSONFile(this.context, FileHelper.Directory.PUBLIC_PACKAGE, this.appPackageName, FileHelper.REPLACEMENT_DATA);
+        if (replacementDataJSON != null) {
+            replacementData = ReplacementData.fromJSON(replacementDataJSON);
+            File replacementMapFile = FileHelper.getFile(this.context, FileHelper.Directory.PRIVATE_PACKAGE, this.appPackageName, FileHelper.REPLACEMENT_MAP);
+            if (replacementMapFile != null && replacementMapFile.exists()) {
+                HashMap<String, Integer> replacementMap = (HashMap<String, Integer>) FileHelper.readHashMap(this.context,
+                        FileHelper.Directory.PRIVATE_PACKAGE, this.appPackageName, FileHelper.REPLACEMENT_MAP);
+                replacementData.setReplacementMap(replacementMap);
+            }
+        }
+
+        detectableApp.init(this.performLayoutChecks, this.performInteractionChecks, replacementData, this.context);
         return detectableApp;
     }
 }

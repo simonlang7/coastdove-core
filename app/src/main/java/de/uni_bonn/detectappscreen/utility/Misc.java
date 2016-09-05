@@ -55,7 +55,7 @@ public class Misc {
         long seconds = TimeUnit.MILLISECONDS.toSeconds(ms) - TimeUnit.MINUTES.toSeconds(minutes);
         String hoursString = hours == 0 ? "" : hours + "h ";
         String minutesString = minutes == 0 ? "" : minutes + "m ";
-        String secondsString = seconds == 0 ? "" : seconds + "s";
+        String secondsString = seconds == 0 ? "< 1s" : seconds + "s";
         return hoursString + minutesString + secondsString;
     }
 

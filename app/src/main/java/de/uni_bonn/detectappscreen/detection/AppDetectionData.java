@@ -72,6 +72,8 @@ public class AppDetectionData implements Serializable {
 
     /** Usage data collected for this session (that starts when the app is opened and ends when it's closed) */
     private transient AppUsageData currentAppUsageData;
+    /** Replacement data for this app, loaded separately */
+    private transient ReplacementData replacementData;
 
     /** Application context */
     private transient Context context;
@@ -96,10 +98,12 @@ public class AppDetectionData implements Serializable {
      * @param performInteractionChecks    Whether to perform interaction checks
      * @param context                     App context
      */
-    public void init(boolean performLayoutChecks, boolean performInteractionChecks, Context context) {
+    public void init(boolean performLayoutChecks, boolean performInteractionChecks,
+                     ReplacementData replacementData, Context context) {
         this.performLayoutChecks = performLayoutChecks;
         this.performInteractionChecks = performInteractionChecks;
         this.currentAppUsageData = null;
+        this.replacementData = replacementData;
         this.context = context;
     }
 
@@ -159,6 +163,15 @@ public class AppDetectionData implements Serializable {
     public void saveAppUsageData() {
         currentAppUsageData.finish();
         writeAppUsageData();
+        if (this.replacementData.hasChanged()) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    FileHelper.writeHashMap(context, replacementData.getReplacementMap(),
+                            FileHelper.Directory.PRIVATE_PACKAGE, appPackageName, FileHelper.REPLACEMENT_MAP);
+                }
+            }).start();
+        }
         this.currentAppUsageData = null;
     }
 
@@ -196,6 +209,7 @@ public class AppDetectionData implements Serializable {
      */
     private boolean shallPerformInteractionChecks(AccessibilityEvent event) {
         if (event.getEventType() != AccessibilityEvent.TYPE_VIEW_CLICKED &&
+                event.getEventType() != AccessibilityEvent.TYPE_VIEW_LONG_CLICKED &&
                 event.getEventType() != AccessibilityEvent.TYPE_VIEW_SCROLLED)
             return false;
         if (event.getSource() == null)
@@ -237,7 +251,7 @@ public class AppDetectionData implements Serializable {
                 new NodeInfoDataExtractor<InteractionEventData>() {
                     @Override
                     public InteractionEventData extractData(AccessibilityNodeInfo nodeInfo) {
-                        return new InteractionEventData(nodeInfo);
+                        return new InteractionEventData(nodeInfo, replacementData);
                     }
                 },
                 new NodeInfoFilter() {
@@ -259,7 +273,7 @@ public class AppDetectionData implements Serializable {
             if (parent != null &&
                     (parent.getViewIdResourceName() != null
                     || parent.getText() != null))
-                result.add(new InteractionEventData(parent));
+                result.add(new InteractionEventData(parent, replacementData));
         }
 
         return result;

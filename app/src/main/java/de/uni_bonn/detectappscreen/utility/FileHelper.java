@@ -53,6 +53,8 @@ import de.uni_bonn.detectappscreen.detection.AppDetectionData;
 public class FileHelper {
     public static final String APP_DETECTION_DATA_FILENAME = "AppDetectionData.bin";
     public static final String EXPORTED_DB_FILENAME = "Exported.sqlite";
+    public static final String REPLACEMENT_DATA = "ReplacementData.json";
+    public static final String REPLACEMENT_MAP = "ReplacementMap.bin";
 
     /**
      * Type of directory, to be used when referring to a file
@@ -79,7 +81,7 @@ public class FileHelper {
         JSONObject result = null;
 
         File file = getFile(context, directory, appPackageName, filename);
-        if (file == null)
+        if (file == null || !file.exists())
             return null;
 
         try (InputStream is = new FileInputStream(file);

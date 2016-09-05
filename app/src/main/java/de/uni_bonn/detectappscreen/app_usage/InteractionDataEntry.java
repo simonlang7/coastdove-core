@@ -57,7 +57,7 @@ public class InteractionDataEntry extends ActivityDataEntry {
             String androidID = c.getString(1);
             String text = c.getString(2);
             String className = c.getString(3);
-            InteractionEventData eventData = new InteractionEventData(androidID, text, className);
+            InteractionEventData eventData = new InteractionEventData(androidID, text, "", className);
             interaction.add(eventData);
 
             c.moveToNext();
