@@ -51,6 +51,8 @@ import de.uni_bonn.detectappscreen.detection.AppDetectionData;
  * A collection of functions to help with reading from and writing to files
  */
 public class FileHelper {
+    public static final String APP_DETECTION_DATA_FILENAME = "AppDetectionData.bin";
+
     /**
      * Type of directory, to be used when referring to a file
      */
@@ -241,6 +243,12 @@ public class FileHelper {
     public static boolean fileExists(Context context, Directory directory, String appPackageName, String filename) {
         File file = getFile(context, directory, appPackageName, filename);
         return file != null && file.exists();
+    }
+
+    public static boolean appDetectionDataExists(Context context, String appPackageName) {
+        File detectionData = FileHelper.getFile(context, FileHelper.Directory.PACKAGE,
+                appPackageName, FileHelper.APP_DETECTION_DATA_FILENAME);
+        return detectionData != null && detectionData.exists();
     }
 
     public static File getFile(Context context, Directory directory, String appPackageName, String filename) {

@@ -57,9 +57,7 @@ public class DetectableAppListLoader extends AsyncTaskLoader<ArrayList<String>> 
         String[] files = directory.exists() ? directory.list(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String filename) {
-                File data = FileHelper.getFile(getContext(), FileHelper.Directory.PACKAGE,
-                        filename, "AppDetectionData.bin");
-                boolean detectableDataExists = data.exists();
+                boolean detectableDataExists = FileHelper.appDetectionDataExists(getContext(), filename);
 
                 if (detectableDataExists)
                     return true;

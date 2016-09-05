@@ -12,10 +12,13 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import java.io.File;
+
 import de.uni_bonn.detectappscreen.R;
 import de.uni_bonn.detectappscreen.detection.AppDetectionData;
 import de.uni_bonn.detectappscreen.detection.DetectAppScreenAccessibilityService;
 import de.uni_bonn.detectappscreen.ui.LoadingInfo;
+import de.uni_bonn.detectappscreen.utility.FileHelper;
 import de.uni_bonn.detectappscreen.utility.MultipleObjectLoader;
 
 /**
@@ -52,6 +55,7 @@ public class AppListAdapter extends ArrayAdapter<ApplicationInfo> {
         else
             holder = (ViewHolder)convertView.getTag();
 
+        // Set up image and text
         PackageManager pm = getContext().getPackageManager();
         ApplicationInfo appInfo = getItem(position);
         holder.imageView.setImageDrawable(appInfo.loadIcon(pm));
@@ -74,6 +78,14 @@ public class AppListAdapter extends ArrayAdapter<ApplicationInfo> {
             progressBar.setVisibility(View.GONE);
             progressBar.setIndeterminate(false);
         }
+
+        // Text: black if cache exists, gray otherwise
+        if (FileHelper.appDetectionDataExists(getContext(), appInfo.packageName))
+            holder.appName.setTextColor(getContext().getResources().
+                    getColor(R.color.primary_text_default_material_light));
+        else
+            holder.appName.setTextColor(getContext().getResources().
+                    getColor(R.color.primary_text_disabled_material_light));
 
         return convertView;
     }

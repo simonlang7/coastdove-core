@@ -128,7 +128,7 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
             }
         });
 
-        boolean cacheExists = FileHelper.fileExists(this, FileHelper.Directory.PACKAGE, getAppPackageName(), "AppDetectionData.bin");
+        boolean cacheExists = FileHelper.appDetectionDataExists(context, appPackageName);
         setUpActivationBar(cacheExists);
         setUpASActivationBar();
     }
@@ -160,7 +160,7 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
         MenuItem checkboxDetectClicks = menu.findItem(R.id.checkbox_detect_interactions);
         MenuItem itemDeleteCache = menu.findItem(R.id.item_delete_cache);
         try {
-            boolean cacheExists = FileHelper.fileExists(this, FileHelper.Directory.PACKAGE, getAppPackageName(), "AppDetectionData.bin");
+            boolean cacheExists = FileHelper.appDetectionDataExists(this, this.appPackageName);
 
             // If the detection data is currently in use, the menu items are disabled
             boolean detectionDataLoading = DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader().getStatus(this.appPackageName)
@@ -196,7 +196,7 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
                     detectionData.setPerformInteractionChecks(item.isChecked());
                 return true;
             case R.id.item_delete_cache:
-                FileHelper.deleteFile(this, FileHelper.Directory.PACKAGE, this.appPackageName, "AppDetectionData.bin");
+                FileHelper.deleteFile(this, FileHelper.Directory.PACKAGE, this.appPackageName, FileHelper.APP_DETECTION_DATA_FILENAME);
                 final TextView activateText = (TextView)findViewById(R.id.detectable_app_activate_text);
                 final Switch activateSwitch = (Switch)findViewById(R.id.detectable_app_activate_switch);
                 activateSwitch.setChecked(false);
