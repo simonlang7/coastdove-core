@@ -161,15 +161,21 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
     public boolean onPrepareOptionsMenu(Menu menu) {
         MenuItem checkboxDetectLayouts = menu.findItem(R.id.checkbox_detect_layouts);
         MenuItem checkboxDetectClicks = menu.findItem(R.id.checkbox_detect_interactions);
+        MenuItem checkboxReplacePrivateData = menu.findItem(R.id.checkbox_replace_private_data);
+        MenuItem itemDeleteReplacementMap = menu.findItem(R.id.item_delete_replacement_mapping);
         MenuItem itemDeleteCache = menu.findItem(R.id.item_delete_cache);
         try {
             boolean cacheExists = FileHelper.appDetectionDataExists(this, this.appPackageName);
+            boolean replacementDataExists = FileHelper.fileExists(this, FileHelper.Directory.PUBLIC_PACKAGE, this.appPackageName, FileHelper.REPLACEMENT_DATA);
+            boolean replacementMappingExists = FileHelper.fileExists(this, FileHelper.Directory.PRIVATE_PACKAGE, this.appPackageName, FileHelper.REPLACEMENT_MAP);
 
             // If the detection data is currently in use, the menu items are disabled
             boolean detectionDataLoading = DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader().getStatus(this.appPackageName)
                     == MultipleObjectLoader.Status.LOADING;
             checkboxDetectLayouts.setEnabled(!detectionDataLoading);
             checkboxDetectClicks.setEnabled(!detectionDataLoading);
+            checkboxReplacePrivateData.setEnabled(!detectionDataLoading && replacementDataExists);
+            itemDeleteReplacementMap.setEnabled(!detectionDataLoading && replacementMappingExists);
             itemDeleteCache.setEnabled(cacheExists && !detectionDataLoading);
         } catch (NullPointerException e) {
             checkboxDetectLayouts.setEnabled(false);
@@ -209,6 +215,9 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
                     else
                         detectionData.setReplacementData(null);
                 }
+                return true;
+            case R.id.item_delete_replacement_mapping:
+                FileHelper.deleteFile(this, FileHelper.Directory.PRIVATE_PACKAGE, this.appPackageName, FileHelper.REPLACEMENT_MAP);
                 return true;
             case R.id.item_delete_cache:
                 FileHelper.deleteFile(this, FileHelper.Directory.PRIVATE_PACKAGE, this.appPackageName, FileHelper.APP_DETECTION_DATA_FILENAME);
@@ -260,9 +269,7 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
         checkboxLayouts.setChecked(detectLayouts);
         checkboxInteractions.setChecked(detectInteractions);
 
-        boolean detectionDataInUse = DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader().contains(this.appPackageName);
         boolean replacementDataExists = FileHelper.fileExists(this, FileHelper.Directory.PUBLIC_PACKAGE, this.appPackageName, FileHelper.REPLACEMENT_DATA);
-        checkboxReplacePrivateData.setEnabled(replacementDataExists && !detectionDataInUse);
         checkboxReplacePrivateData.setChecked(replacementDataExists && replacePrivateData);
     }
 
