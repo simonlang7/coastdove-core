@@ -202,14 +202,10 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
                 item.setChecked(!item.isChecked());
                 Misc.setPreference(getPreferences(MODE_PRIVATE), appPackageName, getString(R.string.pref_replace_private_data), item.isChecked());
                 if (detectionData != null) {
-                    if (item.isChecked())
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                ReplacementData replacementData = Misc.loadReplacementData(DetectableAppDetailsActivity.this, appPackageName);
-                                detectionData.setReplacementData(replacementData);
-                            }
-                        }).start();
+                    if (item.isChecked()) {
+                        ReplacementData replacementData = Misc.loadReplacementData(DetectableAppDetailsActivity.this, appPackageName);
+                        detectionData.setReplacementData(replacementData);
+                    }
                     else
                         detectionData.setReplacementData(null);
                 }
