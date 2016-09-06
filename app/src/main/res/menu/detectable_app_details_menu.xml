@@ -14,8 +14,21 @@
         android:checkable="true"/>
 
     <item
+        android:id="@+id/checkbox_replace_private_data"
+        android:title="@string/replace_private_data"
+        app:showAsAction="never"
+        android:checkable="true"/>
+
+    <item
+        android:id="@+id/item_delete_replacement_mapping"
+        android:title="@string/delete_replacement_mapping"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/item_delete_cache"
         android:title="@string/delete_cache"
         app:showAsAction="never"/>
+
+
 
 </menu>

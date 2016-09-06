@@ -132,7 +132,6 @@ public class AppDetectionData implements Serializable {
         }
 
         if (shallPerformInteractionChecks(event)) {
-            Set<InteractionEventData> interactionEventData = checkInteractionEvents(event.getSource(), rootNodeInfo);
             ActivityDataEntry.EntryType type;
             switch (event.getEventType()) {
                 case AccessibilityEvent.TYPE_VIEW_CLICKED:
@@ -148,6 +147,7 @@ public class AppDetectionData implements Serializable {
                     type = ActivityDataEntry.EntryType.OTHER;
                     break;
             }
+            Set<InteractionEventData> interactionEventData = checkInteractionEvents(event.getSource(), rootNodeInfo, type);
 
             boolean shallLog = currentAppUsageData.addInteractionDataEntry(activity, interactionEventData, type);
             if (shallLog)
@@ -163,7 +163,7 @@ public class AppDetectionData implements Serializable {
     public void saveAppUsageData() {
         currentAppUsageData.finish();
         writeAppUsageData();
-        if (this.replacementData.hasChanged()) {
+        if (replacementData != null && replacementData.hasChanged()) {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -236,7 +236,8 @@ public class AppDetectionData implements Serializable {
      * @param source    Source node info
      * @return Data regarding this interaction event
      */
-    private Set<InteractionEventData> checkInteractionEvents(AccessibilityNodeInfo source, AccessibilityNodeInfo rootNodeInfo) {
+    private Set<InteractionEventData> checkInteractionEvents(AccessibilityNodeInfo source, AccessibilityNodeInfo rootNodeInfo,
+                                                             ActivityDataEntry.EntryType type) {
         Set<InteractionEventData> result = new CopyOnWriteArraySet<>();
 
         // Try to find the node info with the same bounds as the source.
@@ -258,13 +259,21 @@ public class AppDetectionData implements Serializable {
                     @Override
                     public boolean filter(AccessibilityNodeInfo nodeInfo) {
                         return nodeInfo != null &&
-                                (nodeInfo.getViewIdResourceName() != null || nodeInfo.getText() != null) &&
-                                (nodeInfo.getViewIdResourceName() == null ||
-                                        !nodeInfo.getViewIdResourceName().endsWith("id/list"));
+                                (nodeInfo.getViewIdResourceName() != null || nodeInfo.getText() != null ||
+                                 nodeInfo.getContentDescription() != null);
                     }
                 });
 
-        result.addAll(traverser.getAllFiltered());
+        switch (type) {
+            case CLICK:
+            case LONG_CLICK:
+                result.addAll(traverser.getAllFiltered());
+                break;
+            case SCROLLING:
+                InteractionEventData data = traverser.nextFiltered();
+                if (data != null)
+                    result.add(data);
+        }
 
         // todo: do not add parent?
         // If we still didn't get any node with at least an ID or a text, add the source node's parent
@@ -272,7 +281,7 @@ public class AppDetectionData implements Serializable {
             AccessibilityNodeInfo parent = source.getParent();
             if (parent != null &&
                     (parent.getViewIdResourceName() != null
-                    || parent.getText() != null))
+                    || parent.getText() != null || parent.getContentDescription() != null))
                 result.add(new InteractionEventData(parent, replacementData));
         }
 
@@ -421,5 +430,13 @@ public class AppDetectionData implements Serializable {
 
     public boolean getPerformInteractionChecks() {
         return this.performInteractionChecks;
+    }
+
+    public ReplacementData getReplacementData() {
+        return replacementData;
+    }
+
+    public void setReplacementData(ReplacementData replacementData) {
+        this.replacementData = replacementData;
     }
 }

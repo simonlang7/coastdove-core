@@ -44,6 +44,7 @@ public class InteractionDataEntry extends ActivityDataEntry {
                 AppUsageContract.InteractionDetailsTable.COLUMN_NAME_DATA_ENTRY_ID,
                 AppUsageContract.InteractionDetailsTable.COLUMN_NAME_ANDROID_ID,
                 AppUsageContract.InteractionDetailsTable.COLUMN_NAME_TEXT,
+                AppUsageContract.InteractionDetailsTable.COLUMN_NAME_DESCRIPTION,
                 AppUsageContract.InteractionDetailsTable.COLUMN_NAME_CLASS_NAME
         };
         String selection = AppUsageContract.InteractionDetailsTable.COLUMN_NAME_DATA_ENTRY_ID + "=?";
@@ -56,8 +57,9 @@ public class InteractionDataEntry extends ActivityDataEntry {
         while (!c.isAfterLast()) {
             String androidID = c.getString(1);
             String text = c.getString(2);
-            String className = c.getString(3);
-            InteractionEventData eventData = new InteractionEventData(androidID, text, "", className);
+            String description = c.getString(3);
+            String className = c.getString(4);
+            InteractionEventData eventData = new InteractionEventData(androidID, text, description, className);
             interaction.add(eventData);
 
             c.moveToNext();

@@ -47,6 +47,8 @@ public class AppDetectionDataLoader extends ObjectLoader<AppDetectionData> {
     private boolean performInteractionChecks;
     /** Full path to the APK file */
     private String fullApkPath;
+    /** Whether to load replacement data */
+    private boolean loadReplacementData;
 
     /** Application context */
     private Context context;
@@ -59,12 +61,13 @@ public class AppDetectionDataLoader extends ObjectLoader<AppDetectionData> {
      * @param appPackageName          Name of the package associated
      */
     public AppDetectionDataLoader(String appPackageName, MultipleObjectLoader<AppDetectionData> multipleObjectLoader,
-                                  boolean performLayoutChecks, boolean performInteractionChecks, Context context,
-                                  LoadingInfo loadingInfo) {
+                                  boolean performLayoutChecks, boolean performInteractionChecks, boolean loadReplacementData,
+                                  Context context, LoadingInfo loadingInfo) {
         super(appPackageName, multipleObjectLoader);
         this.appPackageName = appPackageName;
         this.performLayoutChecks = performLayoutChecks;
         this.performInteractionChecks = performInteractionChecks;
+        this.loadReplacementData = loadReplacementData;
         this.context = context;
         this.loadingInfo = loadingInfo;
         this.fullApkPath = null;
@@ -76,6 +79,7 @@ public class AppDetectionDataLoader extends ObjectLoader<AppDetectionData> {
         this.appPackageName = appPackageName;
         this.performLayoutChecks = Misc.DEFAULT_DETECT_LAYOUTS;
         this.performInteractionChecks = Misc.DEFAULT_DETECT_INTERACTIONS;
+        this.loadReplacementData = Misc.DEFAULT_REPLACE_PRIVATE_DATA;
         this.context = context;
         this.loadingInfo = loadingInfo;
         this.fullApkPath = fullApkPath;
@@ -88,26 +92,22 @@ public class AppDetectionDataLoader extends ObjectLoader<AppDetectionData> {
     protected AppDetectionData load() {
         AppDetectionData detectableApp;
         if (this.fullApkPath != null) {
+            // Create detection data from APK file
             File apkFile = new File(this.fullApkPath);
             detectableApp = AppDetectionDataSetup.fromAPK(this.context, apkFile, appPackageName, 1.0f, loadingInfo);
             FileHelper.writeAppDetectionData(this.context, detectableApp, FileHelper.Directory.PRIVATE_PACKAGE, this.appPackageName, FileHelper.APP_DETECTION_DATA_FILENAME);
         }
         else {
+            // Load cache
             detectableApp = FileHelper.readAppDetectionData(this.context, FileHelper.Directory.PRIVATE_PACKAGE, this.appPackageName, FileHelper.APP_DETECTION_DATA_FILENAME);
         }
 
+        // Load replacement data
         ReplacementData replacementData = null;
-        JSONObject replacementDataJSON = FileHelper.readJSONFile(this.context, FileHelper.Directory.PUBLIC_PACKAGE, this.appPackageName, FileHelper.REPLACEMENT_DATA);
-        if (replacementDataJSON != null) {
-            replacementData = ReplacementData.fromJSON(replacementDataJSON);
-            File replacementMapFile = FileHelper.getFile(this.context, FileHelper.Directory.PRIVATE_PACKAGE, this.appPackageName, FileHelper.REPLACEMENT_MAP);
-            if (replacementMapFile != null && replacementMapFile.exists()) {
-                HashMap<String, Integer> replacementMap = (HashMap<String, Integer>) FileHelper.readHashMap(this.context,
-                        FileHelper.Directory.PRIVATE_PACKAGE, this.appPackageName, FileHelper.REPLACEMENT_MAP);
-                replacementData.setReplacementMap(replacementMap);
-            }
-        }
+        if (this.loadReplacementData)
+            replacementData = Misc.loadReplacementData(context, appPackageName);
 
+        // Initialize
         detectableApp.init(this.performLayoutChecks, this.performInteractionChecks, replacementData, this.context);
         return detectableApp;
     }

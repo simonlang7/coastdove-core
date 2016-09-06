@@ -39,6 +39,7 @@ import android.widget.TextView;
 import de.uni_bonn.detectappscreen.detection.AppDetectionData;
 import de.uni_bonn.detectappscreen.detection.AppDetectionDataLoader;
 import de.uni_bonn.detectappscreen.detection.DetectAppScreenAccessibilityService;
+import de.uni_bonn.detectappscreen.detection.ReplacementData;
 import de.uni_bonn.detectappscreen.ui.LoadingInfo;
 import de.uni_bonn.detectappscreen.ui.add_app.AddAppActivity;
 import de.uni_bonn.detectappscreen.utility.FileHelper;
@@ -109,6 +110,8 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
                     SharedPreferences preferences = getPreferences(MODE_PRIVATE);
                     boolean detectLayouts = preferences.getBoolean(appPackageName + getString(R.string.pref_detect_layouts), Misc.DEFAULT_DETECT_LAYOUTS);
                     boolean detectInteractions = preferences.getBoolean(appPackageName + getString(R.string.pref_detect_interactions), Misc.DEFAULT_DETECT_INTERACTIONS);
+                    boolean replacePrivateData = preferences.getBoolean(appPackageName + getString(R.string.pref_replace_private_data), Misc.DEFAULT_REPLACE_PRIVATE_DATA);
+                    boolean replacementDataExists = FileHelper.fileExists(context, FileHelper.Directory.PUBLIC_PACKAGE, appPackageName, FileHelper.REPLACEMENT_DATA);
 
                     // Loading info UI elements
                     int uid = appPackageName.hashCode();
@@ -118,7 +121,7 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
                     // Start the loading process and add
                     MultipleObjectLoader<AppDetectionData> multiLoader = DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader();
                     AppDetectionDataLoader loader = new AppDetectionDataLoader(appPackageName, multiLoader,
-                            detectLayouts, detectInteractions, context, loadingInfo);
+                            detectLayouts, detectInteractions, replacePrivateData && replacementDataExists, context, loadingInfo);
                     multiLoader.startLoading(appPackageName, loader, loadingInfo);
                     Log.d("DetAppDetails", "Started loading with " + loadingInfo.isFinished() + " finished loadingInfo");
                 }
@@ -181,7 +184,7 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Store options regarding layout / click detection
-        AppDetectionData detectionData = DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader().get(this.appPackageName);
+        final AppDetectionData detectionData = DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader().get(this.appPackageName);
         switch (item.getItemId()) {
             case R.id.checkbox_detect_layouts:
                 item.setChecked(!item.isChecked());
@@ -194,6 +197,22 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
                 Misc.setPreference(getPreferences(MODE_PRIVATE), appPackageName, getString(R.string.pref_detect_interactions), item.isChecked());
                 if (detectionData != null)
                     detectionData.setPerformInteractionChecks(item.isChecked());
+                return true;
+            case R.id.checkbox_replace_private_data:
+                item.setChecked(!item.isChecked());
+                Misc.setPreference(getPreferences(MODE_PRIVATE), appPackageName, getString(R.string.pref_replace_private_data), item.isChecked());
+                if (detectionData != null) {
+                    if (item.isChecked())
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                ReplacementData replacementData = Misc.loadReplacementData(DetectableAppDetailsActivity.this, appPackageName);
+                                detectionData.setReplacementData(replacementData);
+                            }
+                        }).start();
+                    else
+                        detectionData.setReplacementData(null);
+                }
                 return true;
             case R.id.item_delete_cache:
                 FileHelper.deleteFile(this, FileHelper.Directory.PRIVATE_PACKAGE, this.appPackageName, FileHelper.APP_DETECTION_DATA_FILENAME);
@@ -235,11 +254,20 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
     private void setUpCheckboxes(Menu menu) {
         MenuItem checkboxLayouts = menu.findItem(R.id.checkbox_detect_layouts);
         MenuItem checkboxInteractions = menu.findItem(R.id.checkbox_detect_interactions);
+        MenuItem checkboxReplacePrivateData = menu.findItem(R.id.checkbox_replace_private_data);
         SharedPreferences preferences = getPreferences(MODE_PRIVATE);
-        boolean detectLayouts = Misc.getPreferenceBoolean(preferences, this.appPackageName, getString(R.string.pref_detect_layouts), true);
-        boolean detectInteractions = Misc.getPreferenceBoolean(preferences, this.appPackageName, getString(R.string.pref_detect_interactions), true);
+        boolean detectLayouts = Misc.getPreferenceBoolean(preferences, this.appPackageName, getString(R.string.pref_detect_layouts), Misc.DEFAULT_DETECT_LAYOUTS);
+        boolean detectInteractions = Misc.getPreferenceBoolean(preferences, this.appPackageName,
+                getString(R.string.pref_detect_interactions), Misc.DEFAULT_DETECT_INTERACTIONS);
+        boolean replacePrivateData = Misc.getPreferenceBoolean(preferences, this.appPackageName,
+                getString(R.string.pref_replace_private_data), Misc.DEFAULT_REPLACE_PRIVATE_DATA);
         checkboxLayouts.setChecked(detectLayouts);
         checkboxInteractions.setChecked(detectInteractions);
+
+        boolean detectionDataInUse = DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader().contains(this.appPackageName);
+        boolean replacementDataExists = FileHelper.fileExists(this, FileHelper.Directory.PUBLIC_PACKAGE, this.appPackageName, FileHelper.REPLACEMENT_DATA);
+        checkboxReplacePrivateData.setEnabled(replacementDataExists && !detectionDataInUse);
+        checkboxReplacePrivateData.setChecked(replacementDataExists && replacePrivateData);
     }
 
     /**

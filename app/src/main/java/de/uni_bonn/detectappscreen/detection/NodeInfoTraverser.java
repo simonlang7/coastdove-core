@@ -141,7 +141,7 @@ public class NodeInfoTraverser<T> {
      * @return List of data extracted from each node to which the filter() rules apply
      */
     public List<T> getAllFiltered() {
-        List<T> result = new LinkedList<T>();
+        List<T> result = new LinkedList<>();
         while (hasNext()) {
             AccessibilityNodeInfo currentNodeInfo = nextNodeInfo();
             if (filter(currentNodeInfo))

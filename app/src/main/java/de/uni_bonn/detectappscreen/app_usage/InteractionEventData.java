@@ -65,10 +65,10 @@ public class InteractionEventData {
             if (rule.replaceDescription != null) {
                 switch (rule.replaceDescription) {
                     case DISCARD:
-                        this.text = "";
+                        this.description = "";
                         break;
                     case REPLACE:
-                        this.text = replacementData.getReplacement(this.text);
+                        this.description = replacementData.getReplacement(this.description);
                         break;
                 }
             }
@@ -77,13 +77,13 @@ public class InteractionEventData {
 
     @Override
     public String toString() {
-        String idString = androidID == null ? "" : "ID: " + androidID;
+        String idString = (androidID == null || androidID.equals("")) ? "" : "ID: " + androidID;
         String textSep = idString.equals("") ? "" : ", ";
-        String textString = text == null ? "" : textSep + "Text: " + text;
+        String textString = (text == null || text.equals("")) ? "" : textSep + "Text: " + text;
         String descSep = (idString.equals("") && textString.equals("")) ? "" : ", ";
-        String descString = description == null ? "" : descSep + "Description: " + text;
+        String descString = (description == null || description.equals("")) ? "" : descSep + "Description: " + description;
         String classSep = (idString.equals("") && textString.equals("") && descString.equals("")) ? "" : ", ";
-        String classString = className == null ? "" : classSep + "Class: " + className;
+        String classString = (className == null || className.equals("")) ? "" : classSep + "Class: " + className;
 
         return "(" + idString + textString + descString + classString + ")";
     }
@@ -98,6 +98,7 @@ public class InteractionEventData {
         ContentValues values = new ContentValues();
         values.put(AppUsageContract.InteractionDetailsTable.COLUMN_NAME_ANDROID_ID, this.androidID);
         values.put(AppUsageContract.InteractionDetailsTable.COLUMN_NAME_TEXT, this.text);
+        values.put(AppUsageContract.InteractionDetailsTable.COLUMN_NAME_DESCRIPTION, this.description);
         values.put(AppUsageContract.InteractionDetailsTable.COLUMN_NAME_CLASS_NAME, this.className);
         values.put(AppUsageContract.InteractionDetailsTable.COLUMN_NAME_DATA_ENTRY_ID, dataEntryID);
         return values;

@@ -21,6 +21,8 @@
     <string name="detect_layouts">Detect layouts</string>
     <string name="detect_interactions">Detect interactions</string>
     <string name="detect_activities">Detect activities</string>
+    <string name="replace_private_data">Replace private data</string>
+    <string name="delete_replacement_mapping">Delete replacement mapping</string>
     <string name="delete_cache">Delete cache</string>
     <!-- Detectable App Notifications -->
     <string name="notification_loading_1">Loading data for</string>

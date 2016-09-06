@@ -23,6 +23,7 @@ import android.content.SharedPreferences;
 import android.provider.Settings;
 import android.util.Log;
 
+import org.json.JSONObject;
 import org.w3c.dom.Document;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -31,10 +32,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 import de.uni_bonn.detectappscreen.detection.DetectAppScreenAccessibilityService;
+import de.uni_bonn.detectappscreen.detection.ReplacementData;
 
 /**
  * A collection of general utility functions
@@ -44,6 +47,7 @@ public class Misc {
     public static final String DATE_TIME_FILENAME = "yyyy-MM-dd_HH-mm-ss_SSS";
     public static final boolean DEFAULT_DETECT_LAYOUTS = true;
     public static final boolean DEFAULT_DETECT_INTERACTIONS = true;
+    public static final boolean DEFAULT_REPLACE_PRIVATE_DATA = false;
 
     /**
      * Converts milliseconds to a String of the format "[Hh ][Mm ]Ss", e.g., "1h 20m 3s", "45m 22s" or "54s"
@@ -99,6 +103,26 @@ public class Misc {
                 return true;
         }
         return false;
+    }
+
+    /**
+     * Loads replacement data from files for the given app
+     * @return ReplacementData with the saved replacement mapping (or a new one if none existed), or
+     *         null if no replacement data were found on the device
+     */
+    public static ReplacementData loadReplacementData(Context context, String appPackageName) {
+        ReplacementData replacementData = null;
+        JSONObject replacementDataJSON = FileHelper.readJSONFile(context, FileHelper.Directory.PUBLIC_PACKAGE, appPackageName, FileHelper.REPLACEMENT_DATA);
+        if (replacementDataJSON != null) {
+            replacementData = ReplacementData.fromJSON(replacementDataJSON);
+            File replacementMapFile = FileHelper.getFile(context, FileHelper.Directory.PRIVATE_PACKAGE, appPackageName, FileHelper.REPLACEMENT_MAP);
+            if (replacementMapFile != null && replacementMapFile.exists()) {
+                HashMap<String, Integer> replacementMap = (HashMap<String, Integer>) FileHelper.readHashMap(context,
+                        FileHelper.Directory.PRIVATE_PACKAGE, appPackageName, FileHelper.REPLACEMENT_MAP);
+                replacementData.setReplacementMap(replacementMap);
+            }
+        }
+        return replacementData;
     }
 
     /**
