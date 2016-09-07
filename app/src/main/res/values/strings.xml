@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">DetectAppScreen</string>
+    <string name="app_name">Coast Dove</string>
 
     <!-- Main Activity -->
     <string name="accessibility_services_menu">Accessibility services</string>

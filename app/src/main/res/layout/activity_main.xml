@@ -19,7 +19,7 @@
     <fragment
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:name="de.uni_bonn.detectappscreen.ui.main.DetectableAppsListFragment"
+        android:name="simonlang.coastdove.ui.main.DetectableAppsListFragment"
         android:id="@+id/fragment_detectable_apps_file_list"
         android:layout_gravity="center_horizontal"
         tools:layout="@layout/fragment_simple_list"

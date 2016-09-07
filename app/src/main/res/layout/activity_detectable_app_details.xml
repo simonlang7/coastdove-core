@@ -101,7 +101,7 @@
     <fragment
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:name="de.uni_bonn.detectappscreen.ui.detectable_app_details.AppUsageDataListFragment"
+        android:name="simonlang.coastdove.ui.detectable_app_details.AppUsageDataListFragment"
         android:id="@+id/fragment_app_usage_data_file_list"
         android:layout_gravity="center_horizontal"
         tools:layout="@android:layout/list_content" />

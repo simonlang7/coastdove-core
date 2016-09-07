@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="de.uni_bonn.detectappscreen">
+    package="simonlang.coastdove">
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
@@ -12,8 +12,8 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <service
-            android:name=".detection.DetectAppScreenAccessibilityService"
-            android:label="DetectAppScreen"
+            android:name=".detection.CoastAccessibilityService"
+            android:label="Coast Dove (Statistics)"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
@@ -24,7 +24,7 @@
                 android:resource="@xml/serviceconfig" />
         </service>
 
-        <activity android:name=".ui.main.MainActivity">
+        <activity android:name="simonlang.coastdove.ui.main.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -32,12 +32,12 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".ui.detectable_app_details.DetectableAppDetailsActivity"
-            android:parentActivityName=".ui.main.MainActivity" />
+            android:name="simonlang.coastdove.ui.detectable_app_details.DetectableAppDetailsActivity"
+            android:parentActivityName="simonlang.coastdove.ui.main.MainActivity" />
         <activity
-            android:name=".ui.app_usage_data_details.AppUsageDataDetailsActivity"
-            android:parentActivityName=".ui.detectable_app_details.DetectableAppDetailsActivity" />
-        <activity android:name=".ui.add_app.AddAppActivity"></activity>
+            android:name="simonlang.coastdove.ui.app_usage_data_details.AppUsageDataDetailsActivity"
+            android:parentActivityName="simonlang.coastdove.ui.detectable_app_details.DetectableAppDetailsActivity" />
+        <activity android:name="simonlang.coastdove.ui.add_app.AddAppActivity"></activity>
     </application>
 
 </manifest>
