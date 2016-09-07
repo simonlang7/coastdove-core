@@ -26,29 +26,70 @@
 
         <LinearLayout
             android:orientation="vertical"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_gravity="center_vertical"
-            android:gravity="center_vertical">
+            android:gravity="center_vertical"
+            android:layout_weight="1">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="App Name"
-                android:id="@+id/appName"
-                android:layout_gravity="center_vertical"
-                android:textColor="@color/primary_text_default_material_light"
-                android:textSize="16sp" />
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="App Name"
+                    android:id="@+id/appName"
+                    android:layout_gravity="center_vertical"
+                    android:textColor="@color/primary_text_default_material_light"
+                    android:textSize="16sp" />
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/loadingElements"
+                    android:layout_marginRight="8dp"
+                    android:visibility="visible"
+                    android:layout_weight="1"
+                    android:layout_marginLeft="8dp"
+                    android:layout_gravity="bottom">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Loading"
+                        android:id="@+id/loadingTitle"
+                        android:layout_weight="1" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0%"
+                        android:id="@+id/loadingContentText" />
+
+                </LinearLayout>
+            </LinearLayout>
 
             <ProgressBar
                 style="?android:attr/progressBarStyleHorizontal"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:id="@+id/appProgressBar"
-                android:visibility="gone"
-                android:layout_gravity="bottom" />
+                android:visibility="visible"
+                android:layout_gravity="bottom"
+                android:layout_marginRight="8dp" />
 
         </LinearLayout>
+
+        <ImageButton
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:id="@+id/cancelButton"
+            android:src="@drawable/abc_ic_clear_mtrl_alpha"
+            android:layout_gravity="center_vertical" />
 
     </LinearLayout>
 

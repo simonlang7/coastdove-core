@@ -19,6 +19,7 @@
 package de.uni_bonn.detectappscreen.detection;
 
 import android.content.Context;
+import android.util.Log;
 
 import org.json.JSONObject;
 
@@ -95,6 +96,8 @@ public class AppDetectionDataLoader extends ObjectLoader<AppDetectionData> {
             // Create detection data from APK file
             File apkFile = new File(this.fullApkPath);
             detectableApp = AppDetectionDataSetup.fromAPK(this.context, apkFile, appPackageName, 1.0f, loadingInfo);
+            if (detectableApp == null)
+                return null;
             FileHelper.writeAppDetectionData(this.context, detectableApp, FileHelper.Directory.PRIVATE_PACKAGE, this.appPackageName, FileHelper.APP_DETECTION_DATA_FILENAME);
         }
         else {
@@ -109,6 +112,8 @@ public class AppDetectionDataLoader extends ObjectLoader<AppDetectionData> {
 
         // Initialize
         detectableApp.init(this.performLayoutChecks, this.performInteractionChecks, replacementData, this.context);
+        // TODO: re-work LoadingInfo with callbacks in activity, update activity to show appropriate bar
+        Log.d("AppDetectionDataLoader", "Accuracy: " + detectableApp.getAccuracy() + "%");
         return detectableApp;
     }
 }

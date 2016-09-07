@@ -28,7 +28,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceMedium"
-            android:text="Activate"
+            android:text="@string/activate"
             android:id="@+id/detectable_app_activate_text"
             android:layout_gravity="center_vertical"
             android:textColor="@color/abc_primary_text_material_dark"
@@ -56,6 +56,25 @@
             android:layout_marginTop="-4dp" />
 
     </FrameLayout>
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/detectable_app_accuracy_warning_bar"
+        android:background="@color/background_floating_material_dark"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/accuracy_warning"
+            android:id="@+id/detectable_app_accuracy_warning_text"
+            android:layout_marginLeft="16dp"
+            android:layout_marginTop="6dp"
+            android:layout_marginBottom="6dp"
+            android:textColor="@color/abc_primary_text_material_dark" />
+    </LinearLayout>
 
     <LinearLayout
         android:orientation="horizontal"

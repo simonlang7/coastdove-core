@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.support.v7.app.NotificationCompat;
-import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ProgressBar;
@@ -19,6 +18,8 @@ public class LoadingInfo {
     private NotificationCompat.Builder builder;
     private int uid;
     private volatile boolean indeterminate;
+    private volatile String title;
+    private volatile String contentText;
     private volatile int progress;
     private volatile int maxProgress;
     private volatile boolean started;
@@ -34,6 +35,9 @@ public class LoadingInfo {
         initNotification(context);
         this.progress = 0;
         this.maxProgress = 0;
+        this.indeterminate = true;
+        this.title = "";
+        this.contentText = "";
         this.started = false;
         this.finished = false;
     }
@@ -45,6 +49,9 @@ public class LoadingInfo {
         this.progressBar = null;
         this.progress = 0;
         this.maxProgress = 0;
+        this.indeterminate = true;
+        this.title = "";
+        this.contentText = "";
         this.started = false;
         this.finished = false;
     }
@@ -122,9 +129,6 @@ public class LoadingInfo {
                             progressBar.setVisibility(View.VISIBLE);
                             progressBar.setIndeterminate(true);
                         }
-                        if (listAdapter != null) {
-                            listAdapter.notifyDataSetChanged();
-                        }
                     }
                 });
             }
@@ -148,8 +152,6 @@ public class LoadingInfo {
                             progressBar.setMax(maxProgress);
                             progressBar.setProgress(progress);
                         }
-                        if (listAdapter != null)
-                            listAdapter.notifyDataSetChanged();
                     }
                 });
             }
@@ -162,6 +164,17 @@ public class LoadingInfo {
     public void update() {
         if (notificationManager != null)
             notificationManager.notify(this.uid, builder.build());
+        synchronized (this) {
+            if (activity != null) {
+                activity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (listAdapter != null)
+                            listAdapter.notifyDataSetChanged();
+                    }
+                });
+            }
+        }
     }
 
     public void end() {
@@ -176,9 +189,6 @@ public class LoadingInfo {
                         if (progressBar != null) {
                             progressBar.setIndeterminate(false);
                             progressBar.setVisibility(View.GONE);
-                        }
-                        if (listAdapter != null) {
-                            listAdapter.notifyDataSetChanged();
                         }
                     }
                 });
@@ -199,6 +209,22 @@ public class LoadingInfo {
         }
     }
 
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getContentText() {
+        return contentText;
+    }
+
+    public void setContentText(String contentText) {
+        this.contentText = contentText;
+    }
+
     public int getProgress() {
         return progress;
     }
@@ -213,6 +239,14 @@ public class LoadingInfo {
 
     public boolean isFinished() {
         return this.finished;
+    }
+
+    public boolean isIndeterminate() {
+        return indeterminate;
+    }
+
+    public void setIndeterminate(boolean indeterminate) {
+        this.indeterminate = indeterminate;
     }
 
     private void initNotification(Context context) {

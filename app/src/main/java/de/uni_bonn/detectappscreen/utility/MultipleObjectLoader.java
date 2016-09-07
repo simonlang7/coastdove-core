@@ -48,6 +48,32 @@ public class MultipleObjectLoader<T> {
     }
 
     /**
+     * Interrupts the loading thread of the object for the given key
+     * @param key    Key to identify the object
+     */
+    public void interrupt(String key) {
+        synchronized (this) {
+            if (loadingObjects.containsKey(key)) {
+                loadingObjects.get(key).interrupt();
+            }
+        }
+    }
+
+    /**
+     * Indicates whether the thread loading the object for the given key is currently interrupted
+     * @param key    Key to identify the object
+     * @return true if the thread is interrupted
+     */
+    public boolean isInterrupted(String key) {
+        boolean result = false;
+        synchronized (this) {
+            if (loadingObjects.containsKey(key))
+                result = loadingObjects.get(key).isInterrupted();
+        }
+        return result;
+    }
+
+    /**
      * Returns the loading status of an object
      * @param key    Key of the object to look for
      * @return LOADED if the object has finished loading, LOADING if it is loading,
@@ -105,12 +131,14 @@ public class MultipleObjectLoader<T> {
      */
     public boolean remove(String key) {
         boolean removed = false;
-        if (loadingObjects.containsKey(key)) {
-            Thread thread = loadingObjects.get(key);
-            thread.interrupt();
-            loadingObjects.remove(key);
-            Log.d("MultipleObjectLoader", "Removed loader thread for " + key);
-            removed = true;
+        synchronized (this) {
+            if (loadingObjects.containsKey(key)) {
+                    Thread thread = loadingObjects.get(key);
+                    thread.interrupt();
+                    loadingObjects.remove(key);
+                Log.d("MultipleObjectLoader", "Removed loader thread for " + key);
+                removed = true;
+            }
         }
         if (loadedObjects.containsKey(key)) {
             loadedObjects.remove(key);
@@ -180,9 +208,8 @@ public class MultipleObjectLoader<T> {
      * @param object    Object loaded
      */
     void deliverResult(String key, T object) {
+        remove(key);
         loadedObjects.put(key, object);
-        loadingObjects.remove(key);
-        loadingInfos.remove(key);
         Log.d("MultipleObjectLoader", "Removed loader thread for " + key);
     }
 }

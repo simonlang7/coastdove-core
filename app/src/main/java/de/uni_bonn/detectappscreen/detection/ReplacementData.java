@@ -4,12 +4,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -54,12 +49,14 @@ public class ReplacementData {
                 JSONObject replacementEntry = replacementDataArray.getJSONObject(i);
                 String androidID = replacementEntry.getString("androidID");
                 JSONObject replacementJSON = replacementEntry.getJSONObject("replacement");
+
                 ReplacementType replaceText = null;
                 ReplacementType replaceDescription = null;
                 if (replacementJSON.has("text"))
                     replaceText = ReplacementType.valueOf(replacementJSON.getString("text"));
                 if (replacementJSON.has("description"))
                     replaceDescription = ReplacementType.valueOf(replacementJSON.getString("description"));
+
                 result.replacementRules.put(androidID, new ReplacementRule(replaceText, replaceDescription));
             }
         } catch (JSONException e) {

@@ -53,9 +53,8 @@ import de.uni_bonn.detectappscreen.utility.FileHelper;
  * favored.
  */
 public class AppDetectionData implements Serializable {
-    private static final long serialVersionUID = 3582683828213329450L;
-
-
+    private static final long serialVersionUID = 8801767592574786461L;
+    
     /** Name of the package associated, i.e. the app that can be detected */
     private String appPackageName;
     /** Hash map mapping from each layout to a set of android IDs that identify the layout*/
@@ -64,6 +63,8 @@ public class AppDetectionData implements Serializable {
     private Map<String, Set<String>> reverseMap;
     /** Contains information about main activities */
     private AppMetaInformation appMetaInformation;
+    /** Percentage of possibly detectable layouts that are actually detected */
+    private int accuracy;
 
     /** Indicates whether to perform layout checks or not */
     private transient boolean performLayoutChecks;
@@ -85,11 +86,13 @@ public class AppDetectionData implements Serializable {
      * @param reverseMap                 Map (androidID -> {possible layouts})
      */
     public AppDetectionData(String appPackageName, Map<String, LayoutIdentification> layoutIdentificationMap,
-                            Map<String, Set<String>> reverseMap, AppMetaInformation appMetaInformation) {
+                            Map<String, Set<String>> reverseMap, AppMetaInformation appMetaInformation,
+                            int accuracy) {
         this.appPackageName = appPackageName;
         this.layoutIdentificationMap = layoutIdentificationMap;
         this.reverseMap = reverseMap;
         this.appMetaInformation = appMetaInformation;
+        this.accuracy = accuracy;
     }
 
     /**
@@ -438,5 +441,9 @@ public class AppDetectionData implements Serializable {
 
     public void setReplacementData(ReplacementData replacementData) {
         this.replacementData = replacementData;
+    }
+
+    public int getAccuracy() {
+        return accuracy;
     }
 }

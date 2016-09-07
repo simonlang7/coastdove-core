@@ -31,8 +31,10 @@ public abstract class ObjectLoader<T> implements Runnable {
     @Override
     public final void run() {
         T object = this.load();
-        if (Thread.currentThread().isInterrupted())
+        if (Thread.currentThread().isInterrupted()) {
+            this.multipleObjectLoader.remove(key);
             return;
+        }
 
         this.multipleObjectLoader.deliverResult(key, object);
     }

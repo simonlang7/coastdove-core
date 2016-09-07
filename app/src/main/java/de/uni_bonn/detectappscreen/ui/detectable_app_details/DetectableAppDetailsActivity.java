@@ -127,13 +127,13 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
                 }
                 else
                     DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader().remove(appPackageName);
-                setUpASActivationBar();
+                setUpReminderBars();
             }
         });
 
         boolean cacheExists = FileHelper.appDetectionDataExists(context, appPackageName);
         setUpActivationBar(cacheExists);
-        setUpASActivationBar();
+        setUpReminderBars();
     }
 
     @Override
@@ -315,9 +315,11 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
     /**
      * Sets up a bar to remind the user to activate the accessibility service
      */
-    private void setUpASActivationBar() {
+    private void setUpReminderBars() {
         final LinearLayout activateASBar = (LinearLayout)findViewById(R.id.detectable_app_accessibility_activation_bar);
+        final LinearLayout accuracyWarningBar = (LinearLayout)findViewById(R.id.detectable_app_accuracy_warning_bar);
         boolean detectionDataLoadedOrLoading = false;
+
         try {
             detectionDataLoadedOrLoading = DetectAppScreenAccessibilityService.getAppDetectionDataMultiLoader().contains(this.appPackageName);
         } catch (NullPointerException e) {

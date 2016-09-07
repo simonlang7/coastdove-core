@@ -9,6 +9,10 @@
 
     <!-- Add App Activity -->
     <string name="add_detectable_app">Add Detectable App</string>
+    <string name="add_app_parsing_resources">Parsing resources&#8230;</string>
+    <string name="add_app_reading_apk">Reading .apk file&#8230;</string>
+    <string name="add_app_setting_up_layouts">Setting up layouts&#8230;</string>
+    <string name="add_app_cancelling">Cancelling&#8230;</string>
     <!-- Add App Notifications -->
     <string name="add_app_notification_loading">Setting up layouts</string>
     <string name="add_app_notification_finished_loading">Finished setting up layouts</string>
@@ -16,6 +20,7 @@
     <!-- Detectable App Details -->
     <string name="activate">Activate</string>
     <string name="activate_no_cache">Add app to activate</string>
+    <string name="accuracy_warning">Accuracy is . Consider rebuilding the cache.</string>
     <string name="activate_accessibility">Click to activate accessibility service</string>
     <string name="loading">Loading</string>
     <string name="detect_layouts">Detect layouts</string>

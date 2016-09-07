@@ -30,10 +30,12 @@ import brut.androlib.res.decoder.AXmlResourceParser;
 import de.uni_bonn.detectappscreen.R;
 import de.uni_bonn.detectappscreen.detection.AppDetectionData;
 import de.uni_bonn.detectappscreen.detection.AppMetaInformation;
+import de.uni_bonn.detectappscreen.detection.DetectAppScreenAccessibilityService;
 import de.uni_bonn.detectappscreen.detection.LayoutIdentification;
 import de.uni_bonn.detectappscreen.ui.LoadingInfo;
 import de.uni_bonn.detectappscreen.utility.APKToolHelper;
 import de.uni_bonn.detectappscreen.utility.CollatorWrapper;
+import de.uni_bonn.detectappscreen.utility.MultipleObjectLoader;
 import de.uni_bonn.detectappscreen.utility.PowerSet;
 import de.uni_bonn.detectappscreen.utility.Misc;
 import soot.jimple.infoflow.android.resources.ARSCFileParser;
@@ -77,6 +79,7 @@ public class AppDetectionDataSetup {
 
         loadingInfo.setNotificationData(context.getString(R.string.add_app_notification_loading),
                 appPackageName, R.drawable.notification_template_icon_bg);
+        loadingInfo.setTitle(context.getString(R.string.add_app_parsing_resources));
         loadingInfo.start(true);
 
         ZipFile apk;
@@ -94,11 +97,21 @@ public class AppDetectionDataSetup {
 
         try {
             resourceParser.parse(apk.getInputStream(arscEntry));
+            if (Thread.currentThread().isInterrupted()) {
+                loadingInfo.end();
+                apk.close();
+                return null;
+            }
 
             XmlPullParserFactory fac = XmlPullParserFactory.newInstance();
             XmlPullParser p = fac.newPullParser();
             p.setInput(manifestInputStream, "UTF-8");
             mainActivities = parseMainActivities(p);
+            if (Thread.currentThread().isInterrupted()) {
+                loadingInfo.end();
+                apk.close();
+                return null;
+            }
         } catch (IOException e) {
             Log.e("AppDetectionDataSetup", "Cannot get InputStream: " + e.getMessage());
         } catch (XmlPullParserException e) {
@@ -108,12 +121,19 @@ public class AppDetectionDataSetup {
         AppMetaInformation appMetaInformation = new AppMetaInformation(appPackageName, mainActivities);
 
         // Read APK file
+        loadingInfo.setTitle(context.getString(R.string.add_app_reading_apk));
+        loadingInfo.update();
         Log.d("AppDetectionDataSetup", "Reading APK file");
         Enumeration<?> zipEntries = apk.entries();
         List<LayoutIdentificationContainer> containers = new LinkedList<>();
         while (zipEntries.hasMoreElements()) {
             ZipEntry zipEntry = (ZipEntry)zipEntries.nextElement();
             try {
+                if (Thread.currentThread().isInterrupted()) {
+                    loadingInfo.end();
+                    apk.close();
+                    return null;
+                }
                 String entryName = zipEntry.getName();
                 if (entryName.contains("res/layout/") && Misc.isBinaryXML(apk.getInputStream(zipEntry))) {
                     String name = entryName.replaceAll(".*/", "").replace(".xml", "");
@@ -133,16 +153,24 @@ public class AppDetectionDataSetup {
             }
         }
 
+        try {
+            apk.close();
+        } catch (IOException e) {
+            Log.e("AppDetectionDataSetup", "Unable to close APK file: " + e.getMessage());
+        }
+
         // get unique IDs and reverse map
         List<LayoutIdentificationContainer> containersCopy = new LinkedList<>(containers);
-        lookupUniqueIDs(containersCopy);
+        loadingInfo.setTitle(context.getString(R.string.add_app_setting_up_layouts));
+        loadingInfo.update();
+        int accuracy = lookupUniqueIDs(containersCopy, loadingInfo);
         reverseMap = buildReverseMap(containers, allAndroidIDs);
 
         loadingInfo.setNotificationData(context.getString(R.string.add_app_notification_finished_loading),
                 null, null);
         loadingInfo.end();
 
-        return new AppDetectionData(appPackageName, layoutIdentificationMap, reverseMap, appMetaInformation);
+        return new AppDetectionData(appPackageName, layoutIdentificationMap, reverseMap, appMetaInformation, accuracy);
     }
 
     /**
@@ -225,11 +253,15 @@ public class AppDetectionDataSetup {
      * which is held in its own container
      * @param containers    Layouts (containers) to process
      */
-    private static void lookupUniqueIDs(List<LayoutIdentificationContainer> containers) {
+    private static int lookupUniqueIDs(List<LayoutIdentificationContainer> containers, LoadingInfo loadingInfo) {
         int layoutsCount = containers.size();
+        loadingInfo.setContentText("0%");
+        loadingInfo.setIndeterminate(false);
+        int progress = 0;
+        loadingInfo.update(100, progress);
 
         // The fewer androidIDs we need to identify a layout, the better, hence start with size 1
-        for (int currentSize = 1; currentSize < 16 && containers.size() > 0; ++currentSize) {
+        outer: for (int currentSize = 1; currentSize < 16 && containers.size() > 0; ++currentSize) {
             Log.d("AppDetectionDataSetup", "Size: " + currentSize);
             Map<String, Integer> idOccurrenceCounts = idOccurrenceCounts(containers, currentSize);
 
@@ -238,6 +270,11 @@ public class AppDetectionDataSetup {
             // What's the current "best" for identifiers?
             Iterator<LayoutIdentificationContainer> it = containers.iterator();
             while (it.hasNext()) {
+                if (Thread.interrupted()) { // This clears the interrupt flag (unlike Thread.currentThread().isInterrupted())
+                    if (progress < 50) // If progress too low, interrupt thread again, so the multiLoader does not add the resulting data
+                        Thread.currentThread().interrupt();
+                    break outer;
+                }
                 if (currentSize >= 5)
                     Log.d("AppDetectionDataSetup", count + " / " + currentMax);
 
@@ -251,7 +288,10 @@ public class AppDetectionDataSetup {
                 ++count;
             }
 
-            //System.out.println("\nidOccurrenceCounts size: " + idOccurrenceCounts.size());
+            float accuracy = (layoutsCount - containers.size())/(float)layoutsCount;
+            progress = Math.round(accuracy * 100);
+            loadingInfo.setContentText(progress + "%");
+            loadingInfo.update(100, progress);
             Log.d("AppDetectionDataSetup", "Accuracy: " + (layoutsCount - containers.size())/(float)layoutsCount);
         }
 
@@ -261,6 +301,8 @@ public class AppDetectionDataSetup {
                 container.addBestIDSetsAsLayoutIdentifiers();
             }
         }
+
+        return progress;
     }
 
     /**
