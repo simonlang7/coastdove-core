@@ -65,6 +65,12 @@ public final class AppUsageContract {
         public static final String COLUMN_NAME_LAYOUT = "layout";
     }
 
+    public static abstract class ScreenOffDetailsTable implements BaseColumns {
+        public static final String TABLE_NAME = "screen_off_details";
+        public static final String COLUMN_NAME_DATA_ENTRY_ID = "data_entry_id";
+        public static final String COLUMN_NAME_DURATION = "duration";
+    }
+
     public static abstract class ScrollDetailsTable implements BaseColumns {
         public static final String TABLE_NAME = "scroll_details";
     }
@@ -133,8 +139,19 @@ public final class AppUsageContract {
                     "FOREIGN KEY (" + LayoutDetailsTable.COLUMN_NAME_DATA_ENTRY_ID + ") REFERENCES " + DataEntryTable.TABLE_NAME + "(" + DataEntryTable._ID + ")"
                     + " )";
 
+    public static final String SQL_CREATE_SCREEN_OFF_DETAILS =
+            "CREATE TABLE " + ScreenOffDetailsTable.TABLE_NAME + " (" +
+                    ScreenOffDetailsTable._ID + " INTEGER PRIMARY KEY," +
+                    ScreenOffDetailsTable.COLUMN_NAME_DATA_ENTRY_ID + " INTEGER" + COMMA_SEP +
+                    ScreenOffDetailsTable.COLUMN_NAME_DURATION + " INTEGER" + COMMA_SEP +
+                    "FOREIGN KEY (" + ScreenOffDetailsTable.COLUMN_NAME_DATA_ENTRY_ID + ") REFERENCES " + DataEntryTable.TABLE_NAME + "(" + DataEntryTable._ID + ")"
+                    + " )";
+
     public static final String SQL_DELETE_LAYOUT_DETAILS =
             "DROP TABLE IF EXISTS " + LayoutDetailsTable.TABLE_NAME;
+
+    public static final String SQL_DELETE_SCREEN_OFF_DETAILS =
+            "DROP TABLE IF EXISTS " + ScreenOffDetailsTable.TABLE_NAME;
 
     public static final String SQL_DELETE_SCROLL_DETAILS =
             "DROP TABLE IF EXISTS " + ScrollDetailsTable.TABLE_NAME;

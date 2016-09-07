@@ -155,8 +155,8 @@ public class AppUsageData {
 
     /**
      * Adds an interaction data entry
-     * @param timestamp        Time at which the data were collected
-     * @param activity         Activity detected
+     * @param timestamp              Time at which the data were collected
+     * @param activity               Activity detected
      * @param detectedInteraction    Interaction detected
      * @return True if a new data entry was added, false if the previous data entry equals these data
      *         or there was no activity data object to add the data to
@@ -170,7 +170,7 @@ public class AppUsageData {
 
     /**
      * Adds an interaction data entry, using the current time when creating the timestamp
-     * @param activity         Activity detected
+     * @param activity               Activity detected
      * @param detectedInteraction    Interaction detected
      * @return True if a new data entry was added, false if the previous data entry equals these data
      *         or there was no activity data object to add the data to
@@ -178,6 +178,30 @@ public class AppUsageData {
     public boolean addInteractionDataEntry(String activity, Set<InteractionEventData> detectedInteraction, ActivityDataEntry.EntryType type) {
         Date timestamp = new Date();
         return addInteractionDataEntry(timestamp, activity, detectedInteraction, type);
+    }
+
+    /**
+     * Adds a screen off entry
+     * @param timestamp    Time at which the screen was turned off
+     * @param activity     Activity detected
+     * @return True if a new data entry was added, false if no activity was detected previously (should not happen)
+     */
+    public boolean addScreenOffEntry(Date timestamp, String activity) {
+        if (activityDataList.isEmpty())
+            return false;
+        activityDataList.peekLast().addScreenOffEntry(timestamp, activity);
+        return true;
+    }
+
+    /**
+     * Finishes the last screen off entry
+     * @return True if the last screen off entry was finished, false if no activity was detected previously (should not happen)
+     */
+    public boolean finishScreenOffEntry() {
+        if (activityDataList.isEmpty())
+            return false;
+        activityDataList.peekLast().finishScreenOffEntry();
+        return true;
     }
 
     /**

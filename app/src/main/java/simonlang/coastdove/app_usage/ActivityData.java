@@ -22,6 +22,7 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
+import android.util.Log;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -186,6 +187,27 @@ public class ActivityData {
         }
         else
             return false;
+    }
+
+    /**
+     * Adds a screen off entry
+     * @param timestamp    Time at which the screen was turned off
+     * @param activity     Activity detected
+     */
+    public void addScreenOffEntry(Date timestamp, String activity) {
+        ScreenOffEntry entry = new ScreenOffEntry(timestamp, activity);
+        this.dataEntries.add(entry);
+    }
+
+    /**
+     * Finished a screen off entry (i.e. stops the time measured)
+     */
+    public void finishScreenOffEntry() {
+        ScreenOffEntry lastEntry = (ScreenOffEntry)findLastEntryOfType(ScreenOffEntry.class);
+        if (lastEntry != null)
+            lastEntry.finish();
+        else
+            Log.e("ActivityData", "Unable to find ScreenOffEntry. This should not happen and may yield strange results.");
     }
 
     /**

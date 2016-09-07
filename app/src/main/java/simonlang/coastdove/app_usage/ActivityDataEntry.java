@@ -43,6 +43,8 @@ public abstract class ActivityDataEntry {
             return EntryType.LONG_CLICK;
         if (type.equals(EntryType.SCROLLING.name()))
             return EntryType.SCROLLING;
+        if (type.equals(EntryType.SCREEN_OFF.name()))
+            return EntryType.SCREEN_OFF;
         else
             return EntryType.OTHER;
     }
@@ -51,6 +53,7 @@ public abstract class ActivityDataEntry {
         CLICK,
         LONG_CLICK,
         SCROLLING,
+        SCREEN_OFF,
         OTHER;
 
         public String toString() {

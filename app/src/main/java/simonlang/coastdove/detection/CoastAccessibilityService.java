@@ -20,6 +20,8 @@ package simonlang.coastdove.detection;
 
 import android.accessibilityservice.AccessibilityService;
 import android.content.ComponentName;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.util.Log;
@@ -43,7 +45,8 @@ public class CoastAccessibilityService extends AccessibilityService {
         return appDetectionDataMultiLoader;
     }
 
-
+    /** Receiver for when the screen turns off or on */
+    private ScreenStateReceiver screenStateReceiver;
     /** Name of the current activity, as acquired during the last window state change event */
     private String currentActivity;
     /** Name of the previous app, as extracted from the last activity of the previous app */
@@ -114,15 +117,29 @@ public class CoastAccessibilityService extends AccessibilityService {
         this.previousPackageName = activityPackageName;
     }
 
-    /**
-     * Initializes this accessibility service
-     */
+    @Override
+    public void onCreate() {
+        super.onCreate();
+
+        this.screenStateReceiver = new ScreenStateReceiver();
+        IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
+        filter.addAction(Intent.ACTION_SCREEN_ON);
+        registerReceiver(this.screenStateReceiver, filter);
+    }
+
     @Override
     protected void onServiceConnected() {
         super.onServiceConnected();
 
         this.currentActivity = "";
         this.previousPackageName = "";
+    }
+
+    @Override
+    public void onDestroy() {
+        unregisterReceiver(this.screenStateReceiver);
+
+        super.onDestroy();
     }
 
     @Override
