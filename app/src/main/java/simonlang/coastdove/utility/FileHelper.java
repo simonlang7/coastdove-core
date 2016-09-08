@@ -60,11 +60,13 @@ public class FileHelper {
      * Type of directory, to be used when referring to a file
      */
     public enum Directory {
+        /** The app's private directory */
+        PRIVATE,
         /** The external storage public directory of this app */
         PUBLIC,
-        /** The app's package name as a sub-directory of the private directory */
+        /** The app's package name as a sub-directory of the app's private directory */
         PRIVATE_PACKAGE,
-        /** The app's package name as a sub-directory of the public directory */
+        /** The app's package name as a sub-directory of the app's public directory */
         PUBLIC_PACKAGE
     }
 
@@ -280,6 +282,10 @@ public class FileHelper {
         File baseDirectory;
         String subDirectory;
         switch (directory) {
+            case PRIVATE:
+                baseDirectory = context.getFilesDir();
+                subDirectory = "";
+                break;
             case PUBLIC:
                 if (!Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
                     Log.e("FileHelper", "External storage is not mounted, failing.");

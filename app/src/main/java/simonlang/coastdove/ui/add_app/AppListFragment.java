@@ -88,7 +88,6 @@ public class AppListFragment extends LoadableListFragment<ApplicationInfo> {
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext());
             boolean replacePrivateData = Misc.getPreferenceBoolean(prefs, item.packageName,
                     getActivity().getString(R.string.pref_replace_private_data), Misc.DEFAULT_REPLACE_PRIVATE_DATA);
-            Log.d("LOADER", "replace private data? " + replacePrivateData + " (" + item.packageName + getActivity().getString(R.string.pref_replace_private_data) + ")");
             AppDetectionDataLoader loader = new AppDetectionDataLoader(item.packageName, multiLoader, item.publicSourceDir, replacePrivateData, getActivity(), loadingInfo);
 
             multiLoader.startLoading(item.packageName, loader, loadingInfo);

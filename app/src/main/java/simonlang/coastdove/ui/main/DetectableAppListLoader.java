@@ -22,6 +22,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.v4.content.AsyncTaskLoader;
+import android.util.Log;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -48,8 +49,9 @@ public class DetectableAppListLoader extends AsyncTaskLoader<ArrayList<String>> 
 
     @Override
     public ArrayList<String> loadInBackground() {
-        File directory = FileHelper.getFile(getContext(), FileHelper.Directory.PUBLIC, null, "");
-        String[] files = directory.exists() ? directory.list(new FilenameFilter() {
+        // TODO: also check list of SQLite "app" entries right away.
+        File directory = FileHelper.getFile(getContext(), FileHelper.Directory.PRIVATE, null, "");
+        String[] apps = directory.exists() ? directory.list(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String filename) {
                 boolean detectableDataExists = FileHelper.appDetectionDataExists(getContext(), filename);
@@ -74,9 +76,9 @@ public class DetectableAppListLoader extends AsyncTaskLoader<ArrayList<String>> 
             }
         }) : new String[0];
         
-        ArrayList<String> data = new ArrayList<>(files.length);
-        for (String file : files)
-            data.add(file);
+        ArrayList<String> data = new ArrayList<>(apps.length);
+        for (String app : apps)
+            data.add(app);
         Collections.sort(data, new CollatorWrapper());
         return data;
     }

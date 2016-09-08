@@ -93,16 +93,17 @@ public class CoastAccessibilityService extends AccessibilityService {
      */
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
-        if (event.getEventType() == AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED) {
-            Log.d("Coast AS", "Notification received");
-            Parcelable data = event.getParcelableData();
-            if (data instanceof Notification) {
-                Notification notification = (Notification)data;
-                Log.d("Coast AS", "Notification: " + notification.tickerText + ": " +
-                        event.getText());
-            }
-        }
         if (event.getPackageName() != null) {
+            if (event.getEventType() == AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED) {
+                Log.d("Coast AS", "Notification received");
+                Parcelable data = event.getParcelableData();
+                if (data instanceof Notification) {
+                    Notification notification = (Notification)data;
+                    Log.d("Coast AS", "Notification package: " + event.getPackageName());
+                    Log.d("Coast AS", "Notification: " + notification.tickerText + ": " +
+                            event.getText());
+                }
+            }
             String packageName = event.getPackageName().toString();
 
 
