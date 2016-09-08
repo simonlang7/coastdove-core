@@ -81,7 +81,7 @@ public class SQLiteTableLoader extends AsyncTaskLoader<ArrayList<AppUsageDataUIC
             c.moveToNext();
         }
 
-        dbHelper.close();
+        db.close();
 
         return data;
     }

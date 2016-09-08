@@ -112,6 +112,7 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
                     boolean detectLayouts = preferences.getBoolean(appPackageName + getString(R.string.pref_detect_layouts), Misc.DEFAULT_DETECT_LAYOUTS);
                     boolean detectInteractions = preferences.getBoolean(appPackageName + getString(R.string.pref_detect_interactions), Misc.DEFAULT_DETECT_INTERACTIONS);
                     boolean detectScreenState = preferences.getBoolean(appPackageName + getString(R.string.pref_detect_screen_state), Misc.DEFAULT_DETECT_SCREEN_STATE);
+                    boolean detectNotifications = preferences.getBoolean(appPackageName + getString(R.string.pref_detect_notifications), Misc.DEFAULT_DETECT_NOTIFICATIONS);
                     boolean replacePrivateData = preferences.getBoolean(appPackageName + getString(R.string.pref_replace_private_data), Misc.DEFAULT_REPLACE_PRIVATE_DATA);
                     boolean replacementDataExists = FileHelper.fileExists(context, FileHelper.Directory.PUBLIC_PACKAGE, appPackageName, FileHelper.REPLACEMENT_DATA);
 
@@ -123,7 +124,7 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
                     // Start the loading process and add
                     MultipleObjectLoader<AppDetectionData> multiLoader = CoastAccessibilityService.getAppDetectionDataMultiLoader();
                     AppDetectionDataLoader loader = new AppDetectionDataLoader(appPackageName, multiLoader,
-                            detectLayouts, detectInteractions, detectScreenState, replacePrivateData && replacementDataExists,
+                            detectLayouts, detectInteractions, detectScreenState, detectNotifications, replacePrivateData && replacementDataExists,
                             context, loadingInfo);
                     multiLoader.startLoading(appPackageName, loader, loadingInfo);
                     Log.d("DetAppDetails", "Started loading with " + loadingInfo.isFinished() + " finished loadingInfo");
@@ -149,6 +150,7 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
             boolean detectingLayouts = detectionData.getPerformLayoutChecks();
             boolean detectingInteractions = detectionData.getPerformInteractionChecks();
             boolean detectingScreenState = detectionData.getPerformScreenStateChecks();
+            boolean detectingNotifications = detectionData.getPerformNotificationChecks();
             SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
             if (Misc.getPreferenceBoolean(preferences, appPackageName, getString(R.string.pref_detect_layouts), Misc.DEFAULT_DETECT_LAYOUTS))
                 Misc.setPreference(preferences, appPackageName, getString(R.string.pref_detect_layouts), detectingLayouts);
@@ -156,6 +158,8 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
                 Misc.setPreference(preferences, appPackageName, getString(R.string.pref_detect_interactions), detectingInteractions);
             if (Misc.getPreferenceBoolean(preferences, appPackageName, getString(R.string.pref_detect_screen_state), Misc.DEFAULT_DETECT_SCREEN_STATE))
                 Misc.setPreference(preferences, appPackageName, getString(R.string.pref_detect_screen_state), detectingScreenState);
+            if (Misc.getPreferenceBoolean(preferences, appPackageName, getString(R.string.pref_detect_notifications), Misc.DEFAULT_DETECT_NOTIFICATIONS))
+                Misc.setPreference(preferences, appPackageName, getString(R.string.pref_detect_notifications), detectingNotifications);
         }
 
         setUpCheckboxes(menu);
@@ -166,7 +170,9 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         MenuItem checkboxDetectLayouts = menu.findItem(R.id.checkbox_detect_layouts);
-        MenuItem checkboxDetectClicks = menu.findItem(R.id.checkbox_detect_interactions);
+        MenuItem checkboxDetectInteractions = menu.findItem(R.id.checkbox_detect_interactions);
+        MenuItem checkboxDetectScreenState = menu.findItem(R.id.checkbox_detect_screen_state);
+        MenuItem checkboxDetectNotifications = menu.findItem(R.id.checkbox_detect_notifications);
         MenuItem checkboxReplacePrivateData = menu.findItem(R.id.checkbox_replace_private_data);
         MenuItem itemDeleteReplacementMap = menu.findItem(R.id.item_delete_replacement_mapping);
         MenuItem itemDeleteCache = menu.findItem(R.id.item_delete_cache);
@@ -179,13 +185,18 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
             boolean detectionDataLoading = CoastAccessibilityService.getAppDetectionDataMultiLoader().getStatus(this.appPackageName)
                     == MultipleObjectLoader.Status.LOADING;
             checkboxDetectLayouts.setEnabled(!detectionDataLoading);
-            checkboxDetectClicks.setEnabled(!detectionDataLoading);
+            checkboxDetectInteractions.setEnabled(!detectionDataLoading);
+            checkboxDetectScreenState.setEnabled(!detectionDataLoading);
+            checkboxDetectNotifications.setEnabled(!detectionDataLoading);
             checkboxReplacePrivateData.setEnabled(!detectionDataLoading && replacementDataExists);
             itemDeleteReplacementMap.setEnabled(!detectionDataLoading && replacementMappingExists);
             itemDeleteCache.setEnabled(cacheExists && !detectionDataLoading);
         } catch (NullPointerException e) {
             checkboxDetectLayouts.setEnabled(false);
-            checkboxDetectClicks.setEnabled(false);
+            checkboxDetectInteractions.setEnabled(false);
+            checkboxDetectScreenState.setEnabled(false);
+            checkboxDetectNotifications.setEnabled(false);
+            itemDeleteReplacementMap.setEnabled(false);
             itemDeleteCache.setEnabled(false);
             Log.e("DetectableAppDetailsAc.", "Error creating menu: " + e.getMessage());
         }
@@ -211,6 +222,16 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
                 if (detectionData != null)
                     detectionData.setPerformInteractionChecks(item.isChecked());
                 return true;
+            case R.id.checkbox_detect_screen_state:
+                item.setChecked(!item.isChecked());
+                Misc.setPreference(preferences, appPackageName, getString(R.string.pref_detect_screen_state), item.isChecked());
+                if (detectionData != null)
+                    detectionData.setPerformScreenStateChecks(item.isChecked());
+            case R.id.checkbox_detect_notifications:
+                item.setChecked(!item.isChecked());
+                Misc.setPreference(preferences, appPackageName, getString(R.string.pref_detect_notifications), item.isChecked());
+                if (detectionData != null)
+                    detectionData.setPerformNotificationChecks(item.isChecked());
             case R.id.checkbox_replace_private_data:
                 item.setChecked(!item.isChecked());
                 Misc.setPreference(preferences, appPackageName, getString(R.string.pref_replace_private_data), item.isChecked());
@@ -267,19 +288,24 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
         MenuItem checkboxLayouts = menu.findItem(R.id.checkbox_detect_layouts);
         MenuItem checkboxInteractions = menu.findItem(R.id.checkbox_detect_interactions);
         MenuItem checkboxScreenState = menu.findItem(R.id.checkbox_detect_screen_state);
+        MenuItem checkboxNotifications = menu.findItem(R.id.checkbox_detect_notifications);
         MenuItem checkboxReplacePrivateData = menu.findItem(R.id.checkbox_replace_private_data);
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-        boolean detectLayouts = Misc.getPreferenceBoolean(preferences, this.appPackageName, getString(R.string.pref_detect_layouts), Misc.DEFAULT_DETECT_LAYOUTS);
+        boolean detectLayouts = Misc.getPreferenceBoolean(preferences, this.appPackageName,
+                getString(R.string.pref_detect_layouts), Misc.DEFAULT_DETECT_LAYOUTS);
         boolean detectInteractions = Misc.getPreferenceBoolean(preferences, this.appPackageName,
                 getString(R.string.pref_detect_interactions), Misc.DEFAULT_DETECT_INTERACTIONS);
         boolean detectScreenState = Misc.getPreferenceBoolean(preferences, this.appPackageName,
                 getString(R.string.pref_detect_screen_state), Misc.DEFAULT_DETECT_SCREEN_STATE);
+        boolean detectNotifications = Misc.getPreferenceBoolean(preferences, this.appPackageName,
+                getString(R.string.pref_detect_notifications), Misc.DEFAULT_DETECT_NOTIFICATIONS);
         boolean replacePrivateData = Misc.getPreferenceBoolean(preferences, this.appPackageName,
                 getString(R.string.pref_replace_private_data), Misc.DEFAULT_REPLACE_PRIVATE_DATA);
 
         checkboxLayouts.setChecked(detectLayouts);
         checkboxInteractions.setChecked(detectInteractions);
         checkboxScreenState.setChecked(detectScreenState);
+        checkboxNotifications.setChecked(detectNotifications);
 
         boolean replacementDataExists = FileHelper.fileExists(this, FileHelper.Directory.PUBLIC_PACKAGE, this.appPackageName, FileHelper.REPLACEMENT_DATA);
         checkboxReplacePrivateData.setChecked(replacementDataExists && replacePrivateData);

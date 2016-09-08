@@ -10,6 +10,7 @@
     <string name="pref_detect_layouts">:detect_layouts</string>
     <string name="pref_detect_interactions">:detect_clicks</string>
     <string name="pref_detect_screen_state">:detect_screen_state</string>
+    <string name="pref_detect_notifications">:detect_notifications</string>
     <string name="pref_replace_private_data">:replace_private_data</string>
 
     <!-- Intent Extras -->

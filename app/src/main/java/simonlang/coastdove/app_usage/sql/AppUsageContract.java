@@ -20,6 +20,8 @@ package simonlang.coastdove.app_usage.sql;
 
 import android.provider.BaseColumns;
 
+import simonlang.coastdove.app_usage.NotificationEvent;
+
 /**
  * Defines everything needed for SQL interaction
  */
@@ -31,6 +33,13 @@ public final class AppUsageContract {
         public static final String COLUMN_NAME_TIMESTAMP = "timestamp";
         public static final String COLUMN_NAME_PACKAGE = "package";
         public static final String COLUMN_NAME_DURATION = "duration";
+    }
+
+    public static abstract class NotificationTable implements BaseColumns {
+        public static final String TABLE_NAME = "notification";
+        public static final String COLUMN_NAME_TIMESTAMP = "timestamp";
+        public static final String COLUMN_NAME_PACKAGE = "package";
+        public static final String COLUMN_NAME_CONTENT = "content";
     }
 
     public static abstract class ActivityTable implements BaseColumns {
@@ -89,6 +98,17 @@ public final class AppUsageContract {
 
     public static final String SQL_DELETE_APPS =
             "DROP TABLE IF EXISTS " + AppTable.TABLE_NAME;
+
+    public static final String SQL_CREATE_NOTIFICATIONS =
+            "CREATE TABLE " + NotificationTable.TABLE_NAME + " (" +
+                    NotificationTable._ID + " INTEGER PRIMARY KEY," +
+                    NotificationTable.COLUMN_NAME_TIMESTAMP + TEXT_TYPE + COMMA_SEP +
+                    NotificationTable.COLUMN_NAME_PACKAGE + TEXT_TYPE + COMMA_SEP +
+                    NotificationTable.COLUMN_NAME_CONTENT + TEXT_TYPE
+                    + " )";
+
+    public static final String SQL_DELETE_NOTIFICATIONS =
+            "DROP TABLE IF EXISTS " + NotificationTable.TABLE_NAME;
 
     public static final String SQL_CREATE_ACTIVITIES =
             "CREATE TABLE " + ActivityTable.TABLE_NAME + " (" +

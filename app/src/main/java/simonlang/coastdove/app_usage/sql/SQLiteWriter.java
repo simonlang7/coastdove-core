@@ -48,6 +48,7 @@ public class SQLiteWriter implements Runnable {
             Log.e("SQLiteWriter", e.getMessage());
         } finally {
             db.endTransaction();
+            db.close();
         }
     }
 }

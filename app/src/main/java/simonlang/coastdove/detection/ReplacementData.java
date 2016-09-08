@@ -36,7 +36,9 @@ public class ReplacementData {
         /** Discard the content (i.e., replace by "") */
         DISCARD,
         /** Replace the content by a fixed String (e.g., "Josh" will always be replaced by "1") */
-        REPLACE
+        REPLACE,
+        /** Keep the original content */
+        KEEP
     }
 
     /**
@@ -62,6 +64,11 @@ public class ReplacementData {
     public static ReplacementData fromJSON(JSONObject data) {
         ReplacementData result = new ReplacementData();
         try {
+            ReplacementType notificationReplacement = ReplacementType.KEEP;
+            if (data.has("notifications"))
+                notificationReplacement = ReplacementType.valueOf(data.getString("notifications"));
+            result.notificationReplacement = notificationReplacement;
+
             JSONArray replacementDataArray = data.getJSONArray("replacementData");
             for (int i = 0; i < replacementDataArray.length(); ++i) {
                 JSONObject replacementEntry = replacementDataArray.getJSONObject(i);
@@ -90,8 +97,13 @@ public class ReplacementData {
     /** Map (actual String -> substituted Integer) */
     private HashMap<String, Integer> replacementMap;
 
+    /** How to replace notifications */
+    private ReplacementType notificationReplacement;
+
+    /** Whether the replacement map has changed since being last  */
     private boolean changed;
 
+    /** Next number for substitution (the first string is replaced by 0, the second by 1, ...) */
     private int nextSubstitution;
 
     /** Returns the replacement rule for elements with the given androidID as the key */
@@ -104,6 +116,11 @@ public class ReplacementData {
         return replacementRules.containsKey(key);
     }
 
+    /** How to replace notifications */
+    public ReplacementType getNotificationReplacement() {
+        return notificationReplacement;
+    }
+
     /**
      * Returns the internal replacement map (actualString -> substituted Integer)
      */
@@ -111,11 +128,21 @@ public class ReplacementData {
         return this.replacementMap;
     }
 
+    /**
+     * Sets the replacement map (actual String -> substituted Integer), used when loading this
+     * map from binary
+     * @param replacementMap    Replacement map to set
+     */
     public void setReplacementMap(HashMap<String, Integer> replacementMap) {
         this.replacementMap = replacementMap;
         this.nextSubstitution = replacementMap.size();
     }
 
+    /**
+     * Retrieves the replacement string for the given string
+     * @param key    String to replace
+     * @return Replacement string
+     */
     public String getReplacement(String key) {
         if (key.equals(""))
             return "";
@@ -128,11 +155,21 @@ public class ReplacementData {
         return ""+replacementMap.get(key);
     }
 
+    /** Whether the replacement map has changed since being last */
     public boolean hasChanged() {
         return this.changed;
     }
 
+    /** Sets the changed status for the replacement map */
+    public void setChanged(boolean changed) {
+        this.changed = changed;
+    }
+
+    /**
+     * Constructs a replacement data object
+     */
     private ReplacementData() {
+        this.notificationReplacement = ReplacementType.KEEP;
         this.replacementRules = new HashMap<>();
         this.replacementMap = new HashMap<>();
         this.nextSubstitution = 0;

@@ -18,8 +18,11 @@
 
 package simonlang.coastdove.detection;
 
+import android.app.Notification;
 import android.content.Context;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Rect;
+import android.os.Parcelable;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
@@ -34,6 +37,8 @@ import simonlang.coastdove.app_usage.ActivityDataEntry;
 import simonlang.coastdove.app_usage.AppUsageData;
 import simonlang.coastdove.app_usage.AppUsageDataProcessor;
 import simonlang.coastdove.app_usage.InteractionEventData;
+import simonlang.coastdove.app_usage.NotificationEvent;
+import simonlang.coastdove.app_usage.sql.AppUsageDbHelper;
 import simonlang.coastdove.app_usage.sql.SQLiteWriter;
 import simonlang.coastdove.utility.CollatorWrapper;
 import simonlang.coastdove.utility.FileHelper;
@@ -64,6 +69,8 @@ public class AppDetectionData implements Serializable {
     private transient boolean performInteractionChecks;
     /** Indicates whether to perform screen state checks or not */
     private transient boolean performScreenStateChecks;
+    /**  Indicates whether to perform notification checks or not */
+    private transient boolean performNotificationChecks;
 
     /** Usage data collected for this session (that starts when the app is opened and ends when it's closed) */
     private transient AppUsageData currentAppUsageData;
@@ -96,11 +103,12 @@ public class AppDetectionData implements Serializable {
      * @param context                     App context
      */
     public void init(boolean performLayoutChecks, boolean performInteractionChecks,
-                     boolean performScreenStateChecks, ReplacementData replacementData,
-                     Context context) {
+                     boolean performScreenStateChecks, boolean performNotificationChecks,
+                     ReplacementData replacementData, Context context) {
         this.performLayoutChecks = performLayoutChecks;
         this.performInteractionChecks = performInteractionChecks;
         this.performScreenStateChecks = performScreenStateChecks;
+        this.performNotificationChecks = performNotificationChecks;
         this.currentAppUsageData = null;
         this.replacementData = replacementData;
         this.context = context;
@@ -152,6 +160,11 @@ public class AppDetectionData implements Serializable {
             if (shallLog)
                 Log.i("Interaction events", interactionEventData.toString());
         }
+
+        if (shallPerformNotificationChecks(event)) {
+            String notificationContent = checkNotification(event);
+            saveNotificationEvent(notificationContent);
+        }
     }
 
     /**
@@ -171,22 +184,66 @@ public class AppDetectionData implements Serializable {
     }
 
     /**
-     * Writes the current app usage data to a file and swaps it for an empty new one,
-     * shall be called whenever the app to be detected is exited
+     * Writes the current app usage data to the SQLite database and swaps it for an empty new one,
+     * is automatically called whenever the app to be detected is exited
      */
     public void saveAppUsageData() {
         currentAppUsageData.finish();
         writeAppUsageData();
+        updateReplacementMapping();
+        this.currentAppUsageData = null;
+    }
+
+    public void updateReplacementMapping() {
         if (replacementData != null && replacementData.hasChanged()) {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
                     FileHelper.writeHashMap(context, replacementData.getReplacementMap(),
                             FileHelper.Directory.PRIVATE_PACKAGE, appPackageName, FileHelper.REPLACEMENT_MAP);
+                    replacementData.setChanged(false);
                 }
             }).start();
         }
-        this.currentAppUsageData = null;
+    }
+
+    /**
+     * Saves a notification event with the given content to the SQLite database
+     * @param content    Notification content
+     */
+    public void saveNotificationEvent(String content) {
+        String contentToWrite = content;
+        if (this.replacementData != null) {
+            ReplacementData.ReplacementType type = replacementData.getNotificationReplacement();
+            switch (type) {
+                case DISCARD:
+                    contentToWrite = "";
+                    break;
+                case REPLACE:
+                    contentToWrite = replacementData.getReplacement(content);
+                    break;
+            }
+            updateReplacementMapping();
+        }
+        final NotificationEvent notificationEvent = new NotificationEvent(this.appPackageName, contentToWrite);
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                AppUsageDbHelper helper = new AppUsageDbHelper(context);
+                SQLiteDatabase db = helper.getWritableDatabase();
+                db.beginTransactionNonExclusive();
+                try {
+                    notificationEvent.writeToSQLiteDB(db);
+                    db.setTransactionSuccessful();
+                } catch (RuntimeException e) {
+                    Log.e("AppDetectionData", e.getMessage());
+                } finally {
+                    db.endTransaction();
+                    db.close();
+                }
+            }
+        }).start();
     }
 
     /**
@@ -229,6 +286,18 @@ public class AppDetectionData implements Serializable {
         if (event.getSource() == null)
             return false;
         if (!performInteractionChecks)
+            return false;
+
+        return true;
+    }
+
+    /**
+     * Returns true iff a notification check shall be performed
+     */
+    private boolean shallPerformNotificationChecks(AccessibilityEvent event) {
+        if (event.getEventType() != AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED)
+            return false;
+        if (!performNotificationChecks)
             return false;
 
         return true;
@@ -300,6 +369,25 @@ public class AppDetectionData implements Serializable {
         }
 
         return result;
+    }
+
+    /**
+     * Checks the notification and returns its content as a string
+     * @param event    Event triggered by the notification
+     * @return Notification content
+     */
+    private String checkNotification(AccessibilityEvent event) {
+        // Get notification data
+        Parcelable data = event.getParcelableData();
+        if (data instanceof Notification) {
+            Log.d("Notification", event.getPackageName().toString());
+            Notification notification = (Notification)data;
+            String tickerText = notification.tickerText != null ? notification.tickerText.toString() : "";
+
+            // Save notification data right away
+            return tickerText;
+        }
+        return "";
     }
 
     /**
@@ -452,6 +540,14 @@ public class AppDetectionData implements Serializable {
 
     public void setPerformScreenStateChecks(boolean performScreenStateChecks) {
         this.performScreenStateChecks = performScreenStateChecks;
+    }
+
+    public boolean getPerformNotificationChecks() {
+        return performNotificationChecks;
+    }
+
+    public void setPerformNotificationChecks(boolean performNotificationChecks) {
+        this.performNotificationChecks = performNotificationChecks;
     }
 
     public ReplacementData getReplacementData() {

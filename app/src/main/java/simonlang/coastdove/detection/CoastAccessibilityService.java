@@ -21,14 +21,18 @@ package simonlang.coastdove.detection;
 import android.accessibilityservice.AccessibilityService;
 import android.app.Notification;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Parcelable;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 
+import simonlang.coastdove.app_usage.NotificationEvent;
+import simonlang.coastdove.app_usage.sql.AppUsageDbHelper;
 import simonlang.coastdove.utility.MultipleObjectLoader;
 
 /**
@@ -54,6 +58,29 @@ public class CoastAccessibilityService extends AccessibilityService {
     /** Name of the previous app, as extracted from the last activity of the previous app */
     private String previousPackageName;
 
+
+    /**
+     * Checks the current activity and compares layouts of the current app as necessary
+     * @param event    Accessibility Event that triggered this method
+     */
+    @Override
+    public void onAccessibilityEvent(AccessibilityEvent event) {
+        if (event.getPackageName() != null) {
+            String packageName = event.getPackageName().toString();
+
+            checkActivity(event);
+
+            // Handle layout detection
+            AppDetectionData detectionData = appDetectionDataMultiLoader.get(packageName);
+            if (detectionData != null) {
+                screenStateReceiver.setCurrentDetectionData(detectionData);
+                detectionData.performChecks(event, getRootInActiveWindow(), currentActivity);
+            }
+
+            // Changed app? Write gathered data to file
+            checkPackageChanged();
+        }
+    }
 
     /**
      * Returns the activity info of the current activity
@@ -87,40 +114,6 @@ public class CoastAccessibilityService extends AccessibilityService {
         }
     }
 
-    /**
-     * Checks the current activity and compares layouts of the current app as necessary
-     * @param event    Accessibility Event that triggered this method
-     */
-    @Override
-    public void onAccessibilityEvent(AccessibilityEvent event) {
-        if (event.getPackageName() != null) {
-            if (event.getEventType() == AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED) {
-                Log.d("Coast AS", "Notification received");
-                Parcelable data = event.getParcelableData();
-                if (data instanceof Notification) {
-                    Notification notification = (Notification)data;
-                    Log.d("Coast AS", "Notification package: " + event.getPackageName());
-                    Log.d("Coast AS", "Notification: " + notification.tickerText + ": " +
-                            event.getText());
-                }
-            }
-            String packageName = event.getPackageName().toString();
-
-
-            checkActivity(event);
-
-            // Handle layout detection
-            AppDetectionData detectionData = appDetectionDataMultiLoader.get(packageName);
-            if (detectionData != null) {
-                screenStateReceiver.setCurrentDetectionData(detectionData);
-                detectionData.performChecks(event, getRootInActiveWindow(), currentActivity);
-            }
-
-            // Changed app? Write gathered data to file
-            checkPackageChanged();
-        }
-    }
-
     private void checkPackageChanged() {
         int slashPos = currentActivity.indexOf('/');
         String activityPackageName = currentActivity.substring(0, slashPos < 0 ? 0 : slashPos);
@@ -132,12 +125,6 @@ public class CoastAccessibilityService extends AccessibilityService {
             }
         }
         this.previousPackageName = activityPackageName;
-    }
-
-    @Override
-    public void onCreate() {
-        super.onCreate();
-
     }
 
     @Override
