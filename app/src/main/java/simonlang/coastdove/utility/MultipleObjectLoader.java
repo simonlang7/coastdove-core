@@ -177,6 +177,13 @@ public class MultipleObjectLoader<T> {
         return loadedObjects.containsKey(key) || loadingObjects.containsKey(key);
     }
 
+    /**
+     * Returns the number of loaders currently active
+     */
+    public int getNumberLoading() {
+        return loadingObjects.size();
+    }
+
     /** Retrieves LoadingInfo for the given key */
     public LoadingInfo getLoadingInfo(String key) {
         return loadingInfos.get(key);

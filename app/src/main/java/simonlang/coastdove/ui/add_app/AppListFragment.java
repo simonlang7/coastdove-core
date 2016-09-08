@@ -26,7 +26,6 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.v4.content.Loader;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
@@ -58,6 +57,25 @@ public class AppListFragment extends LoadableListFragment<ApplicationInfo> {
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+
+        SharedPreferences preferences = getActivity().getPreferences(Context.MODE_PRIVATE);
+        int scrollPosition = preferences.getInt(Misc.ADD_APP_SCROLL_POSITION_PREF, 0);
+
+        getListView().smoothScrollToPosition(scrollPosition);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        int scrollPosition = getListView().getFirstVisiblePosition();
+        SharedPreferences preferences = getActivity().getPreferences(Context.MODE_PRIVATE);
+        preferences.edit().putInt(Misc.ADD_APP_SCROLL_POSITION_PREF, scrollPosition).apply();
+    }
+
+    @Override
     public Loader<ArrayList<ApplicationInfo>> onCreateLoader(int id, Bundle args) {
         return new AppListLoader(getActivity());
     }
@@ -80,17 +98,20 @@ public class AppListFragment extends LoadableListFragment<ApplicationInfo> {
         MultipleObjectLoader<AppDetectionData> multiLoader = CoastAccessibilityService.getAppDetectionDataMultiLoader();
 
         if (!cacheExists && multiLoader.getLoadingInfo(item.packageName) == null) {
-            // Create app detection data
-            LoadingInfo loadingInfo = new LoadingInfo(getActivity().getApplicationContext(),
-                    item.publicSourceDir.hashCode(), AddAppActivity.ORIGIN);
-            loadingInfo.setUIElements(getActivity(), adapter);
+            if (multiLoader.getNumberLoading() == 0) {
+                // TODO: put in queue, load one after another
+                // Create app detection data
+                LoadingInfo loadingInfo = new LoadingInfo(getActivity().getApplicationContext(),
+                        item.publicSourceDir.hashCode(), AddAppActivity.ORIGIN);
+                loadingInfo.setUIElements(getActivity(), adapter);
 
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext());
-            boolean replacePrivateData = Misc.getPreferenceBoolean(prefs, item.packageName,
-                    getActivity().getString(R.string.pref_replace_private_data), Misc.DEFAULT_REPLACE_PRIVATE_DATA);
-            AppDetectionDataLoader loader = new AppDetectionDataLoader(item.packageName, multiLoader, item.publicSourceDir, replacePrivateData, getActivity(), loadingInfo);
+                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext());
+                boolean replacePrivateData = Misc.getPreferenceBoolean(prefs, item.packageName,
+                        getActivity().getString(R.string.pref_replace_private_data), Misc.DEFAULT_REPLACE_PRIVATE_DATA);
+                AppDetectionDataLoader loader = new AppDetectionDataLoader(item.packageName, multiLoader, item.publicSourceDir, replacePrivateData, getActivity(), loadingInfo);
 
-            multiLoader.startLoading(item.packageName, loader, loadingInfo);
+                multiLoader.startLoading(item.packageName, loader, loadingInfo);
+            }
         }
         else {
             // Open details if data exist

@@ -42,13 +42,20 @@ import simonlang.coastdove.detection.ReplacementData;
  * A collection of general utility functions
  */
 public class Misc {
+    // Date / Time
     public static final String DATE_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss.SSS";
     public static final String DATE_TIME_FILENAME = "yyyy-MM-dd_HH-mm-ss_SSS";
+
+    // Detectable App Details Activity
     public static final boolean DEFAULT_DETECT_LAYOUTS = true;
     public static final boolean DEFAULT_DETECT_INTERACTIONS = true;
     public static final boolean DEFAULT_DETECT_SCREEN_STATE = true;
     public static final boolean DEFAULT_DETECT_NOTIFICATIONS = true;
     public static final boolean DEFAULT_REPLACE_PRIVATE_DATA = false;
+
+    // Scroll positions
+    public static final String ADD_APP_SCROLL_POSITION_PREF = "scroll_position_add_app";
+
 
     /**
      * Converts milliseconds to a String of the format "[Hh ][Mm ]Ss", e.g., "1h 20m 3s", "45m 22s" or "54s"
