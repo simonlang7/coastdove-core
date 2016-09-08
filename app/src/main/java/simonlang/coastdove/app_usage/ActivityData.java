@@ -77,9 +77,12 @@ public class ActivityData {
             switch (entryType) {
                 case CLICK:
                 case LONG_CLICK:
-                case SCROLLING:
                     result.dataEntries.add(InteractionDataEntry.fromSQLiteDB(db, entryTimestamp, activity,
                             entryType, count, dataEntryID));
+                    break;
+                case SCREEN_OFF:
+                    result.dataEntries.add(ScreenOffEntry.fromSQLiteDB(db, entryTimestamp, activity,
+                            count, dataEntryID));
                     break;
                 case LAYOUTS:
                     result.dataEntries.add(LayoutDataEntry.fromSQLiteDB(db, entryTimestamp, activity,

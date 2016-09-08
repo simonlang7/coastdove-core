@@ -62,6 +62,8 @@ public class AppDetectionData implements Serializable {
     private transient boolean performLayoutChecks;
     /** Indicates whether to perform interaction checks or not */
     private transient boolean performInteractionChecks;
+    /** Indicates whether to perform screen state checks or not */
+    private transient boolean performScreenStateChecks;
 
     /** Usage data collected for this session (that starts when the app is opened and ends when it's closed) */
     private transient AppUsageData currentAppUsageData;
@@ -94,9 +96,11 @@ public class AppDetectionData implements Serializable {
      * @param context                     App context
      */
     public void init(boolean performLayoutChecks, boolean performInteractionChecks,
-                     ReplacementData replacementData, Context context) {
+                     boolean performScreenStateChecks, ReplacementData replacementData,
+                     Context context) {
         this.performLayoutChecks = performLayoutChecks;
         this.performInteractionChecks = performInteractionChecks;
+        this.performScreenStateChecks = performScreenStateChecks;
         this.currentAppUsageData = null;
         this.replacementData = replacementData;
         this.context = context;
@@ -148,7 +152,22 @@ public class AppDetectionData implements Serializable {
             if (shallLog)
                 Log.i("Interaction events", interactionEventData.toString());
         }
+    }
 
+    /**
+     * Called when the screen is turned off
+     */
+    public void onScreenOff() {
+        if (currentAppUsageData != null && performScreenStateChecks)
+            currentAppUsageData.addScreenOffEntry();
+    }
+
+    /**
+     * Called when the screen is turned on
+     */
+    public void onScreenOn() {
+        if (currentAppUsageData != null && performScreenStateChecks)
+            currentAppUsageData.finishScreenOffEntry();
     }
 
     /**
@@ -425,6 +444,14 @@ public class AppDetectionData implements Serializable {
 
     public boolean getPerformInteractionChecks() {
         return this.performInteractionChecks;
+    }
+
+    public boolean getPerformScreenStateChecks() {
+        return performScreenStateChecks;
+    }
+
+    public void setPerformScreenStateChecks(boolean performScreenStateChecks) {
+        this.performScreenStateChecks = performScreenStateChecks;
     }
 
     public ReplacementData getReplacementData() {

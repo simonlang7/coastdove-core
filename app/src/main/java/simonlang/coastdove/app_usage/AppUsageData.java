@@ -21,6 +21,7 @@ package simonlang.coastdove.app_usage;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.util.Log;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -183,14 +184,22 @@ public class AppUsageData {
     /**
      * Adds a screen off entry
      * @param timestamp    Time at which the screen was turned off
-     * @param activity     Activity detected
      * @return True if a new data entry was added, false if no activity was detected previously (should not happen)
      */
-    public boolean addScreenOffEntry(Date timestamp, String activity) {
+    public boolean addScreenOffEntry(Date timestamp) {
         if (activityDataList.isEmpty())
             return false;
-        activityDataList.peekLast().addScreenOffEntry(timestamp, activity);
+        activityDataList.peekLast().addScreenOffEntry(timestamp, "");
         return true;
+    }
+
+    /**
+     * Adds a screen off entry, using the current time when creating the timestamp
+     * @return True if a new data entry was added, false if no activity was detected previously (should not happen)
+     */
+    public boolean addScreenOffEntry() {
+        Date timestamp = new Date();
+        return addScreenOffEntry(timestamp);
     }
 
     /**

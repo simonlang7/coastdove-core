@@ -25,6 +25,7 @@
     <string name="loading">Loading</string>
     <string name="detect_layouts">Detect layouts</string>
     <string name="detect_interactions">Detect interactions</string>
+    <string name="detect_screen_state">Detect screen state</string>
     <string name="detect_activities">Detect activities</string>
     <string name="replace_private_data">Replace private data</string>
     <string name="delete_replacement_mapping">Delete replacement mapping</string>

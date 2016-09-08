@@ -20,11 +20,15 @@ public class ScreenStateReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        if (intent.getAction().equals(Intent.ACTION_SCREEN_OFF)) {
-            Log.d("ScreenStateReceiver", "Screen off");
+        if (currentDetectionData != null) {
+            if (intent.getAction().equals(Intent.ACTION_SCREEN_OFF))
+                currentDetectionData.onScreenOff();
+            else if (intent.getAction().equals(Intent.ACTION_SCREEN_ON))
+                currentDetectionData.onScreenOn();
         }
-        else if (intent.getAction().equals(Intent.ACTION_SCREEN_ON)) {
-            Log.d("ScreenStateReceiver", "Screen on");
-        }
+    }
+
+    public void setCurrentDetectionData(AppDetectionData currentDetectionData) {
+        this.currentDetectionData = currentDetectionData;
     }
 }

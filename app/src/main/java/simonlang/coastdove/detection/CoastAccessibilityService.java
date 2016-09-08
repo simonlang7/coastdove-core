@@ -19,11 +19,13 @@
 package simonlang.coastdove.detection;
 
 import android.accessibilityservice.AccessibilityService;
+import android.app.Notification;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.os.Parcelable;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 
@@ -94,12 +96,23 @@ public class CoastAccessibilityService extends AccessibilityService {
         if (event.getPackageName() != null) {
             String packageName = event.getPackageName().toString();
 
+            if (event.getEventType() == AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED) {
+                Parcelable data = event.getParcelableData();
+                if (data instanceof Notification) {
+                    Notification notification = (Notification)data;
+                    Log.d("Coast AS", "Notification: " + notification.tickerText + ": " +
+                        event.getText());
+                }
+            }
+
             checkActivity(event);
 
             // Handle layout detection
             AppDetectionData detectionData = appDetectionDataMultiLoader.get(packageName);
-            if (detectionData != null)
+            if (detectionData != null) {
+                screenStateReceiver.setCurrentDetectionData(detectionData);
                 detectionData.performChecks(event, getRootInActiveWindow(), currentActivity);
+            }
 
             // Changed app? Write gathered data to file
             checkPackageChanged();
@@ -111,8 +124,10 @@ public class CoastAccessibilityService extends AccessibilityService {
         String activityPackageName = currentActivity.substring(0, slashPos < 0 ? 0 : slashPos);
         if (!activityPackageName.equals(previousPackageName)) {
             AppDetectionData previousDetectionData = appDetectionDataMultiLoader.get(previousPackageName);
-            if (previousDetectionData != null)
+            if (previousDetectionData != null) {
+                screenStateReceiver.setCurrentDetectionData(null);
                 previousDetectionData.saveAppUsageData();
+            }
         }
         this.previousPackageName = activityPackageName;
     }
@@ -121,15 +136,16 @@ public class CoastAccessibilityService extends AccessibilityService {
     public void onCreate() {
         super.onCreate();
 
-        this.screenStateReceiver = new ScreenStateReceiver();
-        IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
-        filter.addAction(Intent.ACTION_SCREEN_ON);
-        registerReceiver(this.screenStateReceiver, filter);
     }
 
     @Override
     protected void onServiceConnected() {
         super.onServiceConnected();
+
+        this.screenStateReceiver = new ScreenStateReceiver();
+        IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
+        filter.addAction(Intent.ACTION_SCREEN_ON);
+        registerReceiver(this.screenStateReceiver, filter);
 
         this.currentActivity = "";
         this.previousPackageName = "";

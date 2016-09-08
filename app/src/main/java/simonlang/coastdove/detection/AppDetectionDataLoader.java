@@ -41,6 +41,8 @@ public class AppDetectionDataLoader extends ObjectLoader<AppDetectionData> {
     private boolean performLayoutChecks;
     /** Whether to listen to interaction events */
     private boolean performInteractionChecks;
+    /** Whether to react to screen state changes */
+    private boolean performScreenStateChecks;
     /** Full path to the APK file */
     private String fullApkPath;
     /** Whether to load replacement data */
@@ -57,12 +59,13 @@ public class AppDetectionDataLoader extends ObjectLoader<AppDetectionData> {
      * @param appPackageName          Name of the package associated
      */
     public AppDetectionDataLoader(String appPackageName, MultipleObjectLoader<AppDetectionData> multipleObjectLoader,
-                                  boolean performLayoutChecks, boolean performInteractionChecks, boolean loadReplacementData,
-                                  Context context, LoadingInfo loadingInfo) {
+                                  boolean performLayoutChecks, boolean performInteractionChecks, boolean performScreenStateChecks,
+                                  boolean loadReplacementData, Context context, LoadingInfo loadingInfo) {
         super(appPackageName, multipleObjectLoader);
         this.appPackageName = appPackageName;
         this.performLayoutChecks = performLayoutChecks;
         this.performInteractionChecks = performInteractionChecks;
+        this.performScreenStateChecks = performScreenStateChecks;
         this.loadReplacementData = loadReplacementData;
         this.context = context;
         this.loadingInfo = loadingInfo;
@@ -75,6 +78,7 @@ public class AppDetectionDataLoader extends ObjectLoader<AppDetectionData> {
         this.appPackageName = appPackageName;
         this.performLayoutChecks = Misc.DEFAULT_DETECT_LAYOUTS;
         this.performInteractionChecks = Misc.DEFAULT_DETECT_INTERACTIONS;
+        this.performScreenStateChecks = Misc.DEFAULT_DETECT_SCREEN_STATE;
         this.loadReplacementData = loadReplacementData;
         this.context = context;
         this.loadingInfo = loadingInfo;
@@ -102,14 +106,12 @@ public class AppDetectionDataLoader extends ObjectLoader<AppDetectionData> {
 
         // Load replacement data
         ReplacementData replacementData = null;
-        if (this.loadReplacementData) {
-            Log.d("LOADER", "LOADING REPLACEMENT DATA");
+        if (this.loadReplacementData)
             replacementData = Misc.loadReplacementData(context, appPackageName);
-        }
-        Log.d("LOADER", "Replacement data null? " + (replacementData == null));
 
         // Initialize
-        detectableApp.init(this.performLayoutChecks, this.performInteractionChecks, replacementData, this.context);
+        detectableApp.init(this.performLayoutChecks, this.performInteractionChecks, this.performScreenStateChecks,
+                replacementData, this.context);
         // TODO: re-work LoadingInfo with callbacks in activity, update activity to show appropriate bar
         Log.d("AppDetectionDataLoader", "Accuracy: " + detectableApp.getAccuracy() + "%");
         return detectableApp;

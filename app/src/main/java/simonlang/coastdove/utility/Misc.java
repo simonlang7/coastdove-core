@@ -46,6 +46,7 @@ public class Misc {
     public static final String DATE_TIME_FILENAME = "yyyy-MM-dd_HH-mm-ss_SSS";
     public static final boolean DEFAULT_DETECT_LAYOUTS = true;
     public static final boolean DEFAULT_DETECT_INTERACTIONS = true;
+    public static final boolean DEFAULT_DETECT_SCREEN_STATE = true;
     public static final boolean DEFAULT_REPLACE_PRIVATE_DATA = false;
 
     /**
