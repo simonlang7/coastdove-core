@@ -4,7 +4,7 @@ android {
     compileSdkVersion 22
     buildToolsVersion "21.1.2"
     defaultConfig {
-        applicationId "de.uni_bonn.detectappscreen"
+        applicationId "simonlang.coastdove"
         minSdkVersion 22
         targetSdkVersion 22
         versionCode 1

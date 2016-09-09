@@ -25,14 +25,18 @@ package simonlang.coastdove.utility;
 import android.content.Context;
 import android.util.Log;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Iterator;
 
 import brut.androlib.AndrolibException;
 import brut.androlib.ApkOptions;
 import brut.androlib.res.AndrolibResources;
+import brut.androlib.res.data.ResPackage;
+import brut.androlib.res.data.ResResource;
 import brut.androlib.res.data.ResTable;
 import brut.androlib.res.decoder.AXmlResourceParser;
 import brut.androlib.res.decoder.ResAttrDecoder;
@@ -44,32 +48,104 @@ import brut.directory.DirectoryException;
  * Some functions to help extract necessary data from APK files using apktool
  */
 public class APKToolHelper {
+
+    /** APK file to process */
+    private ExtFile apk;
+
+    /** Internal resources */
+    private AndrolibResources androlibResources;
+    /** Internal resource table */
+    private ResTable resTable;
+    /** Internal binary XML decoder */
+    private XmlPullStreamDecoder xmlPullStreamDecoder;
+    /** Internal decoder for resource attributes */
+    private ResAttrDecoder attrDecoder;
+
+    /** Current internal package */
+    private ResPackage currentResPackage;
+    /** Current internal resource */
+    private ResResource currentResResource;
+
+    /** Internal iterator for packages */
+    private Iterator<ResPackage> resPackageIterator;
+    /** Internal iterator for resources */
+    private Iterator<ResResource> resResourceIterator;
+
+
+    /** Creates an APKToolHelper for the given .apk file */
+    public APKToolHelper(File apkFile) {
+        this.apk = new ExtFile(apkFile);
+        init();
+    }
+
     /**
-     * Decodes AndroidManifest.xml from an APK file using apktool
-     * @param apkFile    APK file from which to parse AndroidManifest.xml
-     * @return Contents of AndroidManifest.xml (non-binary) for further processing
+     * Returns an input stream for AndroidManifest.xml, as human-readable XML
      */
-    public static byte[] decodeManifestWithResources(Context context, File apkFile) {
-        AndrolibResources androlibResources = new AndrolibResources();
-        androlibResources.apkOptions = new ApkOptions();
-        ExtFile apkExtFile = new ExtFile(apkFile);
+    public InputStream manifestInputStream() {
+        return new ByteArrayInputStream(decodeManifestWithResources());
+    }
+
+    /**
+     * Returns an input stream for the current resource, as human-readable XML
+     */
+    public InputStream currentResourceInputStream() {
+        return new ByteArrayInputStream(decodeCurrentResource());
+    }
+
+    /**
+     * Returns true if the currently selected resource contains the given sub-path
+     */
+    public boolean currentResourceHasSubPath(String subPath) {
+        return currentResResource != null && currentResResource.toString().contains(subPath);
+    }
+
+    /**
+     * Switches to the next resource that either contains the given sub-path, or to null
+     */
+    public void nextResourceWithSubPath(String subPath) {
+        do {
+            next();
+        } while (currentResResource != null &&
+                currentResResource.toString().contains(subPath));
+    }
+
+    /**
+     * Decodes the current resource to human-readable XML
+     * @return byte array of the decoded resource
+     */
+    private byte[] decodeCurrentResource() {
         byte[] result = null;
 
         try {
-            boolean hasManifest = apkExtFile.getDirectory().containsFile("AndroidManifest.xml");
-            boolean hasResources = apkExtFile.getDirectory().containsFile("resources.arsc");
-            if (hasManifest) {
-                InputStream in = apkExtFile.getDirectory().getFileInput("AndroidManifest.xml");
+            InputStream in = apk.getDirectory().getFileInput(currentResResource.getFilePath());
+            ByteArrayOutputStream out = new ByteArrayOutputStream(in.available());
+
+            this.xmlPullStreamDecoder.decode(in, out);
+            result = out.toByteArray();
+        } catch (DirectoryException e) {
+            Log.e("APKToolHelper", "Directory exception: " + e.toString());
+        } catch (IOException e) {
+            Log.e("APKToolHelper", "IO error: " + e.toString());
+        } catch (AndrolibException e) {
+            Log.e("APKToolHelper", "Error in Androlib: " + e.toString());
+        }
+
+        return result;
+    }
+
+    /**
+     * Decodes AndroidManifest.xml
+     * @return Contents of AndroidManifest.xml (non-binary) for further processing
+     */
+    private byte[] decodeManifestWithResources() {
+        byte[] result = null;
+
+        try {
+            if (hasManifest()) {
+                InputStream in = apk.getDirectory().getFileInput("AndroidManifest.xml");
                 ByteArrayOutputStream out = new ByteArrayOutputStream(in.available());
 
-                AXmlResourceParser axmlParser = new AXmlResourceParser();
-                axmlParser.setAttrDecoder(new ResAttrDecoder());
-                XmlPullStreamDecoder xmlPullStreamDecoder = new XmlPullStreamDecoder(axmlParser, androlibResources.getResXmlSerializer());
-                ResTable resTable = androlibResources.getResTable(apkExtFile, hasResources);
-                ResAttrDecoder attrDecoder = axmlParser.getAttrDecoder();
-                attrDecoder.setCurrentPackage(resTable.listMainPackages().iterator().next());
-
-                xmlPullStreamDecoder.decodeManifest(in, out);
+                this.xmlPullStreamDecoder.decodeManifest(in, out);
                 result = out.toByteArray();
             }
         } catch (AndrolibException e) {
@@ -82,5 +158,68 @@ public class APKToolHelper {
 
         return result;
     }
-    
+
+    /**
+     * Returns true if the APK file contains AndroidManifest.xml
+     */
+    private boolean hasManifest() {
+        try {
+            return this.apk.getDirectory().containsFile("AndroidManifest.xml");
+        } catch (DirectoryException e) {
+            Log.e("APKToolHelper", "Error accessing APK file: " + e.getMessage());
+            return false;
+        }
+    }
+
+    private boolean hasResources() {
+        try {
+            return this.apk.getDirectory().containsFile("resources.arsc");
+        } catch (DirectoryException e) {
+            Log.e("APKToolHelper", "Error accessing APK file: " + e.getMessage());
+            return false;
+        }
+    }
+
+    private void init() {
+        this.androlibResources = new AndrolibResources();
+        androlibResources.apkOptions = new ApkOptions();
+
+        AXmlResourceParser axmlParser = new AXmlResourceParser();
+        axmlParser.setAttrDecoder(new ResAttrDecoder());
+        this.xmlPullStreamDecoder = new XmlPullStreamDecoder(axmlParser, androlibResources.getResXmlSerializer());
+        try {
+            this.resTable = androlibResources.getResTable(apk, hasResources());
+            this.attrDecoder = axmlParser.getAttrDecoder();
+            // Initialize attribute decoder to first package
+            this.resPackageIterator = resTable.listMainPackages().iterator();
+            nextPackage();
+            this.attrDecoder.setCurrentPackage(this.currentResPackage);
+
+
+        } catch (AndrolibException e) {
+            Log.e("APKToolHelper", "Error in Androlib: " + e.getMessage());
+            throw new RuntimeException("Error in Androlib: " + e.getMessage());
+        }
+    }
+
+    private void next() {
+        if (resResourceIterator.hasNext())
+            nextResource();
+        else if (resPackageIterator.hasNext())
+            nextPackage();
+        else {
+            currentResPackage = null;
+            currentResResource = null;
+        }
+    }
+
+    private void nextPackage() {
+        this.currentResPackage = this.resPackageIterator.next();
+        this.resResourceIterator = currentResPackage.listFiles().iterator();
+        this.attrDecoder.setCurrentPackage(currentResPackage);
+    }
+
+    private void nextResource() {
+        this.currentResResource = this.resResourceIterator.next();
+    }
 }
