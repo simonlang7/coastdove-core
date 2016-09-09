@@ -41,6 +41,7 @@ import soot.jimple.infoflow.android.resources.ARSCFileParser;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.Collator;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -90,8 +91,10 @@ public class AppDetectionDataSetup {
         Log.d("AppDetectionDataSetup", "Parsing resources.arsc and AndroidManifest.xml");
         ARSCFileParser resourceParser = new ARSCFileParser();
         ZipEntry arscEntry = apk.getEntry("resources.arsc");
-        byte[] manifestBuf = APKToolHelper.decodeManifestWithResources(context, apkFile);
-        ByteArrayInputStream manifestInputStream = new ByteArrayInputStream(manifestBuf);
+        APKToolHelper apktoolHelper = new APKToolHelper(apkFile);
+        InputStream manifestInputStream = apktoolHelper.manifestInputStream();
+        //byte[] manifestBuf = APKToolHelper.decodeManifestWithResources(context, apkFile);
+        //ByteArrayInputStream manifestInputStream = new ByteArrayInputStream(manifestBuf);
 
         try {
             resourceParser.parse(apk.getInputStream(arscEntry));
@@ -105,6 +108,7 @@ public class AppDetectionDataSetup {
             XmlPullParser p = fac.newPullParser();
             p.setInput(manifestInputStream, "UTF-8");
             mainActivities = parseMainActivities(p);
+            manifestInputStream.close();
             if (Thread.currentThread().isInterrupted()) {
                 loadingInfo.end();
                 apk.close();

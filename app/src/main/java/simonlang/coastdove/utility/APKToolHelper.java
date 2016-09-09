@@ -22,7 +22,6 @@
 
 package simonlang.coastdove.utility;
 
-import android.content.Context;
 import android.util.Log;
 
 import java.io.ByteArrayInputStream;
@@ -92,6 +91,10 @@ public class APKToolHelper {
         return new ByteArrayInputStream(decodeCurrentResource());
     }
 
+    public String currentResourceName() {
+        return currentResResource.getResSpec().getName();
+    }
+
     /**
      * Returns true if the currently selected resource contains the given sub-path
      */
@@ -106,7 +109,7 @@ public class APKToolHelper {
         do {
             next();
         } while (currentResResource != null &&
-                currentResResource.toString().contains(subPath));
+                !currentResResource.getFilePath().contains(subPath));
     }
 
     /**
@@ -117,7 +120,8 @@ public class APKToolHelper {
         byte[] result = null;
 
         try {
-            InputStream in = apk.getDirectory().getFileInput(currentResResource.getFilePath());
+            Log.d("APKToolHelper", currentResResource.getFilePath());
+            InputStream in = apk.getDirectory().getDir("res").getFileInput(currentResResource.getFilePath());
             ByteArrayOutputStream out = new ByteArrayOutputStream(in.available());
 
             this.xmlPullStreamDecoder.decode(in, out);
@@ -171,6 +175,9 @@ public class APKToolHelper {
         }
     }
 
+    /**
+     * Returns true if the APK file contains resources.arsc
+     */
     private boolean hasResources() {
         try {
             return this.apk.getDirectory().containsFile("resources.arsc");
@@ -180,6 +187,9 @@ public class APKToolHelper {
         }
     }
 
+    /**
+     * Initializes some needed internal apktool objects
+     */
     private void init() {
         this.androlibResources = new AndrolibResources();
         androlibResources.apkOptions = new ApkOptions();
@@ -202,6 +212,11 @@ public class APKToolHelper {
         }
     }
 
+    /**
+     * Selects the next ResResource in the current package. If none is available,
+     * the next package and its first resource are selected. If no further package
+     * is available, both resource and package are set to null.
+     */
     private void next() {
         if (resResourceIterator.hasNext())
             nextResource();
@@ -213,12 +228,19 @@ public class APKToolHelper {
         }
     }
 
+    /**
+     * Selects the next package and initializes the resource iterator and attribute
+     * decoder
+     */
     private void nextPackage() {
         this.currentResPackage = this.resPackageIterator.next();
         this.resResourceIterator = currentResPackage.listFiles().iterator();
         this.attrDecoder.setCurrentPackage(currentResPackage);
     }
 
+    /**
+     * Selects the next resource
+     */
     private void nextResource() {
         this.currentResResource = this.resResourceIterator.next();
     }
