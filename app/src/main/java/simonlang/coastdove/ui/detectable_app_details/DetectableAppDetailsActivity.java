@@ -227,11 +227,13 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
                 Misc.setPreference(preferences, appPackageName, getString(R.string.pref_detect_screen_state), item.isChecked());
                 if (detectionData != null)
                     detectionData.setPerformScreenStateChecks(item.isChecked());
+                return true;
             case R.id.checkbox_detect_notifications:
                 item.setChecked(!item.isChecked());
                 Misc.setPreference(preferences, appPackageName, getString(R.string.pref_detect_notifications), item.isChecked());
                 if (detectionData != null)
                     detectionData.setPerformNotificationChecks(item.isChecked());
+                return true;
             case R.id.checkbox_replace_private_data:
                 item.setChecked(!item.isChecked());
                 Misc.setPreference(preferences, appPackageName, getString(R.string.pref_replace_private_data), item.isChecked());
