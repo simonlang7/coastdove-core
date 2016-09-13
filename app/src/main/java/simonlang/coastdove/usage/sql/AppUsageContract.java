@@ -16,11 +16,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package simonlang.coastdove.app_usage.sql;
+package simonlang.coastdove.usage.sql;
 
 import android.provider.BaseColumns;
-
-import simonlang.coastdove.app_usage.NotificationEvent;
 
 /**
  * Defines everything needed for SQL interaction

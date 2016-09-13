@@ -35,7 +35,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
-import simonlang.coastdove.detection.CoastAccessibilityService;
+import simonlang.coastdove.detection.CoastDoveService;
 import simonlang.coastdove.detection.ReplacementData;
 
 /**
@@ -107,7 +107,7 @@ public class Misc {
         String settingValue = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
         String[] activeAccessibilityServices = settingValue.split(":");
         for (String service : activeAccessibilityServices) {
-            if (service.contains(CoastAccessibilityService.class.getName()))
+            if (service.contains(CoastDoveService.class.getName()))
                 return true;
         }
         return false;

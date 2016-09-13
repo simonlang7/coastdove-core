@@ -44,7 +44,7 @@ import java.io.StreamCorruptedException;
 import java.util.HashMap;
 
 import simonlang.coastdove.R;
-import simonlang.coastdove.app_usage.sql.AppUsageDbHelper;
+import simonlang.coastdove.usage.sql.AppUsageDbHelper;
 import simonlang.coastdove.detection.AppDetectionData;
 
 /**

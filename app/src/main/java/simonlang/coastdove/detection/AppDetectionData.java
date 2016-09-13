@@ -33,13 +33,11 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-import simonlang.coastdove.app_usage.ActivityDataEntry;
-import simonlang.coastdove.app_usage.AppUsageData;
-import simonlang.coastdove.app_usage.AppUsageDataProcessor;
-import simonlang.coastdove.app_usage.InteractionEventData;
-import simonlang.coastdove.app_usage.NotificationEvent;
-import simonlang.coastdove.app_usage.sql.AppUsageDbHelper;
-import simonlang.coastdove.app_usage.sql.SQLiteWriter;
+import simonlang.coastdove.usage.ActivityDataEntry;
+import simonlang.coastdove.usage.AppUsageData;
+import simonlang.coastdove.usage.AppUsageDataProcessor;
+import simonlang.coastdove.usage.sql.AppUsageDbHelper;
+import simonlang.coastdove.usage.sql.SQLiteWriter;
 import simonlang.coastdove.utility.CollatorWrapper;
 import simonlang.coastdove.utility.FileHelper;
 
@@ -49,7 +47,7 @@ import simonlang.coastdove.utility.FileHelper;
  * android ID that uniquely identifies a layout, or a set of several android IDs, though as few as possible are
  * favored.
  */
-public class AppDetectionData implements Serializable {
+public final class AppDetectionData implements Serializable {
     private static final long serialVersionUID = 6474227652249667875L;
 
     /** Name of the package associated, i.e. the app that can be detected */
@@ -63,6 +61,11 @@ public class AppDetectionData implements Serializable {
     /** Percentage of possibly detectable layouts that are actually detected */
     private int accuracy;
 
+    /** Whether to collect usage data (to be stored on the device) */
+    private transient boolean collectUsageData;
+    /** Whether to notify listeners (for displaying overlays) */
+    private transient boolean notifyListeners;
+
     /** Indicates whether to perform layout checks or not */
     private transient boolean performLayoutChecks;
     /** Indicates whether to perform interaction checks or not */
@@ -71,6 +74,7 @@ public class AppDetectionData implements Serializable {
     private transient boolean performScreenStateChecks;
     /**  Indicates whether to perform notification checks or not */
     private transient boolean performNotificationChecks;
+
 
     /** Usage data collected for this session (that starts when the app is opened and ends when it's closed) */
     private transient AppUsageData currentAppUsageData;
@@ -516,6 +520,22 @@ public class AppDetectionData implements Serializable {
     /** Contains information about main activities */
     public AppMetaInformation getAppMetaInformation() {
         return appMetaInformation;
+    }
+
+    public boolean isCollectUsageData() {
+        return collectUsageData;
+    }
+
+    public void setCollectUsageData(boolean collectUsageData) {
+        this.collectUsageData = collectUsageData;
+    }
+
+    public boolean isNotifyListeners() {
+        return notifyListeners;
+    }
+
+    public void setNotifyListeners(boolean notifyListeners) {
+        this.notifyListeners = notifyListeners;
     }
 
     public void setPerformLayoutChecks(boolean performLayoutChecks) {

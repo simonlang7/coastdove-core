@@ -25,8 +25,8 @@ import android.support.v4.content.AsyncTaskLoader;
 
 import java.util.ArrayList;
 
-import simonlang.coastdove.app_usage.sql.AppUsageContract;
-import simonlang.coastdove.app_usage.sql.AppUsageDbHelper;
+import simonlang.coastdove.usage.sql.AppUsageContract;
+import simonlang.coastdove.usage.sql.AppUsageDbHelper;
 import simonlang.coastdove.utility.Misc;
 
 /**

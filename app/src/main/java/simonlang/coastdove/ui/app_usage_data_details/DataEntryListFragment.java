@@ -31,8 +31,8 @@ import android.widget.ExpandableListView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 
-import simonlang.coastdove.app_usage.AppUsageData;
-import simonlang.coastdove.app_usage.AppUsageDataLoader;
+import simonlang.coastdove.usage.AppUsageData;
+import simonlang.coastdove.usage.AppUsageDataLoader;
 import simonlang.coastdove.R;
 
 /**

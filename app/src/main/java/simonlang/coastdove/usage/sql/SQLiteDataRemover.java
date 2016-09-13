@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package simonlang.coastdove.app_usage.sql;
+package simonlang.coastdove.usage.sql;
 
 import android.content.Context;
 import android.database.Cursor;

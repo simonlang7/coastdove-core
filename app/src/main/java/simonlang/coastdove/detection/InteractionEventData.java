@@ -16,13 +16,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package simonlang.coastdove.app_usage;
+package simonlang.coastdove.detection;
 
 import android.content.ContentValues;
 import android.view.accessibility.AccessibilityNodeInfo;
 
-import simonlang.coastdove.app_usage.sql.AppUsageContract;
-import simonlang.coastdove.detection.ReplacementData;
+import simonlang.coastdove.usage.sql.AppUsageContract;
 
 /**
  * Data gathered when a TYPE_VIEW_CLICKED or TYPE_VIEW_SCROLLED event occurs

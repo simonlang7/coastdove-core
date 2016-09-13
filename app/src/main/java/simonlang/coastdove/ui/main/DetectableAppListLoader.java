@@ -22,15 +22,14 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.v4.content.AsyncTaskLoader;
-import android.util.Log;
 
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.Collections;
 
-import simonlang.coastdove.app_usage.sql.AppUsageContract;
-import simonlang.coastdove.app_usage.sql.AppUsageDbHelper;
+import simonlang.coastdove.usage.sql.AppUsageContract;
+import simonlang.coastdove.usage.sql.AppUsageDbHelper;
 import simonlang.coastdove.utility.CollatorWrapper;
 import simonlang.coastdove.utility.FileHelper;
 

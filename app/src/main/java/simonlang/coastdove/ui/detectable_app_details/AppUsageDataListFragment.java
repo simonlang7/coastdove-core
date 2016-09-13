@@ -37,7 +37,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import simonlang.coastdove.R;
-import simonlang.coastdove.app_usage.sql.SQLiteDataRemover;
+import simonlang.coastdove.usage.sql.SQLiteDataRemover;
 import simonlang.coastdove.ui.app_usage_data_details.AppUsageDataDetailsActivity;
 import simonlang.coastdove.ui.LoadableListFragment;
 

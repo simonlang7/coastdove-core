@@ -22,7 +22,7 @@ package simonlang.coastdove.detection;
 import java.io.Serializable;
 import java.util.Collection;
 
-import simonlang.coastdove.app_usage.ActivityData;
+import simonlang.coastdove.usage.ActivityData;
 
 /**
  * Contains meta information regarding a detectable app, such as entry activities

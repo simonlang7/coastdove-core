@@ -13,7 +13,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <service
-            android:name=".detection.CoastAccessibilityService"
+            android:name=".detection.CoastDoveService"
             android:label="Coast Dove (Statistics)"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>

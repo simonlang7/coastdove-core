@@ -39,7 +39,7 @@ import android.widget.TextView;
 
 import simonlang.coastdove.detection.AppDetectionData;
 import simonlang.coastdove.detection.AppDetectionDataLoader;
-import simonlang.coastdove.detection.CoastAccessibilityService;
+import simonlang.coastdove.detection.CoastDoveService;
 import simonlang.coastdove.detection.ReplacementData;
 import simonlang.coastdove.ui.LoadingInfo;
 import simonlang.coastdove.ui.add_app.AddAppActivity;
@@ -74,14 +74,14 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         final ProgressBar progressBar = (ProgressBar)findViewById(R.id.detectable_app_progress_bar);
-        CoastAccessibilityService.getAppDetectionDataMultiLoader()
+        CoastDoveService.appDetectionDataMultiLoader
                 .updateLoadingInfoUIElements(ORIGIN, this, progressBar);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        CoastAccessibilityService.getAppDetectionDataMultiLoader()
+        CoastDoveService.appDetectionDataMultiLoader
                 .clearLoadingInfoUIElements(ORIGIN);
     }
 
@@ -93,7 +93,7 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
 
         boolean detectionDataLoadedOrLoading = false;
         try {
-            detectionDataLoadedOrLoading = CoastAccessibilityService.getAppDetectionDataMultiLoader().contains(this.appPackageName);
+            detectionDataLoadedOrLoading = CoastDoveService.appDetectionDataMultiLoader.contains(this.appPackageName);
         } catch (NullPointerException e) {
         }
 
@@ -122,7 +122,7 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
                     loadingInfo.setUIElements(DetectableAppDetailsActivity.this, progressBar);
 
                     // Start the loading process and add
-                    MultipleObjectLoader<AppDetectionData> multiLoader = CoastAccessibilityService.getAppDetectionDataMultiLoader();
+                    MultipleObjectLoader<AppDetectionData> multiLoader = CoastDoveService.appDetectionDataMultiLoader;
                     AppDetectionDataLoader loader = new AppDetectionDataLoader(appPackageName, multiLoader,
                             detectLayouts, detectInteractions, detectScreenState, detectNotifications, replacePrivateData && replacementDataExists,
                             context, loadingInfo);
@@ -130,7 +130,7 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
                     Log.d("DetAppDetails", "Started loading with " + loadingInfo.isFinished() + " finished loadingInfo");
                 }
                 else
-                    CoastAccessibilityService.getAppDetectionDataMultiLoader().remove(appPackageName);
+                    CoastDoveService.appDetectionDataMultiLoader.remove(appPackageName);
                 setUpReminderBars();
             }
         });
@@ -145,7 +145,7 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
         getMenuInflater().inflate(R.menu.detectable_app_details_menu, menu);
 
         // Set up the menu checkboxes
-        AppDetectionData detectionData = CoastAccessibilityService.getAppDetectionDataMultiLoader().get(this.appPackageName);
+        AppDetectionData detectionData = CoastDoveService.appDetectionDataMultiLoader.get(this.appPackageName);
         if (detectionData != null) {
             boolean detectingLayouts = detectionData.getPerformLayoutChecks();
             boolean detectingInteractions = detectionData.getPerformInteractionChecks();
@@ -182,7 +182,7 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
             boolean replacementMappingExists = FileHelper.fileExists(this, FileHelper.Directory.PRIVATE_PACKAGE, this.appPackageName, FileHelper.REPLACEMENT_MAP);
 
             // If the detection data is currently in use, the menu items are disabled
-            boolean detectionDataLoading = CoastAccessibilityService.getAppDetectionDataMultiLoader().getStatus(this.appPackageName)
+            boolean detectionDataLoading = CoastDoveService.appDetectionDataMultiLoader.getStatus(this.appPackageName)
                     == MultipleObjectLoader.Status.LOADING;
             checkboxDetectLayouts.setEnabled(!detectionDataLoading);
             checkboxDetectInteractions.setEnabled(!detectionDataLoading);
@@ -207,7 +207,7 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Store options regarding layout / click detection
-        final AppDetectionData detectionData = CoastAccessibilityService.getAppDetectionDataMultiLoader().get(this.appPackageName);
+        final AppDetectionData detectionData = CoastDoveService.appDetectionDataMultiLoader.get(this.appPackageName);
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         switch (item.getItemId()) {
             case R.id.checkbox_detect_layouts:
@@ -361,7 +361,7 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
         boolean detectionDataLoadedOrLoading = false;
 
         try {
-            detectionDataLoadedOrLoading = CoastAccessibilityService.getAppDetectionDataMultiLoader().contains(this.appPackageName);
+            detectionDataLoadedOrLoading = CoastDoveService.appDetectionDataMultiLoader.contains(this.appPackageName);
         } catch (NullPointerException e) {
         }
 

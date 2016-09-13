@@ -16,13 +16,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package simonlang.coastdove.app_usage;
+package simonlang.coastdove.usage;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.v4.content.AsyncTaskLoader;
 
-import simonlang.coastdove.app_usage.sql.AppUsageDbHelper;
+import simonlang.coastdove.usage.sql.AppUsageDbHelper;
 
 /**
  * Loader for app usage data object

@@ -19,37 +19,25 @@
 package simonlang.coastdove.detection;
 
 import android.accessibilityservice.AccessibilityService;
-import android.app.Notification;
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
-import android.database.sqlite.SQLiteDatabase;
-import android.os.Parcelable;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 
-import simonlang.coastdove.app_usage.NotificationEvent;
-import simonlang.coastdove.app_usage.sql.AppUsageDbHelper;
 import simonlang.coastdove.utility.MultipleObjectLoader;
 
 /**
- * Accessibility Service for [co]llecting [a]pp usage [st]atistics. Keeps a map of AppDetectionData
- * globally and uses these to collect usage data when using any Android app, identified by its package name.
+ * Accessibility Service for [co]llecting [a]pp usage [st]atistics and [d]isplaying [ove]rlays.
+ * Keeps a map of AppDetectionData globally and uses these to detect layouts and interaction
+ * elements of arbitrary apps, identified by their package names.
  */
-public class CoastAccessibilityService extends AccessibilityService {
+public class CoastDoveService extends AccessibilityService {
 
     /** Contains all AppDetectionData needed to process detectable apps */
-    protected static MultipleObjectLoader<AppDetectionData> appDetectionDataMultiLoader = new MultipleObjectLoader<>();
-
-    /**
-     * Returns the MultipleObjectLoader used to load AppDetectionData
-     */
-    public static MultipleObjectLoader<AppDetectionData> getAppDetectionDataMultiLoader() {
-        return appDetectionDataMultiLoader;
-    }
+    public static final MultipleObjectLoader<AppDetectionData> appDetectionDataMultiLoader = new MultipleObjectLoader<>();
 
     /** Receiver for when the screen turns off or on */
     private ScreenStateReceiver screenStateReceiver;
@@ -94,7 +82,7 @@ public class CoastAccessibilityService extends AccessibilityService {
     }
 
     /**
-     * Stores the name of the current activity in {@link CoastAccessibilityService#currentActivity}
+     * Stores the name of the current activity in {@link CoastDoveService#currentActivity}
      * @param event    AccessibilityEvent that has occurred
      */
     private void checkActivity(AccessibilityEvent event) {

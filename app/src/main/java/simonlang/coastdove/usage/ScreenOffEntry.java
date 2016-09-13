@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package simonlang.coastdove.app_usage;
+package simonlang.coastdove.usage;
 
 import android.content.ContentValues;
 import android.database.Cursor;
@@ -25,7 +25,7 @@ import android.database.sqlite.SQLiteException;
 
 import java.util.Date;
 
-import simonlang.coastdove.app_usage.sql.AppUsageContract;
+import simonlang.coastdove.usage.sql.AppUsageContract;
 import simonlang.coastdove.utility.Misc;
 
 /**

@@ -16,13 +16,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package simonlang.coastdove.app_usage.sql;
+package simonlang.coastdove.usage.sql;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
-import simonlang.coastdove.app_usage.AppUsageData;
+import simonlang.coastdove.usage.AppUsageData;
 
 /**
  * Writes an AppUsageData object into the SQLite database

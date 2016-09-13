@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package simonlang.coastdove.app_usage;
+package simonlang.coastdove.usage;
 
 import android.content.ContentValues;
 import android.database.Cursor;
@@ -27,7 +27,8 @@ import java.util.Date;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-import simonlang.coastdove.app_usage.sql.AppUsageContract;
+import simonlang.coastdove.detection.InteractionEventData;
+import simonlang.coastdove.usage.sql.AppUsageContract;
 
 /**
  * Data entry containing a detected interaction at a certain point during app usage

@@ -29,8 +29,8 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.List;
 
-import simonlang.coastdove.app_usage.ActivityData;
-import simonlang.coastdove.app_usage.ActivityDataEntry;
+import simonlang.coastdove.usage.ActivityData;
+import simonlang.coastdove.usage.ActivityDataEntry;
 import simonlang.coastdove.R;
 import simonlang.coastdove.utility.Misc;
 

@@ -23,7 +23,7 @@ import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 
 import simonlang.coastdove.R;
-import simonlang.coastdove.detection.CoastAccessibilityService;
+import simonlang.coastdove.detection.CoastDoveService;
 
 public class AddAppActivity extends AppCompatActivity {
 
@@ -43,7 +43,7 @@ public class AddAppActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        CoastAccessibilityService.getAppDetectionDataMultiLoader()
+        CoastDoveService.appDetectionDataMultiLoader
                 .clearLoadingInfoUIElements(ORIGIN);
     }
 }

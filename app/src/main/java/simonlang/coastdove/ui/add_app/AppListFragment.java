@@ -35,7 +35,7 @@ import java.util.ArrayList;
 import simonlang.coastdove.R;
 import simonlang.coastdove.detection.AppDetectionData;
 import simonlang.coastdove.detection.AppDetectionDataLoader;
-import simonlang.coastdove.detection.CoastAccessibilityService;
+import simonlang.coastdove.detection.CoastDoveService;
 import simonlang.coastdove.ui.LoadableListFragment;
 import simonlang.coastdove.ui.LoadingInfo;
 import simonlang.coastdove.ui.detectable_app_details.DetectableAppDetailsActivity;
@@ -51,7 +51,7 @@ public class AppListFragment extends LoadableListFragment<ApplicationInfo> {
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        MultipleObjectLoader<AppDetectionData> multiLoader = CoastAccessibilityService.getAppDetectionDataMultiLoader();
+        MultipleObjectLoader<AppDetectionData> multiLoader = CoastDoveService.appDetectionDataMultiLoader;
         multiLoader.updateLoadingInfoUIElements(AddAppActivity.ORIGIN,
                 getActivity(), this.adapter);
     }
@@ -95,7 +95,7 @@ public class AppListFragment extends LoadableListFragment<ApplicationInfo> {
         super.onListItemClick(listView, view, position, id);
         final ApplicationInfo item = (ApplicationInfo)listView.getItemAtPosition(position);
         boolean cacheExists = FileHelper.appDetectionDataExists(getActivity(), item.packageName);
-        MultipleObjectLoader<AppDetectionData> multiLoader = CoastAccessibilityService.getAppDetectionDataMultiLoader();
+        MultipleObjectLoader<AppDetectionData> multiLoader = CoastDoveService.appDetectionDataMultiLoader;
 
         if (!cacheExists && multiLoader.getLoadingInfo(item.packageName) == null) {
             if (multiLoader.getNumberLoading() == 0) {

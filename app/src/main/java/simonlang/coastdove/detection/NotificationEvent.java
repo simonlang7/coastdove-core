@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package simonlang.coastdove.app_usage;
+package simonlang.coastdove.detection;
 
 import android.content.ContentValues;
 import android.database.Cursor;
@@ -28,7 +28,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-import simonlang.coastdove.app_usage.sql.AppUsageContract;
+import simonlang.coastdove.usage.sql.AppUsageContract;
 import simonlang.coastdove.utility.Misc;
 
 /**

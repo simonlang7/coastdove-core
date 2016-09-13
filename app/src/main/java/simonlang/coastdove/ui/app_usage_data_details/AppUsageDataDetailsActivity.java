@@ -25,8 +25,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
-import simonlang.coastdove.app_usage.AppUsageData;
-import simonlang.coastdove.app_usage.sql.SQLiteDataRemover;
+import simonlang.coastdove.usage.AppUsageData;
+import simonlang.coastdove.usage.sql.SQLiteDataRemover;
 import simonlang.coastdove.utility.FileHelper;
 import simonlang.coastdove.R;
 

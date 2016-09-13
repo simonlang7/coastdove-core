@@ -33,7 +33,7 @@ import android.widget.TextView;
 
 import simonlang.coastdove.R;
 import simonlang.coastdove.detection.AppDetectionData;
-import simonlang.coastdove.detection.CoastAccessibilityService;
+import simonlang.coastdove.detection.CoastDoveService;
 import simonlang.coastdove.ui.LoadingInfo;
 import simonlang.coastdove.utility.FileHelper;
 import simonlang.coastdove.utility.MultipleObjectLoader;
@@ -84,7 +84,7 @@ public class AppListAdapter extends ArrayAdapter<ApplicationInfo> {
         holder.appName.setText(text);
 
         // Update progress bar
-        final MultipleObjectLoader<AppDetectionData> multiLoader = CoastAccessibilityService.getAppDetectionDataMultiLoader();
+        final MultipleObjectLoader<AppDetectionData> multiLoader = CoastDoveService.appDetectionDataMultiLoader;
         LoadingInfo loadingInfo = multiLoader.getLoadingInfo(appInfo.packageName);
         ProgressBar progressBar = holder.progressBar;
         if (loadingInfo != null) {
