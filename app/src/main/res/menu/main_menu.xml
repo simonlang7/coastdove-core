@@ -7,11 +7,6 @@
         app:showAsAction="never"/>
 
     <item
-        android:id="@+id/item_export_db"
-        android:title="@string/export_database"
-        app:showAsAction="never"/>
-
-    <item
         android:id="@+id/item_add_detectable_app"
         android:title="@string/add_app"
         app:showAsAction="ifRoom"/>

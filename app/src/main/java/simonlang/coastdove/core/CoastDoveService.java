@@ -69,15 +69,14 @@ public class CoastDoveService extends AccessibilityService {
 
             checkActivity(event);
 
-            // Handle layout detection
-            AppDetectionData detectionData = multiLoader.get(packageName);
-            if (detectionData != null) {
-                screenStateReceiver.setCurrentDetectionData(detectionData);
-                detectionData.performChecks(event, getRootInActiveWindow(), currentActivity);
-            }
-
             // Changed app? Write gathered data to file
             checkPackageChanged();
+
+            // Handle layout detection
+            AppDetectionData detectionData = multiLoader.get(packageName);
+            if (detectionData != null)
+                detectionData.performChecks(event, getRootInActiveWindow(), currentActivity);
+
         }
     }
 
@@ -117,10 +116,18 @@ public class CoastDoveService extends AccessibilityService {
         int slashPos = currentActivity.indexOf('/');
         String activityPackageName = currentActivity.substring(0, slashPos < 0 ? 0 : slashPos);
         if (!activityPackageName.equals(previousPackageName)) {
+            // Clean up previous app
             AppDetectionData previousDetectionData = multiLoader.get(previousPackageName);
             if (previousDetectionData != null) {
                 screenStateReceiver.setCurrentDetectionData(null);
-                previousDetectionData.saveAppUsageData();
+                previousDetectionData.onAppClosed();
+            }
+
+            // Init new app
+            AppDetectionData currentDetectionData = multiLoader.get(activityPackageName);
+            if (currentDetectionData != null) {
+                screenStateReceiver.setCurrentDetectionData(currentDetectionData);
+                currentDetectionData.onAppStarted();
             }
         }
         this.previousPackageName = activityPackageName;
@@ -136,7 +143,7 @@ public class CoastDoveService extends AccessibilityService {
         registerReceiver(this.screenStateReceiver, filter);
 
         Intent listenerTestIntent = new Intent();
-        listenerTestIntent.setComponent(new ComponentName("simonlang.coastdove.listener", "simonlang.coastdove.listener.CoastDoveListenerService"));
+        listenerTestIntent.setComponent(new ComponentName("simonlang.coastdove.usagestatistics", "simonlang.coastdove.usagestatistics.StatisticsListener"));
         ListenerConnection listener = new ListenerConnection("de.schildbach.oeffi");
         listeners.add(listener);
         bindService(listenerTestIntent, listener, Context.BIND_AUTO_CREATE);
@@ -148,6 +155,9 @@ public class CoastDoveService extends AccessibilityService {
     @Override
     public void onDestroy() {
         unregisterReceiver(this.screenStateReceiver);
+        for (ListenerConnection listener : listeners)
+            unbindService(listener);
+        listeners.clear();
 
         super.onDestroy();
     }

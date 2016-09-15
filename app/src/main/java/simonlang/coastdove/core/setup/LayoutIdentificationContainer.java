@@ -21,8 +21,8 @@ package simonlang.coastdove.core.setup;
 import java.util.*;
 
 import simonlang.coastdove.core.detection.LayoutIdentification;
-import simonlang.coastdove.core.utility.CollatorWrapper;
 import simonlang.coastdove.core.utility.PowerSet;
+import simonlang.coastdove.lib.CollatorWrapper;
 
 /**
  * Contains a layout identification along with additional information

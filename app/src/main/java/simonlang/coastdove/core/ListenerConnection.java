@@ -12,20 +12,12 @@ import android.util.Log;
 import java.util.Collection;
 import java.util.TreeSet;
 
-import simonlang.coastdove.core.utility.CollatorWrapper;
+import simonlang.coastdove.lib.CollatorWrapper;
 
 /**
  * Service connection to Coast Dove listeners
  */
 public class ListenerConnection implements ServiceConnection {
-    public static final int MSG_APP_CHANGED = 1;
-    public static final int MSG_ACTIVITY_DETECTED = 2;
-    public static final int MSG_LAYOUTS_DETECTED = 4;
-    public static final int MSG_INTERACTION_DETECTED = 8;
-    public static final int MSG_NOTIFICATION_DETECTED = 16;
-    public static final int MSG_SCREEN_STATE_DETECTED = 32;
-
-
     private Messenger mService = null;
     private boolean mBound = false;
 
@@ -60,7 +52,8 @@ public class ListenerConnection implements ServiceConnection {
             return;
 
         Message msg = Message.obtain(null, type, 0, 0);
-        msg.setData(data);
+        if (data != null)
+            msg.setData(data);
         try {
             mService.send(msg);
         } catch (RemoteException e) {

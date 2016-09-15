@@ -18,19 +18,11 @@
 
 package simonlang.coastdove.core.detection;
 
-import android.util.Log;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.CopyOnWriteArraySet;
 
-import simonlang.coastdove.core.utility.CollatorWrapper;
 import simonlang.coastdove.core.utility.SetSizeComparator;
 
 /**
@@ -63,29 +55,6 @@ public class LayoutIdentification implements Serializable {
         this.name = name;
         this.ambiguity = ambiguity;
         this.layoutIdentifiers = layoutIdentifiers;
-    }
-
-    /**
-     * Creates a new layout identification using the given data
-     * @param name                 Name of the layouts to be identified
-     * @param ambiguity            Number of layouts that are identified by exactly the same android IDs
-     * @param layoutIdentifiers    Sets of android IDs, each of which can identify the according layout
-     */
-    public LayoutIdentification(String name, int ambiguity, JSONArray layoutIdentifiers) {
-        this.name = name;
-        this.ambiguity = ambiguity;
-        this.layoutIdentifiers = new CopyOnWriteArraySet<>();
-        try {
-            for (int i = 0; i < layoutIdentifiers.length(); ++i) {
-                Set<String> currentSet = new TreeSet<>(new CollatorWrapper());
-                JSONArray currentArray = layoutIdentifiers.getJSONArray(i);
-                for (int j = 0; j < currentArray.length(); ++j)
-                    currentSet.add(currentArray.getString(j));
-                this.layoutIdentifiers.add(currentSet);
-            }
-        } catch (JSONException e) {
-            Log.e("LayoutIdentification", "Error reading JSONObject for LayoutIdentification " + name + ": " + e.getMessage());
-        }
     }
 
     /**
@@ -137,31 +106,5 @@ public class LayoutIdentification implements Serializable {
 
     public void setLayoutIdentifiers(Set<Set<String>> layoutIdentifiers) {
         this.layoutIdentifiers = layoutIdentifiers;
-    }
-
-    /**
-     * Converts this object to a JSONObject
-     * @return a JSONObject with this LayoutIdentification's contents
-     */
-    public JSONObject toJSON() {
-        JSONObject result = new JSONObject();
-
-        try {
-            result.put("_type", "LayoutIdentification");
-            result.put("name", getName());
-            JSONArray layoutIdentifiersAsJSON = new JSONArray();
-            for (Set<String> identifier : layoutIdentifiers) {
-                JSONArray identifierAsJSON = new JSONArray(identifier);
-                layoutIdentifiersAsJSON.put(identifierAsJSON);
-            }
-            result.put("layoutIdentifiers", layoutIdentifiersAsJSON);
-        } catch (JSONException e) {
-            System.err.println("Error saving LayoutIdentification (" +
-                    getName() + ") to JSON: " + e.getMessage());
-            e.printStackTrace();
-            System.exit(1);
-        }
-
-        return result;
     }
 }

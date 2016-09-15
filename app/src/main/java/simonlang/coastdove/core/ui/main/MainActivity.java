@@ -59,20 +59,6 @@ public class MainActivity extends AppCompatActivity {
             case R.id.item_accessibility_services:
                 startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
                 return true;
-            case R.id.item_export_db:
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        FileHelper.exportSQLiteDB(MainActivity.this, FileHelper.Directory.PUBLIC, FileHelper.EXPORTED_DB_FILENAME);
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                Toast.makeText(MainActivity.this, getString(R.string.database_exported), Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                    }
-                }).start();
-                return true;
             case R.id.item_add_detectable_app:
                 startActivity(new Intent(this, AddAppActivity.class));
                 return true;

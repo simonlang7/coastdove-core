@@ -98,12 +98,12 @@
             android:clickable="true" />
     </LinearLayout>
 
-    <fragment
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:name="simonlang.coastdove.core.ui.detectable_app_details.AppUsageDataListFragment"
-        android:id="@+id/fragment_app_usage_data_file_list"
-        android:layout_gravity="center_horizontal"
-        tools:layout="@android:layout/list_content" />
+    <!--<fragment-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="match_parent"-->
+        <!--android:name="simonlang.coastdove.core.ui.detectable_app_details.AppUsageDataListFragment"-->
+        <!--android:id="@+id/fragment_app_usage_data_file_list"-->
+        <!--android:layout_gravity="center_horizontal"-->
+        <!--tools:layout="@android:layout/list_content" />-->
 
 </LinearLayout>

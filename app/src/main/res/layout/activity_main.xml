@@ -20,7 +20,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:name="simonlang.coastdove.core.ui.main.DetectableAppsListFragment"
-        android:id="@+id/fragment_detectable_apps_file_list"
+        android:id="@+id/fragment_detectable_apps_list"
         android:layout_gravity="center_horizontal"
         tools:layout="@layout/fragment_simple_list"
         android:layout_weight="1" />

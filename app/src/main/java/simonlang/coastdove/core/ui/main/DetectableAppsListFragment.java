@@ -64,7 +64,7 @@ public class DetectableAppsListFragment extends LoadableListFragment<String> {
 
     @Override
     protected void addProgressBarToViewGroup() {
-        ViewGroup root = (ViewGroup)getActivity().findViewById(R.id.fragment_detectable_apps_file_list);
+        ViewGroup root = (ViewGroup)getActivity().findViewById(R.id.fragment_detectable_apps_list);
         root.addView(this.progressBar);
     }
 

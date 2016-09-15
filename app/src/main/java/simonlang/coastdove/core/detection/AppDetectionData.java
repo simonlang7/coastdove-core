@@ -20,11 +20,9 @@ package simonlang.coastdove.core.detection;
 
 import android.app.Notification;
 import android.content.Context;
-import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Parcelable;
-import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 
@@ -36,13 +34,11 @@ import java.util.concurrent.CopyOnWriteArraySet;
 
 import simonlang.coastdove.core.CoastDoveService;
 import simonlang.coastdove.core.ListenerConnection;
-import simonlang.coastdove.core.usage.ActivityDataEntry;
-import simonlang.coastdove.core.usage.AppUsageData;
-import simonlang.coastdove.core.usage.AppUsageDataProcessor;
-import simonlang.coastdove.core.usage.sql.AppUsageDbHelper;
-import simonlang.coastdove.core.usage.sql.SQLiteWriter;
-import simonlang.coastdove.core.utility.CollatorWrapper;
 import simonlang.coastdove.core.utility.FileHelper;
+import simonlang.coastdove.lib.AppMetaInformation;
+import simonlang.coastdove.lib.CollatorWrapper;
+import simonlang.coastdove.lib.CoastDoveListenerService;
+import simonlang.coastdove.lib.EventType;
 import simonlang.coastdove.lib.InteractionEventData;
 
 /**
@@ -52,7 +48,7 @@ import simonlang.coastdove.lib.InteractionEventData;
  * favored.
  */
 public final class AppDetectionData implements Serializable {
-    private static final long serialVersionUID = 6474227652249667875L;
+    private static final long serialVersionUID = -599352705245161574L;
 
     /** Name of the package associated, i.e. the app that can be detected */
     private String appPackageName;
@@ -80,8 +76,6 @@ public final class AppDetectionData implements Serializable {
     private transient boolean performNotificationChecks;
 
 
-    /** Usage data collected for this session (that starts when the app is opened and ends when it's closed) */
-    private transient AppUsageData currentAppUsageData;
     /** Replacement data for this app, loaded separately */
     private transient ReplacementData replacementData;
 
@@ -117,7 +111,6 @@ public final class AppDetectionData implements Serializable {
         this.performInteractionChecks = performInteractionChecks;
         this.performScreenStateChecks = performScreenStateChecks;
         this.performNotificationChecks = performNotificationChecks;
-        this.currentAppUsageData = null;
         this.replacementData = replacementData;
         this.context = context;
     }
@@ -129,66 +122,55 @@ public final class AppDetectionData implements Serializable {
      * @param activity    Current activity to add to the ActivityDataEntry
      */
     public void performChecks(AccessibilityEvent event, AccessibilityNodeInfo rootNodeInfo, String activity) {
-        if (this.currentAppUsageData == null)
-            newAppUsageData();
 
         boolean notifyListeners = false;
         int type = 0;
         Bundle data = new Bundle();
+
+        // Activity
         if (shallPerformActivityChecks(event)) {
             notifyListeners = true;
-            type |= ListenerConnection.MSG_ACTIVITY_DETECTED;
+            type |= CoastDoveListenerService.MSG_ACTIVITY_DETECTED;
             data.putString("activity", activity);
-
-            boolean shallLog = currentAppUsageData.addActivityData(activity);
-            if (shallLog)
-                Log.i("Activity", activity);
         }
 
+        // Layouts
         if (shallPerformLayoutChecks(event)) {
             Set<String> recognizedLayouts = checkLayouts(event.getSource(), rootNodeInfo);
             notifyListeners = true;
-            type |= ListenerConnection.MSG_LAYOUTS_DETECTED;
+            type |= CoastDoveListenerService.MSG_LAYOUTS_DETECTED;
             data.putStringArray("layouts", recognizedLayouts.toArray(new String[recognizedLayouts.size()]));
-
-            boolean shallLog = currentAppUsageData.addLayoutDataEntry(activity, recognizedLayouts);
-            if (shallLog)
-                Log.i("Recognized layouts", recognizedLayouts.toString());
         }
 
+        // Interaction
         if (shallPerformInteractionChecks(event)) {
-            ActivityDataEntry.EntryType entryType;
+            EventType eventType;
             switch (event.getEventType()) {
                 case AccessibilityEvent.TYPE_VIEW_CLICKED:
-                    entryType = ActivityDataEntry.EntryType.CLICK;
+                    eventType = EventType.CLICK;
                     break;
                 case AccessibilityEvent.TYPE_VIEW_LONG_CLICKED:
-                    entryType = ActivityDataEntry.EntryType.LONG_CLICK;
+                    eventType = EventType.LONG_CLICK;
                     break;
                 case AccessibilityEvent.TYPE_VIEW_SCROLLED:
-                    entryType = ActivityDataEntry.EntryType.SCROLLING;
+                    eventType = EventType.SCROLLING;
                     break;
                 default:
-                    entryType = ActivityDataEntry.EntryType.OTHER;
+                    eventType = EventType.OTHER;
                     break;
             }
-            Set<InteractionEventData> interactionEventData = checkInteractionEvents(event.getSource(), rootNodeInfo, entryType);
+            Set<InteractionEventData> interactionEventData = checkInteractionEvents(event.getSource(), rootNodeInfo, eventType);
             notifyListeners = true;
-            type |= ListenerConnection.MSG_INTERACTION_DETECTED;
+            type |= CoastDoveListenerService.MSG_INTERACTION_DETECTED;
             data.putParcelableArray("interaction", interactionEventData.toArray(new InteractionEventData[interactionEventData.size()]));
-
-            boolean shallLog = currentAppUsageData.addInteractionDataEntry(activity, interactionEventData, entryType);
-            if (shallLog)
-                Log.i("Interaction events", interactionEventData.toString());
+            data.putString("eventType", eventType.name());
         }
 
         if (shallPerformNotificationChecks(event)) {
             String notificationContent = checkNotification(event);
             notifyListeners = true;
-            type |= ListenerConnection.MSG_NOTIFICATION_DETECTED;
+            type |= CoastDoveListenerService.MSG_NOTIFICATION_DETECTED;
             data.putString("notification", notificationContent);
-
-            saveNotificationEvent(notificationContent);
         }
 
         if (notifyListeners) {
@@ -201,12 +183,11 @@ public final class AppDetectionData implements Serializable {
      * Called when the screen is turned off
      */
     public void onScreenOff() {
-        if (currentAppUsageData != null && performScreenStateChecks) {
+        if (performScreenStateChecks) {
             Bundle data = new Bundle();
             data.putBoolean("screenOff", true);
             for (ListenerConnection listener : CoastDoveService.listeners)
-                listener.sendMessage(this.appPackageName, ListenerConnection.MSG_SCREEN_STATE_DETECTED, data);
-            currentAppUsageData.addScreenOffEntry();
+                listener.sendMessage(this.appPackageName, CoastDoveListenerService.MSG_SCREEN_STATE_DETECTED, data);
         }
     }
 
@@ -214,26 +195,37 @@ public final class AppDetectionData implements Serializable {
      * Called when the screen is turned on
      */
     public void onScreenOn() {
-        if (currentAppUsageData != null && performScreenStateChecks) {
+        if (performScreenStateChecks) {
             Bundle data = new Bundle();
             data.putBoolean("screenOff", false);
             for (ListenerConnection listener : CoastDoveService.listeners)
-                listener.sendMessage(this.appPackageName, ListenerConnection.MSG_SCREEN_STATE_DETECTED, data);
-            currentAppUsageData.finishScreenOffEntry();
+                listener.sendMessage(this.appPackageName, CoastDoveListenerService.MSG_SCREEN_STATE_DETECTED, data);
         }
     }
 
     /**
-     * Writes the current app usage data to the SQLite database and swaps it for an empty new one,
-     * is automatically called whenever the app to be detected is exited
+     * Notifies listeners that the app to be detected has been closed, and updates the internal
+     * replacement mapping for private data. Automatically called by CoastDoveService.
      */
-    public void saveAppUsageData() {
-        currentAppUsageData.finish();
-        writeAppUsageData();
+    public void onAppClosed() {
+        for (ListenerConnection listener : CoastDoveService.listeners)
+            listener.sendMessage(this.appPackageName, CoastDoveListenerService.MSG_APP_CLOSED, null);
         updateReplacementMapping();
-        this.currentAppUsageData = null;
     }
 
+    /**
+     * Notifies listeners that the app to be detected has been opened
+     */
+    public void onAppStarted() {
+        Bundle data = new Bundle();
+        data.putString("appPackageName", this.appPackageName);
+        for (ListenerConnection listener: CoastDoveService.listeners)
+            listener.sendMessage(this.appPackageName, CoastDoveListenerService.MSG_APP_STARTED, data);
+    }
+
+    /**
+     * Updates the internal mapping for private data replacement
+     */
     public void updateReplacementMapping() {
         if (replacementData != null && replacementData.hasChanged()) {
             new Thread(new Runnable() {
@@ -248,51 +240,8 @@ public final class AppDetectionData implements Serializable {
     }
 
     /**
-     * Saves a notification event with the given content to the SQLite database
-     * @param content    Notification content
+     * Returns true iff the current activity shall be checked
      */
-    public void saveNotificationEvent(String content) {
-        String contentToWrite = content;
-        if (this.replacementData != null) {
-            ReplacementData.ReplacementType type = replacementData.getNotificationReplacement();
-            switch (type) {
-                case DISCARD:
-                    contentToWrite = "";
-                    break;
-                case REPLACE:
-                    contentToWrite = replacementData.getReplacement(content);
-                    break;
-            }
-            updateReplacementMapping();
-        }
-        final NotificationEvent notificationEvent = new NotificationEvent(this.appPackageName, contentToWrite);
-
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                AppUsageDbHelper helper = new AppUsageDbHelper(context);
-                SQLiteDatabase db = helper.getWritableDatabase();
-                db.beginTransactionNonExclusive();
-                try {
-                    notificationEvent.writeToSQLiteDB(db);
-                    db.setTransactionSuccessful();
-                } catch (RuntimeException e) {
-                    Log.e("AppDetectionData", e.getMessage());
-                } finally {
-                    db.endTransaction();
-                    db.close();
-                }
-            }
-        }).start();
-    }
-
-    /**
-     * Creates a new app usage data
-     */
-    private void newAppUsageData() {
-        currentAppUsageData = new AppUsageData(this.appPackageName);
-    }
-
     private boolean shallPerformActivityChecks(AccessibilityEvent event) {
         if (event.getEventType() != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED)
             return false;
@@ -360,7 +309,7 @@ public final class AppDetectionData implements Serializable {
      * @return Data regarding this interaction event
      */
     private Set<InteractionEventData> checkInteractionEvents(AccessibilityNodeInfo source, AccessibilityNodeInfo rootNodeInfo,
-                                                             ActivityDataEntry.EntryType type) {
+                                                             EventType type) {
         Set<InteractionEventData> result = new CopyOnWriteArraySet<>();
 
         // Try to find the node info with the same bounds as the source.
@@ -420,12 +369,23 @@ public final class AppDetectionData implements Serializable {
         // Get notification data
         Parcelable data = event.getParcelableData();
         if (data instanceof Notification) {
-            Log.d("Notification", event.getPackageName().toString());
             Notification notification = (Notification)data;
             String tickerText = notification.tickerText != null ? notification.tickerText.toString() : "";
 
-            // Save notification data right away
-            return tickerText;
+            String content = tickerText;
+            if (this.replacementData != null) {
+                ReplacementData.ReplacementType type = replacementData.getNotificationReplacement();
+                switch (type) {
+                    case DISCARD:
+                        content = "";
+                        break;
+                    case REPLACE:
+                        content = replacementData.getReplacement(tickerText);
+                        break;
+                }
+                updateReplacementMapping();
+            }
+            return content;
         }
         return "";
     }
@@ -472,16 +432,6 @@ public final class AppDetectionData implements Serializable {
                     }
                 });
         return nodeFinder.nextFiltered();
-    }
-
-    /**
-     * Writes the current app usage data to a file
-     */
-    private void writeAppUsageData() {
-        AppUsageData appUsageData = currentAppUsageData;
-        AppUsageDataProcessor processor = new AppUsageDataProcessor(this.appMetaInformation, appUsageData);
-        processor.process();
-        new Thread(new SQLiteWriter(this.context, appUsageData)).start();
     }
 
     /**

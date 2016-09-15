@@ -52,6 +52,8 @@ import simonlang.coastdove.core.utility.MultipleObjectLoader;
  * Activity started when a detectable app in the main list is clicked,
  * displays a button to activate/deactivate detection, as well as a list
  * of detection sessions
+ *
+ * TODO: This class is a mess. Clean up.
  */
 public class DetectableAppDetailsActivity extends AppCompatActivity {
 

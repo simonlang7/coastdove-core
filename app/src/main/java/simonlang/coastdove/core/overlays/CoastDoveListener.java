@@ -4,7 +4,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-import simonlang.coastdove.core.utility.CollatorWrapper;
+import simonlang.coastdove.lib.CollatorWrapper;
 import simonlang.coastdove.lib.InteractionEventData;
 
 /**

@@ -29,13 +29,13 @@ import org.xmlpull.v1.XmlPullParserFactory;
 import brut.androlib.res.decoder.AXmlResourceParser;
 import simonlang.coastdove.core.R;
 import simonlang.coastdove.core.detection.AppDetectionData;
-import simonlang.coastdove.core.detection.AppMetaInformation;
 import simonlang.coastdove.core.detection.LayoutIdentification;
 import simonlang.coastdove.core.ui.LoadingInfo;
 import simonlang.coastdove.core.utility.APKToolHelper;
-import simonlang.coastdove.core.utility.CollatorWrapper;
 import simonlang.coastdove.core.utility.PowerSet;
 import simonlang.coastdove.core.utility.Misc;
+import simonlang.coastdove.lib.AppMetaInformation;
+import simonlang.coastdove.lib.CollatorWrapper;
 import soot.jimple.infoflow.android.resources.ARSCFileParser;
 
 import java.io.File;
