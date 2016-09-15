@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context="simonlang.coastdove.ui.add_app.AddAppActivity">
+    tools:context="simonlang.coastdove.core.ui.add_app.AddAppActivity">
 
     <android.support.v7.widget.Toolbar
         android:id="@+id/add_app_toolbar"
@@ -19,7 +19,7 @@
     <fragment
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:name="simonlang.coastdove.ui.add_app.AppListFragment"
+        android:name="simonlang.coastdove.core.ui.add_app.AppListFragment"
         android:id="@+id/fragment_app_list"
         android:layout_below="@+id/add_app_toolbar"
         android:layout_centerHorizontal="true"

@@ -19,7 +19,7 @@
     <fragment
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:name="simonlang.coastdove.ui.app_usage_data_details.DataEntryListFragment"
+        android:name="simonlang.coastdove.core.ui.app_usage_data_details.DataEntryListFragment"
         android:id="@+id/fragment_data_entries"
         android:layout_gravity="center_horizontal"
         tools:layout="@layout/list_item_data_entry" />

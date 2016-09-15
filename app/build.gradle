@@ -4,7 +4,7 @@ android {
     compileSdkVersion 22
     buildToolsVersion "21.1.2"
     defaultConfig {
-        applicationId "simonlang.coastdove"
+        applicationId "simonlang.coastdove.core"
         minSdkVersion 22
         targetSdkVersion 22
         versionCode 1
@@ -33,4 +33,5 @@ dependencies {
     compile 'com.android.support:design:22.2.1'
     compile files('libs/apktool_2.2.0.jar')
     compile files('libs/arscparser.jar')
+    compile project(":coastdovelib")
 }
