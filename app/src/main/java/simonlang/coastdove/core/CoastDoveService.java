@@ -79,6 +79,21 @@ public class CoastDoveService extends AccessibilityService {
     }
 
     /**
+     * Indicates whether a listener has an app enabled or not
+     * @param context             App context
+     * @param serviceClassName    Service class name to identify the listener
+     * @param appToCheck          App to check enabled status
+     * @return True if enabled, false otherwise
+     */
+    public static boolean appEnabledOnListener(Context context, String serviceClassName, String appToCheck) {
+        if (!listeners.containsKey(serviceClassName))
+            return false;
+
+        ListenerConnection listener = listeners.get(serviceClassName);
+        return listener.isAppEnabled(appToCheck);
+    }
+
+    /**
      * Disables listening for the provided app to be disabled. If other apps on the listener are still enabled,
      * the listener will keep running for the other apps. If not, the listener will be removed as well.
      * @param context             App context

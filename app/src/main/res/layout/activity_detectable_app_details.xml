@@ -98,6 +98,13 @@
             android:clickable="true" />
     </LinearLayout>
 
+    <fragment
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:name="simonlang.coastdove.core.ui.detectable_app_details.ModuleListFragment"
+        android:id="@+id/fragment_module_list"
+        android:layout_weight="2" />
+
     <!--<fragment-->
         <!--android:layout_width="match_parent"-->
         <!--android:layout_height="match_parent"-->

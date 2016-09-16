@@ -139,6 +139,14 @@ public class ListenerConnection implements ServiceConnection {
     }
 
     /**
+     * Indicates whether the given app is enabled or not
+     * @return True if enabled
+     */
+    public boolean isAppEnabled(String appToCheck) {
+        return mEnabledApps.contains(appToCheck);
+    }
+
+    /**
      * Indicates whether this service has at least one enabled app (returns true if so)
      */
     public boolean hasEnabledApps() {
