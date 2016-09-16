@@ -107,7 +107,7 @@ public class CoastDoveService extends AccessibilityService {
         ListenerConnection listener = listeners.get(serviceClassName);
         listener.disableApp(appToDisable);
         if (!listener.hasEnabledApps())
-            listeners.remove(listener);
+            listeners.remove(serviceClassName);
     }
 
     /** Receiver for when the screen turns off or on */
