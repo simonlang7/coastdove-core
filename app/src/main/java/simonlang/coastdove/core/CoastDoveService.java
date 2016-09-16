@@ -28,11 +28,13 @@ import android.content.pm.PackageManager;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 
-import java.util.Collection;
-import java.util.LinkedList;
+import java.util.HashMap;
+import java.util.Map;
 
 import simonlang.coastdove.core.detection.AppDetectionData;
 import simonlang.coastdove.core.detection.ScreenStateReceiver;
+import simonlang.coastdove.core.ipc.ListenerConnection;
+import simonlang.coastdove.core.utility.Misc;
 import simonlang.coastdove.core.utility.MultipleObjectLoader;
 
 /**
@@ -47,8 +49,51 @@ public class CoastDoveService extends AccessibilityService {
     /** Contains all AppDetectionData needed to process detectable apps */
     public static final MultipleObjectLoader<AppDetectionData> multiLoader = new MultipleObjectLoader<>();
     /** All listeners of Coast Dove modules, i.e., connections to services in other apps listening to
-     *  app detection performed here */
-    public static final Collection<ListenerConnection> listeners = new LinkedList<>();
+     *  app detection performed here. Identified by the remote services' class names */
+    public static final Map<String, ListenerConnection> listeners = new HashMap<>();
+
+    /**
+     * Adds a listener for the provided app to be enabled. If necessary, the listener is constructed,
+     * otherwise the app is enabled on the existing listener.
+     * @param context               App context
+     * @param servicePackageName    Package name of the remote service
+     * @param serviceClassName      Full class name (including all packages) of the remote service
+     * @param appToEnable           App to listen to
+     */
+    public static void addListenerForApp(Context context, String servicePackageName, String serviceClassName,
+                                         String appToEnable) {
+        if (listeners.containsKey(serviceClassName)) {
+            // Listener already running? Just enable the app
+            listeners.get(serviceClassName).enableApp(appToEnable);
+        }
+        else {
+            // No listener? Create a new one and bind it if necessary (otherwise, this will happen when
+            // the AccessibilityService is started).
+            ListenerConnection listener = new ListenerConnection(servicePackageName, serviceClassName);
+            listener.enableApp(appToEnable);
+            listeners.put(serviceClassName, listener);
+
+            if (Misc.isAccessibilityServiceActive(context))
+                context.getApplicationContext().bindService(listener.getListenerIntent(), listener, BIND_AUTO_CREATE);
+        }
+    }
+
+    /**
+     * Disables listening for the provided app to be disabled. If other apps on the listener are still enabled,
+     * the listener will keep running for the other apps. If not, the listener will be removed as well.
+     * @param context             App context
+     * @param serviceClassName    Full class name (including all packages) of the remote service
+     * @param appToDisable        App to stop listening to
+     */
+    public static void removeListenerForApp(Context context, String serviceClassName, String appToDisable) {
+        if (!listeners.containsKey(serviceClassName))
+            return;
+
+        ListenerConnection listener = listeners.get(serviceClassName);
+        listener.disableApp(appToDisable);
+        if (!listener.hasEnabledApps())
+            listeners.remove(listener);
+    }
 
     /** Receiver for when the screen turns off or on */
     private ScreenStateReceiver screenStateReceiver;
@@ -142,11 +187,10 @@ public class CoastDoveService extends AccessibilityService {
         filter.addAction(Intent.ACTION_SCREEN_ON);
         registerReceiver(this.screenStateReceiver, filter);
 
-        Intent listenerTestIntent = new Intent();
-        listenerTestIntent.setComponent(new ComponentName("simonlang.coastdove.usagestatistics", "simonlang.coastdove.usagestatistics.StatisticsListener"));
-        ListenerConnection listener = new ListenerConnection("de.schildbach.oeffi");
-        listeners.add(listener);
-        bindService(listenerTestIntent, listener, Context.BIND_AUTO_CREATE);
+        for (ListenerConnection listener : listeners.values()) {
+            Intent listenerIntent = listener.getListenerIntent();
+            getApplicationContext().bindService(listenerIntent, listener, Context.BIND_AUTO_CREATE);
+        }
 
         this.currentActivity = "";
         this.previousPackageName = "";
@@ -155,9 +199,8 @@ public class CoastDoveService extends AccessibilityService {
     @Override
     public void onDestroy() {
         unregisterReceiver(this.screenStateReceiver);
-        for (ListenerConnection listener : listeners)
-            unbindService(listener);
-        listeners.clear();
+        for (ListenerConnection listener : listeners.values())
+            getApplicationContext().unbindService(listener);
 
         super.onDestroy();
     }

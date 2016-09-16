@@ -24,6 +24,10 @@
                 android:name="android.accessibilityservice"
                 android:resource="@xml/serviceconfig" />
         </service>
+        <service
+            android:name=".ipc.ModuleRegisteringService"
+            android:exported="true"
+            android:process=":remote" />
 
         <activity android:name="simonlang.coastdove.core.ui.main.MainActivity">
             <intent-filter>

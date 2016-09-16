@@ -33,7 +33,7 @@ import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import simonlang.coastdove.core.CoastDoveService;
-import simonlang.coastdove.core.ListenerConnection;
+import simonlang.coastdove.core.ipc.ListenerConnection;
 import simonlang.coastdove.core.utility.FileHelper;
 import simonlang.coastdove.lib.AppMetaInformation;
 import simonlang.coastdove.lib.CollatorWrapper;
@@ -131,7 +131,7 @@ public final class AppDetectionData implements Serializable {
         if (shallPerformActivityChecks(event)) {
             notifyListeners = true;
             type |= CoastDoveListenerService.MSG_ACTIVITY_DETECTED;
-            data.putString("activity", activity);
+            data.putString(CoastDoveListenerService.DATA_ACTIVITY, activity);
         }
 
         // Layouts
@@ -139,7 +139,7 @@ public final class AppDetectionData implements Serializable {
             Set<String> recognizedLayouts = checkLayouts(event.getSource(), rootNodeInfo);
             notifyListeners = true;
             type |= CoastDoveListenerService.MSG_LAYOUTS_DETECTED;
-            data.putStringArray("layouts", recognizedLayouts.toArray(new String[recognizedLayouts.size()]));
+            data.putStringArray(CoastDoveListenerService.DATA_LAYOUTS, recognizedLayouts.toArray(new String[recognizedLayouts.size()]));
         }
 
         // Interaction
@@ -162,19 +162,19 @@ public final class AppDetectionData implements Serializable {
             Set<InteractionEventData> interactionEventData = checkInteractionEvents(event.getSource(), rootNodeInfo, eventType);
             notifyListeners = true;
             type |= CoastDoveListenerService.MSG_INTERACTION_DETECTED;
-            data.putParcelableArray("interaction", interactionEventData.toArray(new InteractionEventData[interactionEventData.size()]));
-            data.putString("eventType", eventType.name());
+            data.putParcelableArray(CoastDoveListenerService.DATA_INTERACTION, interactionEventData.toArray(new InteractionEventData[interactionEventData.size()]));
+            data.putString(CoastDoveListenerService.DATA_EVENT_TYPE, eventType.name());
         }
 
         if (shallPerformNotificationChecks(event)) {
             String notificationContent = checkNotification(event);
             notifyListeners = true;
             type |= CoastDoveListenerService.MSG_NOTIFICATION_DETECTED;
-            data.putString("notification", notificationContent);
+            data.putString(CoastDoveListenerService.DATA_NOTIFICATION, notificationContent);
         }
 
         if (notifyListeners) {
-            for (ListenerConnection listener : CoastDoveService.listeners)
+            for (ListenerConnection listener : CoastDoveService.listeners.values())
                 listener.sendMessage(this.appPackageName, type, data);
         }
     }
@@ -185,8 +185,8 @@ public final class AppDetectionData implements Serializable {
     public void onScreenOff() {
         if (performScreenStateChecks) {
             Bundle data = new Bundle();
-            data.putBoolean("screenOff", true);
-            for (ListenerConnection listener : CoastDoveService.listeners)
+            data.putBoolean(CoastDoveListenerService.DATA_SCREEN_OFF, true);
+            for (ListenerConnection listener : CoastDoveService.listeners.values())
                 listener.sendMessage(this.appPackageName, CoastDoveListenerService.MSG_SCREEN_STATE_DETECTED, data);
         }
     }
@@ -197,8 +197,8 @@ public final class AppDetectionData implements Serializable {
     public void onScreenOn() {
         if (performScreenStateChecks) {
             Bundle data = new Bundle();
-            data.putBoolean("screenOff", false);
-            for (ListenerConnection listener : CoastDoveService.listeners)
+            data.putBoolean(CoastDoveListenerService.DATA_SCREEN_OFF, false);
+            for (ListenerConnection listener : CoastDoveService.listeners.values())
                 listener.sendMessage(this.appPackageName, CoastDoveListenerService.MSG_SCREEN_STATE_DETECTED, data);
         }
     }
@@ -208,7 +208,7 @@ public final class AppDetectionData implements Serializable {
      * replacement mapping for private data. Automatically called by CoastDoveService.
      */
     public void onAppClosed() {
-        for (ListenerConnection listener : CoastDoveService.listeners)
+        for (ListenerConnection listener : CoastDoveService.listeners.values())
             listener.sendMessage(this.appPackageName, CoastDoveListenerService.MSG_APP_CLOSED, null);
         updateReplacementMapping();
     }
@@ -218,8 +218,8 @@ public final class AppDetectionData implements Serializable {
      */
     public void onAppStarted() {
         Bundle data = new Bundle();
-        data.putString("appPackageName", this.appPackageName);
-        for (ListenerConnection listener: CoastDoveService.listeners)
+        data.putString(CoastDoveListenerService.DATA_APP_PACKAGE_NAME, this.appPackageName);
+        for (ListenerConnection listener: CoastDoveService.listeners.values())
             listener.sendMessage(this.appPackageName, CoastDoveListenerService.MSG_APP_STARTED, data);
     }
 
