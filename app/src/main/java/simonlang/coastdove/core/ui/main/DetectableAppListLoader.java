@@ -19,7 +19,10 @@
 package simonlang.coastdove.core.ui.main;
 
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.support.v4.content.AsyncTaskLoader;
+import android.util.Log;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -32,7 +35,7 @@ import simonlang.coastdove.lib.CollatorWrapper;
 /**
  * Loader for a list of detectable apps (with an AppDetectionData.bin stored on the device)
  */
-public class DetectableAppListLoader extends AsyncTaskLoader<ArrayList<String>> {
+public class DetectableAppListLoader extends AsyncTaskLoader<ArrayList<ApplicationInfo>> {
 
     /**
      * Creates a new DetectableAppListLoader
@@ -43,37 +46,30 @@ public class DetectableAppListLoader extends AsyncTaskLoader<ArrayList<String>> 
     }
 
     @Override
-    public ArrayList<String> loadInBackground() {
+    public ArrayList<ApplicationInfo> loadInBackground() {
         File directory = FileHelper.getFile(getContext(), FileHelper.Directory.PRIVATE, null, "");
         String[] apps = directory.exists() ? directory.list(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String filename) {
                 return FileHelper.appDetectionDataExists(getContext(), filename);
-//
-//                if (detectableDataExists)
-//                    return true;
-//
-//                AppUsageDbHelper dbHelper = new AppUsageDbHelper(getContext());
-//                SQLiteDatabase db = dbHelper.getReadableDatabase();
-//
-//                String[] projection = { AppUsageContract.AppTable.COLUMN_NAME_PACKAGE };
-//                String selection = AppUsageContract.AppTable.COLUMN_NAME_PACKAGE + "=?";
-//                String[] selectionArgs = { filename };
-//
-//                Cursor c = db.query(AppUsageContract.AppTable.TABLE_NAME,
-//                        projection, selection, selectionArgs, null, null, null);
-//                boolean usageDataExists = c.moveToFirst();
-//                c.close();
-//                dbHelper.close();
-//
-//                return usageDataExists;
             }
         }) : new String[0];
-        
-        ArrayList<String> data = new ArrayList<>(apps.length);
+
+        ArrayList<String> dataAsStrings = new ArrayList<>(apps.length);
         for (String app : apps)
-            data.add(app);
-        Collections.sort(data, new CollatorWrapper());
+            dataAsStrings.add(app);
+        Collections.sort(dataAsStrings, new CollatorWrapper());
+        
+        ArrayList<ApplicationInfo> data = new ArrayList<>(apps.length);
+        for (String app : dataAsStrings) {
+            PackageManager packageManager = getContext().getPackageManager();
+            try {
+                ApplicationInfo appInfo = packageManager.getApplicationInfo(app, 0);
+                data.add(appInfo);
+            } catch (PackageManager.NameNotFoundException e) {
+                Log.e("DetectableAppListLoader", "Unable to find app " + app + ": " + e.getMessage());
+            }
+        }
         return data;
     }
 

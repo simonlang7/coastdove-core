@@ -19,6 +19,7 @@
 package simonlang.coastdove.core.ui.main;
 
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.os.Bundle;
 import android.support.v4.content.Loader;
 import android.view.View;
@@ -35,30 +36,30 @@ import simonlang.coastdove.core.ui.LoadableListFragment;
 /**
  * ListFragment containing all available apps that can be detected by the accessibility service
  */
-public class DetectableAppsListFragment extends LoadableListFragment<String> {
+public class DetectableAppsListFragment extends LoadableListFragment<ApplicationInfo> {
 
     @Override
-    public Loader<ArrayList<String>> onCreateLoader(int id, Bundle args) {
+    public Loader<ArrayList<ApplicationInfo>> onCreateLoader(int id, Bundle args) {
         return new DetectableAppListLoader(getActivity());
     }
 
     @Override
-    public void onLoaderReset(Loader<ArrayList<String>> loader) {
+    public void onLoaderReset(Loader<ArrayList<ApplicationInfo>> loader) {
     }
 
     @Override
     protected void setUpListAdapter() {
-        this.adapter = new ArrayAdapter<>(getActivity(), android.R.layout.simple_list_item_1);
+        this.adapter = new DetectableAppListAdapter(getActivity(), R.layout.list_item_detectable_app);
         setListAdapter(this.adapter);
     }
 
     @Override
     public void onListItemClick(ListView listView, View view, int position, long id) {
         super.onListItemClick(listView, view, position, id);
-        final String item = (String)listView.getItemAtPosition(position);
+        final ApplicationInfo item = (ApplicationInfo)listView.getItemAtPosition(position);
 
         Intent intent = new Intent(getActivity(), DetectableAppDetailsActivity.class);
-        intent.putExtra(getString(R.string.extras_package_name), item);
+        intent.putExtra(getString(R.string.extras_package_name), item.packageName);
         startActivity(intent);
     }
 
