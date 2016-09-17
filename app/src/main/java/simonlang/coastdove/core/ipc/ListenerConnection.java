@@ -33,6 +33,9 @@ import android.util.Log;
 import java.util.Collection;
 import java.util.TreeSet;
 
+import simonlang.coastdove.core.CoastDoveService;
+import simonlang.coastdove.core.detection.AppDetectionData;
+import simonlang.coastdove.lib.AppMetaInformation;
 import simonlang.coastdove.lib.CoastDoveListenerService;
 import simonlang.coastdove.lib.CollatorWrapper;
 
@@ -45,7 +48,21 @@ public class ListenerConnection implements ServiceConnection {
     private final class IncomingHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
-            super.handleMessage(msg);
+            if ((msg.what & CoastDoveListenerService.REPLY_REQUEST_META_INFORMATION) != 0) {
+                Bundle dataIn = msg.getData();
+                String appPackageName = dataIn.getString(CoastDoveListenerService.DATA_APP_PACKAGE_NAME);
+                Log.d("ListenerConnection", "Got Meta Information request for " + appPackageName);
+                AppDetectionData appDetectionData = CoastDoveService.multiLoader.get(appPackageName);
+                if (appDetectionData == null)
+                    return;
+
+                AppMetaInformation appMetaInformation = appDetectionData.getAppMetaInformation();
+                Bundle dataOut = new Bundle();
+                dataOut.putString(CoastDoveListenerService.DATA_APP_PACKAGE_NAME, appPackageName);
+                dataOut.putParcelable(CoastDoveListenerService.DATA_META_INFORMATION, appMetaInformation);
+                Log.d("ListenerConnection", "Sending Meta Information");
+                ListenerConnection.this.sendMessage(appPackageName, CoastDoveListenerService.MSG_META_INFORMATION, dataOut);
+            }
         }
     }
 
@@ -87,6 +104,12 @@ public class ListenerConnection implements ServiceConnection {
         } catch (RemoteException e) {
             Log.e("ListenerConnection", "Cannot send message with ReplyMessenger: " + e.getMessage());
         }
+
+        for (String enabledApp : mEnabledApps) {
+            Bundle data = new Bundle();
+            data.putString(CoastDoveListenerService.DATA_APP_PACKAGE_NAME, enabledApp);
+            sendMessage(enabledApp, CoastDoveListenerService.MSG_APP_ENABLED, data);
+        }
     }
 
     @Override
@@ -126,15 +149,35 @@ public class ListenerConnection implements ServiceConnection {
 
     /**
      * Enables the given app, so the connection will listen to it. No effect if already enabled.
+     * Also notifies the listener that the app has been enabled.
      */
     public void enableApp(String appPackageName) {
+        if (mEnabledApps.contains(appPackageName))
+            return;
+
         mEnabledApps.add(appPackageName);
+
+        if (mBound) {
+            Bundle data = new Bundle();
+            data.putString(CoastDoveListenerService.DATA_APP_PACKAGE_NAME, appPackageName);
+            sendMessage(appPackageName, CoastDoveListenerService.MSG_APP_ENABLED, data);
+        }
     }
 
     /**
      * Disables the given app, so the connection will no longer listen to it. No effect if it wasn't enabled.
+     * Also notifies the listener that the app has been disabled.
      */
     public void disableApp(String appPackageName) {
+        if (!mEnabledApps.contains(appPackageName))
+            return;
+
+        if (mBound) {
+            Bundle data = new Bundle();
+            data.putString(CoastDoveListenerService.DATA_APP_PACKAGE_NAME, appPackageName);
+            sendMessage(appPackageName, CoastDoveListenerService.MSG_APP_DISABLED, data);
+        }
+
         mEnabledApps.remove(appPackageName);
     }
 

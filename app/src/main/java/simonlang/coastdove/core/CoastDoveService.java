@@ -187,7 +187,7 @@ public class CoastDoveService extends AccessibilityService {
             AppDetectionData currentDetectionData = multiLoader.get(activityPackageName);
             if (currentDetectionData != null) {
                 screenStateReceiver.setCurrentDetectionData(currentDetectionData);
-                currentDetectionData.onAppStarted();
+                currentDetectionData.onAppOpened();
             }
         }
         this.previousPackageName = activityPackageName;

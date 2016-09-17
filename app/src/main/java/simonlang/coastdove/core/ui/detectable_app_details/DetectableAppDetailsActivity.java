@@ -129,7 +129,6 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
                             detectLayouts, detectInteractions, detectScreenState, detectNotifications, replacePrivateData && replacementDataExists,
                             context, loadingInfo);
                     multiLoader.startLoading(appPackageName, loader, loadingInfo);
-                    Log.d("DetAppDetails", "Started loading with " + loadingInfo.isFinished() + " finished loadingInfo");
                 }
                 else
                     CoastDoveService.multiLoader.remove(appPackageName);

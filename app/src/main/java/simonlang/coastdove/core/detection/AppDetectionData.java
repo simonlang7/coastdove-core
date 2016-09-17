@@ -216,11 +216,11 @@ public final class AppDetectionData implements Serializable {
     /**
      * Notifies listeners that the app to be detected has been opened
      */
-    public void onAppStarted() {
+    public void onAppOpened() {
         Bundle data = new Bundle();
         data.putString(CoastDoveListenerService.DATA_APP_PACKAGE_NAME, this.appPackageName);
         for (ListenerConnection listener: CoastDoveService.listeners.values())
-            listener.sendMessage(this.appPackageName, CoastDoveListenerService.MSG_APP_STARTED, data);
+            listener.sendMessage(this.appPackageName, CoastDoveListenerService.MSG_APP_OPENED, data);
     }
 
     /**

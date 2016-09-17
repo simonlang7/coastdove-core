@@ -176,7 +176,7 @@ public class FileHelper {
 
         AppDetectionData result = null;
         try (FileInputStream fis = new FileInputStream(file);
-             ObjectInputStream ois = new ObjectInputStream(fis)) {
+            ObjectInputStream ois = new ObjectInputStream(fis)) {
             result = (AppDetectionData)ois.readObject();
         } catch (FileNotFoundException e) {
             Log.e("FileHelper", "File not found: " + file.getAbsolutePath());
