@@ -29,12 +29,16 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.support.annotation.NonNull;
 import android.util.Log;
+import android.view.accessibility.AccessibilityNodeInfo;
 
 import java.util.Collection;
 import java.util.TreeSet;
 
 import simonlang.coastdove.core.CoastDoveService;
 import simonlang.coastdove.core.detection.AppDetectionData;
+import simonlang.coastdove.core.detection.NodeInfoDataExtractor;
+import simonlang.coastdove.core.detection.NodeInfoFilter;
+import simonlang.coastdove.core.detection.NodeInfoTraverser;
 import simonlang.coastdove.lib.AppMetaInformation;
 import simonlang.coastdove.lib.CoastDoveListenerService;
 import simonlang.coastdove.lib.CollatorWrapper;
@@ -62,6 +66,33 @@ public class ListenerConnection implements ServiceConnection {
                 dataOut.putParcelable(CoastDoveListenerService.DATA_META_INFORMATION, appMetaInformation);
                 Log.d("ListenerConnection", "Sending Meta Information");
                 ListenerConnection.this.sendMessage(appPackageName, CoastDoveListenerService.MSG_META_INFORMATION, dataOut);
+            }
+
+            if ((msg.what & 2) != 0) {
+                AccessibilityNodeInfo rootInfo = CoastDoveService.service.getRootInActiveWindow();
+
+                NodeInfoTraverser<AccessibilityNodeInfo> traverser = new NodeInfoTraverser<AccessibilityNodeInfo>(rootInfo,
+                        new NodeInfoDataExtractor<AccessibilityNodeInfo>() {
+                            @Override
+                            public AccessibilityNodeInfo extractData(AccessibilityNodeInfo nodeInfo) {
+                                return nodeInfo;
+                            }
+                        },
+                        new NodeInfoFilter() {
+                            @Override
+                            public boolean filter(AccessibilityNodeInfo nodeInfo) {
+                                return nodeInfo.getViewIdResourceName() != null &&
+                                        nodeInfo.getViewIdResourceName().contains("directions_go");
+                            }
+                        });
+
+                AccessibilityNodeInfo nodeInfo = traverser.nextFiltered();
+                if (nodeInfo == null) {
+                    Log.d("DEBUG", "directions_go NodeInfo not found :(");
+                    return;
+                }
+
+                nodeInfo.performAction(AccessibilityNodeInfo.ACTION_CLICK);
             }
         }
     }

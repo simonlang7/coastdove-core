@@ -16,6 +16,11 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/*
+    This framework is based on an idea by Sergej Dechand and Rainer Duppré
+    who implemented a study platform using Android's Accessibility Services.
+*/
+
 package simonlang.coastdove.core;
 
 import android.accessibilityservice.AccessibilityService;
@@ -51,6 +56,8 @@ public class CoastDoveService extends AccessibilityService {
     /** All listeners of Coast Dove modules, i.e., connections to services in other apps listening to
      *  app detection performed here. Identified by the remote services' class names */
     public static final Map<String, ListenerConnection> listeners = new HashMap<>();
+
+    public static CoastDoveService service = null;
 
     /**
      * Adds a listener for the provided app to be enabled. If necessary, the listener is constructed,
@@ -209,6 +216,8 @@ public class CoastDoveService extends AccessibilityService {
 
         this.currentActivity = "";
         this.previousPackageName = "";
+
+        service = this;
     }
 
     @Override
@@ -217,6 +226,7 @@ public class CoastDoveService extends AccessibilityService {
         for (ListenerConnection listener : listeners.values())
             getApplicationContext().unbindService(listener);
 
+        service = null;
         super.onDestroy();
     }
 

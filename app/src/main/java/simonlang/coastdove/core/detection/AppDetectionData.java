@@ -23,6 +23,7 @@ import android.content.Context;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Parcelable;
+import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 
@@ -122,7 +123,6 @@ public final class AppDetectionData implements Serializable {
      * @param activity    Current activity to add to the ActivityDataEntry
      */
     public void performChecks(AccessibilityEvent event, AccessibilityNodeInfo rootNodeInfo, String activity) {
-
         boolean notifyListeners = false;
         int type = 0;
         Bundle data = new Bundle();
@@ -422,6 +422,7 @@ public final class AppDetectionData implements Serializable {
                             return false;
                         Rect bounds = new Rect();
                         nodeInfo.getBoundsInParent(bounds);
+
                         if (!bounds.equals(boundsInParent))
                             return false;
                         nodeInfo.getBoundsInScreen(bounds);
