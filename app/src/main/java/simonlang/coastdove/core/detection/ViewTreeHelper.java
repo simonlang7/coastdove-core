@@ -1,5 +1,6 @@
 package simonlang.coastdove.core.detection;
 
+import android.graphics.Rect;
 import android.os.Build;
 import android.view.accessibility.AccessibilityNodeInfo;
 
@@ -89,7 +90,7 @@ public abstract class ViewTreeHelper {
         String androidID = nodeInfo.getViewIdResourceName();
         String text = charSeqToString(nodeInfo.getText());
         String description = charSeqToString(nodeInfo.getContentDescription());
-        if (replacementData.hasReplacementRule(androidID)) {
+        if (replacementData != null && replacementData.hasReplacementRule(androidID)) {
             ReplacementData.ReplacementRule rule = replacementData.getReplacementRule(androidID);
             switch (rule.replaceText) {
                 case REPLACE:
@@ -128,6 +129,13 @@ public abstract class ViewTreeHelper {
             result.setActionList(new LinkedList<>(nodeInfo.getActionList()));
         else
             result.setActionList(new LinkedList<AccessibilityNodeInfo.AccessibilityAction>());
+
+        Rect boundsInScreen = new Rect();
+        nodeInfo.getBoundsInScreen(boundsInScreen);
+        Rect boundsInParent = new Rect();
+        nodeInfo.getBoundsInParent(boundsInParent);
+        result.setBoundsInScreen(boundsInScreen);
+        result.setBoundsInParent(boundsInParent);
 
         result.setCheckable(nodeInfo.isCheckable());
         result.setChecked(nodeInfo.isChecked());

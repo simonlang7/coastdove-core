@@ -21,6 +21,8 @@ package simonlang.coastdove.core.ipc;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.graphics.Rect;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -56,7 +58,7 @@ public class ListenerConnection implements ServiceConnection {
         @Override
         public void handleMessage(Message msg) {
             Bundle dataIn = msg.getData();
-
+            dataIn.setClassLoader(ListenerConnection.this.getClass().getClassLoader());
 
             if ((msg.what & CoastDoveListenerService.REPLY_REQUEST_META_INFORMATION) != 0) {
                 String appPackageName = dataIn.getString(CoastDoveListenerService.DATA_APP_PACKAGE_NAME);
@@ -73,7 +75,17 @@ public class ListenerConnection implements ServiceConnection {
             }
             if ((msg.what & CoastDoveListenerService.REPLY_REQUEST_VIEW_TREE) != 0) {
                 if (CoastDoveService.getService() != null) {
-                    sendViewTree(dataIn);
+                    sendViewTree(dataIn, true);
+                }
+            }
+            if ((msg.what & CoastDoveListenerService.REPLY_REQUEST_VIEW_TREE_NODE) != 0) {
+                if (CoastDoveService.getService() != null) {
+                    sendViewTree(dataIn, false);
+                }
+            }
+            if ((msg.what & CoastDoveListenerService.REPLY_REQUEST_ACTION) != 0) {
+                if (CoastDoveService.getService() != null && Build.VERSION.SDK_INT >= 21) {
+                    performAction(dataIn);
                 }
             }
         }
@@ -83,7 +95,7 @@ public class ListenerConnection implements ServiceConnection {
          * the ListenerConnection
          * @param dataIn    Bundle that may contain information on the startNodeInfo
          */
-        private void sendViewTree(Bundle dataIn) {
+        private void sendViewTree(Bundle dataIn, boolean includeSubTree) {
             AccessibilityNodeInfo rootNodeInfo = CoastDoveService.getService().getRootInActiveWindow();
 
             String appPackageName = rootNodeInfo.getPackageName().toString();
@@ -108,7 +120,7 @@ public class ListenerConnection implements ServiceConnection {
                             @Override
                             public boolean filter(AccessibilityNodeInfo nodeInfo) {
                                 return nodeInfo.getViewIdResourceName() != null &&
-                                        nodeInfo.getViewIdResourceName().contains(startNodeResource);
+                                        nodeInfo.getViewIdResourceName().endsWith(startNodeResource);
                             }
                         }
                 );
@@ -116,18 +128,71 @@ public class ListenerConnection implements ServiceConnection {
             }
 
             if (startNodeInfo != null) {
-                ViewTreeNode viewTree = ViewTreeHelper.fromAccessibilityNodeInfo(
-                        startNodeInfo, appDetectionData.getReplacementData());
-
-                FileHelper.writeTxtFile(CoastDoveService.getService(),
-                        viewTree.toString().split("\n"), FileHelper.Directory.PUBLIC,
-                        null, "ViewTreeTest.txt");
+                ViewTreeNode viewTree;
+                if (includeSubTree)
+                    viewTree = ViewTreeHelper.fromAccessibilityNodeInfo(
+                            startNodeInfo, appDetectionData.getReplacementData());
+                else
+                    viewTree = ViewTreeHelper.flatCopy(startNodeInfo, appDetectionData.getReplacementData());
 
                 Bundle dataOut = new Bundle();
                 dataOut.putParcelable(CoastDoveListenerService.DATA_VIEW_TREE, viewTree);
                 Log.d("ListenerConnection", "Sending ViewTree");
                 ListenerConnection.this.sendMessage(appPackageName,
                         CoastDoveListenerService.MSG_VIEW_TREE, dataOut);
+            }
+        }
+
+        private void performAction(Bundle dataIn) {
+            int actionID = dataIn.getInt(CoastDoveListenerService.DATA_ACTION);
+
+            AccessibilityNodeInfo nodeInfo = null;
+            AccessibilityNodeInfo rootNodeInfo = CoastDoveService.getService().getRootInActiveWindow();
+            if (dataIn.containsKey(CoastDoveListenerService.DATA_RESOURCE_ID)) {
+                final String androidID = dataIn.getString(CoastDoveListenerService.DATA_RESOURCE_ID);
+                NodeInfoTraverser<AccessibilityNodeInfo> traverser = new NodeInfoTraverser<>(rootNodeInfo,
+                        new NodeInfoDataExtractor<AccessibilityNodeInfo>() {
+                            @Override
+                            public AccessibilityNodeInfo extractData(AccessibilityNodeInfo nodeInfo) {
+                                return nodeInfo;
+                            }
+                        },
+                        new NodeInfoFilter() {
+                            @Override
+                            public boolean filter(AccessibilityNodeInfo nodeInfo) {
+                                return nodeInfo.getViewIdResourceName() != null &&
+                                        nodeInfo.getViewIdResourceName().endsWith(androidID);
+                            }
+                        });
+                nodeInfo = traverser.nextFiltered();
+            }
+            else if (dataIn.containsKey(CoastDoveListenerService.DATA_VIEW_TREE_NODE)) {
+                final ViewTreeNode node = dataIn.getParcelable(CoastDoveListenerService.DATA_VIEW_TREE_NODE);
+                NodeInfoTraverser<AccessibilityNodeInfo> traverser = new NodeInfoTraverser<>(rootNodeInfo,
+                        new NodeInfoDataExtractor<AccessibilityNodeInfo>() {
+                            @Override
+                            public AccessibilityNodeInfo extractData(AccessibilityNodeInfo nodeInfo) {
+                                return nodeInfo;
+                            }
+                        },
+                        new NodeInfoFilter() {
+                            @Override
+                            public boolean filter(AccessibilityNodeInfo nodeInfo) {
+                                Rect boundsExpected = new Rect();
+                                Rect boundsActual = new Rect();
+                                node.getBoundsInParent(boundsExpected);
+                                nodeInfo.getBoundsInParent(boundsActual);
+                                if (!boundsExpected.equals(boundsActual))
+                                    return false;
+                                node.getBoundsInScreen(boundsExpected);
+                                nodeInfo.getBoundsInScreen(boundsActual);
+                                return boundsExpected.equals(boundsActual);
+                            }
+                        });
+                nodeInfo = traverser.nextFiltered();
+            }
+            if (nodeInfo != null) {
+                nodeInfo.performAction(actionID);
             }
         }
     }
