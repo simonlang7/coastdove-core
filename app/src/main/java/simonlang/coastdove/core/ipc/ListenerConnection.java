@@ -143,11 +143,16 @@ public class ListenerConnection implements ServiceConnection {
             }
         }
 
+        /**
+         * Tries to perform an action on the node specified in dataIn, and sends the result
+         * (successful or failed) back to the listener
+         */
         private void performAction(Bundle dataIn) {
             int actionID = dataIn.getInt(CoastDoveListenerService.DATA_ACTION);
 
             AccessibilityNodeInfo nodeInfo = null;
             AccessibilityNodeInfo rootNodeInfo = CoastDoveService.getService().getRootInActiveWindow();
+            String appPackageName = rootNodeInfo.getPackageName().toString();
             if (dataIn.containsKey(CoastDoveListenerService.DATA_RESOURCE_ID)) {
                 final String androidID = dataIn.getString(CoastDoveListenerService.DATA_RESOURCE_ID);
                 NodeInfoTraverser<AccessibilityNodeInfo> traverser = new NodeInfoTraverser<>(rootNodeInfo,
@@ -191,9 +196,20 @@ public class ListenerConnection implements ServiceConnection {
                         });
                 nodeInfo = traverser.nextFiltered();
             }
+            Bundle dataOut = new Bundle();
+            boolean actionPerformed = false;
+            dataOut.putInt(CoastDoveListenerService.DATA_ACTION, actionID);
             if (nodeInfo != null) {
-                nodeInfo.performAction(actionID);
+                AppDetectionData appDetectionData = CoastDoveService.multiLoader.get(appPackageName);
+                if (appDetectionData == null)
+                    return;
+
+                actionPerformed = nodeInfo.performAction(actionID);
+                ViewTreeNode node = ViewTreeHelper.flatCopy(nodeInfo, appDetectionData.getReplacementData());
+                dataOut.putParcelable(CoastDoveListenerService.DATA_VIEW_TREE_NODE, node);
             }
+            ListenerConnection.this.sendMessage(appPackageName,
+                    CoastDoveListenerService.MSG_ACTION_RESULT, dataOut, actionPerformed ? 1 : 0, 0);
         }
     }
 
@@ -265,10 +281,20 @@ public class ListenerConnection implements ServiceConnection {
      * @param data              Contents to send
      */
     public void sendMessage(String appPackageName, int type, Bundle data) {
+        sendMessage(appPackageName, type, data, 0, 0);
+    }
+
+    /**
+     * Sends a message to the remote service
+     * @param appPackageName    App to which the contents in data belong
+     * @param type              Type of message (see CoastDoveListenerService in CoastDoveLib)
+     * @param data              Contents to send
+     */
+    public void sendMessage(String appPackageName, int type, Bundle data, int arg1, int arg2) {
         if (!mBound || !mEnabledApps.contains(appPackageName))
             return;
 
-        Message msg = Message.obtain(null, type, 0, 0);
+        Message msg = Message.obtain(null, type, arg1, arg2);
         if (data != null)
             msg.setData(data);
         try {
