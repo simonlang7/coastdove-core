@@ -57,7 +57,15 @@ public class CoastDoveService extends AccessibilityService {
      *  app detection performed here. Identified by the remote services' class names */
     public static final Map<String, ListenerConnection> listeners = new HashMap<>();
 
-    public static CoastDoveService service = null;
+    /** The accessibility service itself, needed to access AccessibilityNodeInfos from
+     * outside */
+    private static CoastDoveService service = null;
+    /** The accessibility service itself, needed to access AccessibilityNodeInfos from
+     * outside */
+    public static CoastDoveService getService() {
+        return service;
+    }
+
 
     /**
      * Adds a listener for the provided app to be enabled. If necessary, the listener is constructed,

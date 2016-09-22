@@ -39,9 +39,12 @@ import simonlang.coastdove.core.detection.AppDetectionData;
 import simonlang.coastdove.core.detection.NodeInfoDataExtractor;
 import simonlang.coastdove.core.detection.NodeInfoFilter;
 import simonlang.coastdove.core.detection.NodeInfoTraverser;
+import simonlang.coastdove.core.detection.ViewTreeHelper;
+import simonlang.coastdove.core.utility.FileHelper;
 import simonlang.coastdove.lib.AppMetaInformation;
 import simonlang.coastdove.lib.CoastDoveListenerService;
 import simonlang.coastdove.lib.CollatorWrapper;
+import simonlang.coastdove.lib.ViewTreeNode;
 
 // Note: I've only now started using the mName convention. Might change it in all other files in the future...
 
@@ -52,10 +55,11 @@ public class ListenerConnection implements ServiceConnection {
     private final class IncomingHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
+            Bundle dataIn = msg.getData();
+
+
             if ((msg.what & CoastDoveListenerService.REPLY_REQUEST_META_INFORMATION) != 0) {
-                Bundle dataIn = msg.getData();
                 String appPackageName = dataIn.getString(CoastDoveListenerService.DATA_APP_PACKAGE_NAME);
-                Log.d("ListenerConnection", "Got Meta Information request for " + appPackageName);
                 AppDetectionData appDetectionData = CoastDoveService.multiLoader.get(appPackageName);
                 if (appDetectionData == null)
                     return;
@@ -64,14 +68,36 @@ public class ListenerConnection implements ServiceConnection {
                 Bundle dataOut = new Bundle();
                 dataOut.putString(CoastDoveListenerService.DATA_APP_PACKAGE_NAME, appPackageName);
                 dataOut.putParcelable(CoastDoveListenerService.DATA_META_INFORMATION, appMetaInformation);
-                Log.d("ListenerConnection", "Sending Meta Information");
+                Log.d("ListenerConnection", "Sending AppMetaInformation for " + appPackageName);
                 ListenerConnection.this.sendMessage(appPackageName, CoastDoveListenerService.MSG_META_INFORMATION, dataOut);
             }
+            if ((msg.what & CoastDoveListenerService.REPLY_REQUEST_VIEW_TREE) != 0) {
+                if (CoastDoveService.getService() != null) {
+                    sendViewTree(dataIn);
+                }
+            }
+        }
 
-            if ((msg.what & 2) != 0) {
-                AccessibilityNodeInfo rootInfo = CoastDoveService.service.getRootInActiveWindow();
+        /**
+         * Retrieves the current ViewTree from CoastDoveService and sends it using
+         * the ListenerConnection
+         * @param dataIn    Bundle that may contain information on the startNodeInfo
+         */
+        private void sendViewTree(Bundle dataIn) {
+            AccessibilityNodeInfo rootNodeInfo = CoastDoveService.getService().getRootInActiveWindow();
 
-                NodeInfoTraverser<AccessibilityNodeInfo> traverser = new NodeInfoTraverser<AccessibilityNodeInfo>(rootInfo,
+            String appPackageName = rootNodeInfo.getPackageName().toString();
+            AppDetectionData appDetectionData = CoastDoveService.multiLoader.get(appPackageName);
+            if (appDetectionData == null)
+                return;
+
+            AccessibilityNodeInfo startNodeInfo = rootNodeInfo;
+            if (dataIn.containsKey(CoastDoveListenerService.DATA_VIEW_TREE_START_NODE_RESOURCE)) {
+                final String startNodeResource = dataIn.getString(
+                        CoastDoveListenerService.DATA_VIEW_TREE_START_NODE_RESOURCE);
+
+                NodeInfoTraverser<AccessibilityNodeInfo> traverser = new NodeInfoTraverser<>(
+                        rootNodeInfo,
                         new NodeInfoDataExtractor<AccessibilityNodeInfo>() {
                             @Override
                             public AccessibilityNodeInfo extractData(AccessibilityNodeInfo nodeInfo) {
@@ -82,17 +108,26 @@ public class ListenerConnection implements ServiceConnection {
                             @Override
                             public boolean filter(AccessibilityNodeInfo nodeInfo) {
                                 return nodeInfo.getViewIdResourceName() != null &&
-                                        nodeInfo.getViewIdResourceName().contains("directions_go");
+                                        nodeInfo.getViewIdResourceName().contains(startNodeResource);
                             }
-                        });
+                        }
+                );
+                startNodeInfo = traverser.nextFiltered();
+            }
 
-                AccessibilityNodeInfo nodeInfo = traverser.nextFiltered();
-                if (nodeInfo == null) {
-                    Log.d("DEBUG", "directions_go NodeInfo not found :(");
-                    return;
-                }
+            if (startNodeInfo != null) {
+                ViewTreeNode viewTree = ViewTreeHelper.fromAccessibilityNodeInfo(
+                        startNodeInfo, appDetectionData.getReplacementData());
 
-                nodeInfo.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                FileHelper.writeTxtFile(CoastDoveService.getService(),
+                        viewTree.toString().split("\n"), FileHelper.Directory.PUBLIC,
+                        null, "ViewTreeTest.txt");
+
+                Bundle dataOut = new Bundle();
+                dataOut.putParcelable(CoastDoveListenerService.DATA_VIEW_TREE, viewTree);
+                Log.d("ListenerConnection", "Sending ViewTree");
+                ListenerConnection.this.sendMessage(appPackageName,
+                        CoastDoveListenerService.MSG_VIEW_TREE, dataOut);
             }
         }
     }
