@@ -5,6 +5,7 @@ import android.os.Build;
 import android.view.accessibility.AccessibilityNodeInfo;
 
 import java.util.ArrayList;
+import java.util.EmptyStackException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Stack;
@@ -24,50 +25,60 @@ public abstract class ViewTreeHelper {
     public static ViewTreeNode fromAccessibilityNodeInfo(AccessibilityNodeInfo rootNodeInfo,
                                                          ReplacementData replacementData) {
         Stack<AccessibilityNodeInfo> nodeInfos = new Stack<>();
+        if (rootNodeInfo == null)
+            return null;
         nodeInfos.push(rootNodeInfo);
         Stack<ViewTreeNode> viewTreeNodes = new Stack<>();
 
         // Traverse tree with depth-first search
         AccessibilityNodeInfo currentNodeInfo;
         ViewTreeNode currentViewTreeNode;
-        while (!nodeInfos.empty()) {
-            currentNodeInfo = nodeInfos.pop();
+        try {
+            while (!nodeInfos.empty()) {
+                currentNodeInfo = nodeInfos.pop();
 
-            // Have we just finished traversing all children?
-            if (currentNodeInfo == null) {
-                List<ViewTreeNode> children = new LinkedList<>();
+                // Have we just finished traversing all children?
+                if (currentNodeInfo == null) {
+                    List<ViewTreeNode> children = new LinkedList<>();
 
-                // Collect children
-                currentViewTreeNode = viewTreeNodes.pop();
-                while (currentViewTreeNode != null) { // until we hit the parent
-                    children.add(currentViewTreeNode);
+                    // Collect children
                     currentViewTreeNode = viewTreeNodes.pop();
-                }
+                    while (currentViewTreeNode != null) { // until we hit the parent
+                        children.add(currentViewTreeNode);
+                        currentViewTreeNode = viewTreeNodes.pop();
+                    }
 
-                // Add children to parent, link parent to children
-                ViewTreeNode parent = viewTreeNodes.peek();
-                for (ViewTreeNode child : children) {
-                    child.setParent(parent);
-                    parent.getChildren().add(child);
+                    // Add children to parent, link parent to children
+                    ViewTreeNode parent = viewTreeNodes.peek();
+                    for (ViewTreeNode child : children) {
+                        child.setParent(parent);
+                        parent.getChildren().add(child);
+                    }
+                } else { // or did we just start processing a new node?
+                    int childCount = currentNodeInfo.getChildCount();
+
+                    // Process the current node (without children)
+                    currentViewTreeNode = flatCopy(currentNodeInfo, replacementData);
+
+                    // Add node to stack
+                    viewTreeNodes.add(currentViewTreeNode);
+
+                    if (childCount > 0) {
+                        // Signal that this node has children
+                        nodeInfos.push(null);
+                        viewTreeNodes.push(null);
+                        for (int i = 0; i < childCount; ++i) {
+                            AccessibilityNodeInfo child = currentNodeInfo.getChild(i);
+                            if (child != null)
+                                nodeInfos.push(child);
+                        }
+                    }
                 }
             }
-            else { // or did we just start processing a new node?
-                int childCount = currentNodeInfo.getChildCount();
-
-                // Process the current node (without children)
-                currentViewTreeNode = flatCopy(currentNodeInfo, replacementData);
-
-                // Add node to stack
-                viewTreeNodes.add(currentViewTreeNode);
-
-                if (childCount > 0) {
-                    // Signal that this node has children
-                    nodeInfos.push(null);
-                    viewTreeNodes.push(null);
-                    for (int i = 0; i < childCount; ++i)
-                        nodeInfos.push(currentNodeInfo.getChild(i));
-                }
-            }
+        } catch (EmptyStackException e) {
+            // For some reason this sometimes occurs. Can't reproduce reliably.
+            // TODO: investigate.
+            return null;
         }
 
         // Once the nodeInfo stack is empty, there should be exactly one element
@@ -136,6 +147,9 @@ public abstract class ViewTreeHelper {
         nodeInfo.getBoundsInParent(boundsInParent);
         result.setBoundsInScreen(boundsInScreen);
         result.setBoundsInParent(boundsInParent);
+
+        AccessibilityNodeInfo.RangeInfo rangeInfo = nodeInfo.getRangeInfo();
+        result.setRangeInfo(rangeInfo == null ? null : new ViewTreeNode.RangeInfo(rangeInfo));
 
         result.setCheckable(nodeInfo.isCheckable());
         result.setChecked(nodeInfo.isChecked());

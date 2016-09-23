@@ -41,6 +41,7 @@ import simonlang.coastdove.lib.CollatorWrapper;
 import simonlang.coastdove.lib.CoastDoveListenerService;
 import simonlang.coastdove.lib.EventType;
 import simonlang.coastdove.lib.InteractionEventData;
+import simonlang.coastdove.lib.ScrollPosition;
 
 /**
  * Data needed for detecting layouts in an associated app. Layouts are identified by certain (if possible unique)
@@ -164,6 +165,13 @@ public final class AppDetectionData implements Serializable {
             type |= CoastDoveListenerService.MSG_INTERACTION_DETECTED;
             data.putParcelableArray(CoastDoveListenerService.DATA_INTERACTION, interactionEventData.toArray(new InteractionEventData[interactionEventData.size()]));
             data.putString(CoastDoveListenerService.DATA_EVENT_TYPE, eventType.name());
+        }
+
+        if (shallPerformScrollPositionChecks(event)) {
+            ScrollPosition scrollPosition = checkScrollPosition(event);
+            notifyListeners = true;
+            type |= CoastDoveListenerService.MSG_SCROLL_POSITION_DETECTED;
+            data.putParcelable(CoastDoveListenerService.DATA_SCROLL_POSITION, scrollPosition);
         }
 
         if (shallPerformNotificationChecks(event)) {
@@ -293,6 +301,23 @@ public final class AppDetectionData implements Serializable {
     }
 
     /**
+     * Returns true iff a scroll position check shall be performed
+     * @param event
+     * @return
+     */
+    private boolean shallPerformScrollPositionChecks(AccessibilityEvent event) {
+        if (event.getEventType() != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED &&
+                event.getEventType() != AccessibilityEvent.TYPE_VIEW_SCROLLED)
+            return false;
+        if (event.getFromIndex() < 0 || event.getToIndex() < 0 || event.getItemCount() < 0)
+            return false;
+        if (!performInteractionChecks)
+            return false;
+
+        return true;
+    }
+
+    /**
      * Performs necessary operations to detect the layouts currently being used
      * @param source      Source node info
      * @return Detected layouts
@@ -358,6 +383,14 @@ public final class AppDetectionData implements Serializable {
         }
 
         return result;
+    }
+
+    /**
+     * Checks the current scroll position and returns it in a ScrollPosition object
+     * @param event    Event triggered by scrolling or by first showing the list
+     */
+    private ScrollPosition checkScrollPosition(AccessibilityEvent event) {
+        return new ScrollPosition(event.getFromIndex(), event.getToIndex(), event.getItemCount());
     }
 
     /**

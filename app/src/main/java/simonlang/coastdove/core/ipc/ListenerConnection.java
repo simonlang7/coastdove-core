@@ -191,7 +191,9 @@ public class ListenerConnection implements ServiceConnection {
                                     return false;
                                 node.getBoundsInScreen(boundsExpected);
                                 nodeInfo.getBoundsInScreen(boundsActual);
-                                return boundsExpected.equals(boundsActual);
+                                if (!boundsExpected.equals(boundsActual))
+                                    return false;
+                                return node.getClassName().equals(nodeInfo.getClassName());
                             }
                         });
                 nodeInfo = traverser.nextFiltered();
