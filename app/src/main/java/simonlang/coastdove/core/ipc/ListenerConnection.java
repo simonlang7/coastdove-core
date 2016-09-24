@@ -206,7 +206,11 @@ public class ListenerConnection implements ServiceConnection {
                 if (appDetectionData == null)
                     return;
 
-                actionPerformed = nodeInfo.performAction(actionID);
+                Bundle arguments = null;
+                if (dataIn.containsKey(CoastDoveListenerService.DATA_ACTION_ARGUMENTS))
+                    arguments = dataIn.getBundle(CoastDoveListenerService.DATA_ACTION_ARGUMENTS);
+
+                actionPerformed = nodeInfo.performAction(actionID, arguments);
                 ViewTreeNode node = ViewTreeHelper.flatCopy(nodeInfo, appDetectionData.getReplacementData());
                 dataOut.putParcelable(CoastDoveListenerService.DATA_VIEW_TREE_NODE, node);
             }
