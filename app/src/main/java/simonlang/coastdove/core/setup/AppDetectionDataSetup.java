@@ -359,6 +359,8 @@ public class AppDetectionDataSetup {
         powerSet.startOver(currentSize);
 
         while (powerSet.hasNext() && powerSet.sizeOfNext() == currentSize) {
+            if (Thread.currentThread().isInterrupted())
+                return;
             Set<String> subset = powerSet.next();
             String androidIDs = subset.toString();
 
