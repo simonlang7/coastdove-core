@@ -14,10 +14,9 @@
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
 
-/*
-    This framework is based on an idea by Sergej Dechand and Rainer Duppré
+
+    This framework is based on an idea by Rainer Duppré and Sergej Dechand,
     who implemented a study platform using Android's Accessibility Services.
 */
 
