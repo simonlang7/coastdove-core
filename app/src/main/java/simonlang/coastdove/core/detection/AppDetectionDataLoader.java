@@ -79,10 +79,10 @@ public class AppDetectionDataLoader extends ObjectLoader<AppDetectionData> {
                                   String fullApkPath, boolean loadReplacementData, Context context, LoadingInfo loadingInfo) {
         super(appPackageName, multipleObjectLoader);
         this.appPackageName = appPackageName;
-        this.performLayoutChecks = Misc.DEFAULT_DETECT_LAYOUTS;
-        this.performInteractionChecks = Misc.DEFAULT_DETECT_INTERACTIONS;
-        this.performScreenStateChecks = Misc.DEFAULT_DETECT_SCREEN_STATE;
-        this.performNotificationChecks = Misc.DEFAULT_DETECT_NOTIFICATIONS;
+        this.performLayoutChecks = DetectableAppConfig.DEFAULT_DETECT_LAYOUTS;
+        this.performInteractionChecks = DetectableAppConfig.DEFAULT_DETECT_INTERACTIONS;
+        this.performScreenStateChecks = DetectableAppConfig.DEFAULT_DETECT_SCREEN_STATE;
+        this.performNotificationChecks = DetectableAppConfig.DEFAULT_DETECT_NOTIFICATIONS;
         this.loadReplacementData = loadReplacementData;
         this.context = context;
         this.loadingInfo = loadingInfo;

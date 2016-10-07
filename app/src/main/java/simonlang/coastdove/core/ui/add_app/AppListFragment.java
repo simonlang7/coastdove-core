@@ -36,6 +36,7 @@ import simonlang.coastdove.core.R;
 import simonlang.coastdove.core.detection.AppDetectionData;
 import simonlang.coastdove.core.detection.AppDetectionDataLoader;
 import simonlang.coastdove.core.CoastDoveService;
+import simonlang.coastdove.core.detection.DetectableAppConfig;
 import simonlang.coastdove.core.ui.LoadableListFragment;
 import simonlang.coastdove.core.ui.LoadingInfo;
 import simonlang.coastdove.core.ui.detectable_app_details.DetectableAppDetailsActivity;
@@ -107,7 +108,7 @@ public class AppListFragment extends LoadableListFragment<ApplicationInfo> {
 
                 SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext());
                 boolean replacePrivateData = Misc.getPreferenceBoolean(prefs, item.packageName,
-                        getActivity().getString(R.string.pref_replace_private_data), Misc.DEFAULT_REPLACE_PRIVATE_DATA);
+                        getActivity().getString(R.string.pref_replace_private_data), DetectableAppConfig.DEFAULT_REPLACE_PRIVATE_DATA);
                 AppDetectionDataLoader loader = new AppDetectionDataLoader(item.packageName, multiLoader, item.publicSourceDir, replacePrivateData, getActivity(), loadingInfo);
 
                 multiLoader.startLoading(item.packageName, loader, loadingInfo);
