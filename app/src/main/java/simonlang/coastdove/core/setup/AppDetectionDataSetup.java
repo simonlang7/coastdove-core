@@ -299,7 +299,7 @@ public class AppDetectionDataSetup {
         // Check the leftovers
         for (LayoutIdentificationContainer container : containers) {
             if (container.ambiguity == 1) {
-                container.addBestIDSetsAsLayoutIdentifiers();
+                container.finish();
             }
         }
 
@@ -413,13 +413,13 @@ public class AppDetectionDataSetup {
             // several bestIDSets, in case some elements (IDs) are invisible
             // on screen when comparing
             if (bestSize < currentSize - 1) {
-                container.addBestIDSetsAsLayoutIdentifiers();
+                container.finish();
                 return true;
             }
         }
         if (currentSize >= powerSet.getSetSize()) {
             if (container.ambiguity == 1) {
-                container.addBestIDSetsAsLayoutIdentifiers();
+                container.finish();
             }
             return true;
         }

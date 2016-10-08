@@ -35,8 +35,6 @@ public class LayoutIdentificationContainer {
     private Set<String> androidIDs;
     /** The power set builder needed for the power set of android IDs */
     private PowerSet<String> powerSet;
-//    /** The original XML document from which to parse */
-//    private Document xmlDocument;
     /** Sets of android IDs best suited for identifying the layout */
     private List<Set<String>> bestIDSets;
     /** Ambiguity level, indicates how many layouts can be identified by the
@@ -86,9 +84,12 @@ public class LayoutIdentificationContainer {
     }
 
     /**
-     * Adds all bestIDSets as layout identifiers to the contained LayoutIdentification
+     * Adds all bestIDSets as layout identifiers to the contained LayoutIdentification, and
+     * all Android IDs
      */
-    public void addBestIDSetsAsLayoutIdentifiers() {
+    public void finish() {
         getLayoutIdentification().addAllLayoutIdentifiers(getBestIDSets());
+        getLayoutIdentification().setAmbiguity(this.ambiguity);
+        getLayoutIdentification().setAndroidIDs(getAndroidIDs());
     }
 }

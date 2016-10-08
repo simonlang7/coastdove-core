@@ -30,7 +30,7 @@ import simonlang.coastdove.core.utility.SetSizeComparator;
  * Usually, each of the layouts in res/layout/ can be identified using the according LayoutIdentification.
  */
 public class LayoutIdentification implements Serializable {
-    private static final long serialVersionUID = 3285957059773072822L;
+    private static final long serialVersionUID = 3285957059773072821L;
 
     /** Name of the layout to be identified, e.g. anything in res/layout/ of the according app */
     protected String name;
@@ -39,6 +39,8 @@ public class LayoutIdentification implements Serializable {
     protected int ambiguity;
     /** Sets of android IDs used to identify this layout. Any one set is enough to identify this layout. */
     protected Set<Set<String>> layoutIdentifiers;
+    /** All android IDs contained in this layout */
+    protected Set<String> androidIDs;
 
     public LayoutIdentification(String name) {
         this.name = name;
@@ -102,6 +104,23 @@ public class LayoutIdentification implements Serializable {
 
     public void setAmbiguity(int ambiguity) {
         this.ambiguity = ambiguity;
+    }
+
+    public void setAndroidIDs(Set<String> androidIDs) {
+        this.androidIDs = androidIDs;
+    }
+
+    public Set<String> getAndroidIDs() {
+        return androidIDs;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof LayoutIdentification) {
+            LayoutIdentification other = (LayoutIdentification)o;
+            return other.getName().equals(getName());
+        }
+        return false;
     }
 
     public void setLayoutIdentifiers(Set<Set<String>> layoutIdentifiers) {
