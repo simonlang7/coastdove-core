@@ -50,18 +50,14 @@ import simonlang.coastdove.lib.ScrollPosition;
  * favored.
  */
 public final class AppDetectionData implements Serializable {
-    private static final long serialVersionUID = -599352705245161575L;
+    private static final long serialVersionUID = -599352705245161577L;
 
     /** Name of the package associated, i.e. the app that can be detected */
     private String appPackageName;
-    /** Hash map mapping from each layout to a set of android IDs that identify the layout*/
-    private Map<String, LayoutIdentification> layoutIdentificationMap;
-    /** Reverse hash map, mapping from sets of android IDs to layouts that can possibly be identified */
-    private Map<String, Set<String>> reverseMap;
+    /** Map (ID -> layout) to identify layouts */
+    private Map<String, String> idLayoutMap;
     /** Contains information about main activities */
     private AppMetaInformation appMetaInformation;
-    /** Percentage of possibly detectable layouts that are actually detected */
-    private int accuracy;
 
     /** Whether to collect usage data (to be stored on the device) */
     private transient boolean collectUsageData;
@@ -87,17 +83,13 @@ public final class AppDetectionData implements Serializable {
     /**
      * Creates an AppDetectionData object using the given parameters
      * @param appPackageName             Package name of the detectable app
-     * @param layoutIdentificationMap    Map (layout -> {android IDs})
-     * @param reverseMap                 Map (androidID -> {possible layouts})
+     * @param idLayoutMap                Map to identify layouts
      */
-    public AppDetectionData(String appPackageName, Map<String, LayoutIdentification> layoutIdentificationMap,
-                            Map<String, Set<String>> reverseMap, AppMetaInformation appMetaInformation,
-                            int accuracy) {
+    public AppDetectionData(String appPackageName, Map<String, String> idLayoutMap,
+                            AppMetaInformation appMetaInformation) {
         this.appPackageName = appPackageName;
-        this.layoutIdentificationMap = layoutIdentificationMap;
-        this.reverseMap = reverseMap;
         this.appMetaInformation = appMetaInformation;
-        this.accuracy = accuracy;
+        this.idLayoutMap = idLayoutMap;
     }
 
     /**
@@ -324,8 +316,7 @@ public final class AppDetectionData implements Serializable {
      */
     private Set<String> checkLayouts(AccessibilityNodeInfo source, AccessibilityNodeInfo rootNodeInfo) {
         Set<String> androidIDsOnScreen = androidIDsOnScreen(rootNodeInfo);
-        Set<String> possibleLayouts = possibleLayouts(androidIDsOnScreen);
-        return recognizedLayouts(androidIDsOnScreen, possibleLayouts);
+        return recognizedLayouts(androidIDsOnScreen);
     }
 
     /**
@@ -496,65 +487,19 @@ public final class AppDetectionData implements Serializable {
     }
 
     /**
-     * Returns a set of layouts that can possibly be detected, given a set of androidIDs
-     * @param androidIDs    set of android IDs detected on the screen
-     */
-    private Set<String> possibleLayouts(Set<String> androidIDs) {
-        Set<String> possibleLayouts = new TreeSet<>(new CollatorWrapper());
-        for (String androidIDOnScreen : androidIDs) {
-            Set<String> currentPossibleLayouts = this.reverseMap.get(androidIDOnScreen);
-            if (currentPossibleLayouts != null)
-                possibleLayouts.addAll(currentPossibleLayouts);
-        }
-
-        return possibleLayouts;
-    }
-
-    /**
      * Returns the set of layouts recognized, given the set of android IDs detected on the screen,
      * and the set of possibly recognizable layouts
      * @param androidIDs         set of android IDs detected on the screen
-     * @param possibleLayouts    set of possibly recognizable layouts
      */
-    private Set<String> recognizedLayouts(Set<String> androidIDs, Set<String> possibleLayouts) {
-        Set<LayoutIdentification> recognizedLayouts = new CopyOnWriteArraySet<>();//new TreeSet<>(new CollatorWrapper());
+    private Set<String> recognizedLayouts(Set<String> androidIDs) {
+        Set<String> recognizedLayouts = new TreeSet<>(new CollatorWrapper());
         Set<LayoutIdentification> ambiguousLayouts = new CopyOnWriteArraySet<>();//new TreeSet<>(new CollatorWrapper());
-        for (String possibleLayout : possibleLayouts) {
-            LayoutIdentification layout = this.layoutIdentificationMap.get(possibleLayout);
-            for (Set<String> layoutIdentifierSet : layout.getLayoutIdentifiers()) {
-                if (androidIDs.containsAll(layoutIdentifierSet)) {
-                    if (layoutIdentifierSet.size() == 1) {
-                        recognizedLayouts.add(layout);
-                        ambiguousLayouts.remove(layout);
-                        break;
-                    }
-                    else {
-                        ambiguousLayouts.add(layout);
-                    }
-                }
-            }
+        for (String id : androidIDs) {
+            if (idLayoutMap.containsKey(id))
+                recognizedLayouts.add(idLayoutMap.get(id));
         }
 
-        // For each ambiguous layout, check whether all its android IDs
-        // also occur in recognized layouts - if so, don't add it
-        outer: for (LayoutIdentification ambiguousLayout : ambiguousLayouts) {
-            Set<String> androidIDsInOtherLayouts = new TreeSet<>(new CollatorWrapper());
-            for (String androidID : ambiguousLayout.getAndroidIDs()) {
-                for (LayoutIdentification recognizedLayout : recognizedLayouts) {
-                    if (recognizedLayout.getAndroidIDs().contains(androidID)) {
-                        androidIDsInOtherLayouts.add(androidID);
-                        if (androidIDsInOtherLayouts.size() == ambiguousLayout.getAndroidIDs().size())
-                            continue outer;
-                    }
-                }
-            }
-            recognizedLayouts.add(ambiguousLayout);
-        }
-
-        Set<String> result = new TreeSet<>(new CollatorWrapper());
-        for (LayoutIdentification layout : recognizedLayouts)
-            result.add(layout.getName());
-        return result;
+        return recognizedLayouts;
     }
 
     /**
@@ -623,9 +568,5 @@ public final class AppDetectionData implements Serializable {
 
     public void setReplacementData(ReplacementData replacementData) {
         this.replacementData = replacementData;
-    }
-
-    public int getAccuracy() {
-        return accuracy;
     }
 }

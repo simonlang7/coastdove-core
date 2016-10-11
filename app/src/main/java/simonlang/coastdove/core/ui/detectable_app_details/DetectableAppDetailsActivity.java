@@ -358,7 +358,6 @@ public class DetectableAppDetailsActivity extends AppCompatActivity {
      */
     private void setUpReminderBars() {
         final LinearLayout activateASBar = (LinearLayout)findViewById(R.id.detectable_app_accessibility_activation_bar);
-        final LinearLayout accuracyWarningBar = (LinearLayout)findViewById(R.id.detectable_app_accuracy_warning_bar);
         boolean detectionDataLoadedOrLoading = false;
 
         try {

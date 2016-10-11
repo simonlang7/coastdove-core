@@ -19,11 +19,9 @@
 package simonlang.coastdove.core.detection;
 
 import android.content.Context;
-import android.util.Log;
 
 import java.io.File;
 
-import simonlang.coastdove.core.setup.AppDetectionDataSetup;
 import simonlang.coastdove.core.ui.LoadingInfo;
 import simonlang.coastdove.core.utility.FileHelper;
 import simonlang.coastdove.core.utility.Misc;
@@ -98,7 +96,7 @@ public class AppDetectionDataLoader extends ObjectLoader<AppDetectionData> {
         if (this.fullApkPath != null) {
             // Create detection data from APK file
             File apkFile = new File(this.fullApkPath);
-            detectableApp = AppDetectionDataSetup.fromAPK(this.context, apkFile, appPackageName, 1.0f, loadingInfo);
+            detectableApp = AppDetectionDataSetup.fromAPK(this.context, apkFile, appPackageName, loadingInfo);
             if (detectableApp == null)
                 return null;
             FileHelper.writeAppDetectionData(this.context, detectableApp, FileHelper.Directory.PRIVATE_PACKAGE, this.appPackageName, FileHelper.APP_DETECTION_DATA_FILENAME);
@@ -116,8 +114,6 @@ public class AppDetectionDataLoader extends ObjectLoader<AppDetectionData> {
         // Initialize
         detectableApp.init(this.performLayoutChecks, this.performInteractionChecks, this.performScreenStateChecks,
                 this.performNotificationChecks, replacementData, this.context);
-        // TODO: re-work LoadingInfo with callbacks in activity, update activity to show appropriate bar
-        Log.d("AppDetectionDataLoader", "Accuracy: " + detectableApp.getAccuracy() + "%");
         return detectableApp;
     }
 }
