@@ -23,7 +23,6 @@ import android.content.Context;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Parcelable;
-import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 
@@ -50,7 +49,7 @@ import simonlang.coastdove.lib.ScrollPosition;
  * favored.
  */
 public final class AppDetectionData implements Serializable {
-    private static final long serialVersionUID = -599352705245161577L;
+    private static final long serialVersionUID = -4426042140007458029L;
 
     /** Name of the package associated, i.e. the app that can be detected */
     private String appPackageName;
@@ -58,11 +57,6 @@ public final class AppDetectionData implements Serializable {
     private Map<String, String> idLayoutMap;
     /** Contains information about main activities */
     private AppMetaInformation appMetaInformation;
-
-    /** Whether to collect usage data (to be stored on the device) */
-    private transient boolean collectUsageData;
-    /** Whether to notify listeners (for displaying overlays) */
-    private transient boolean notifyListeners;
 
     /** Indicates whether to perform layout checks or not */
     private transient boolean performLayoutChecks;
@@ -493,7 +487,6 @@ public final class AppDetectionData implements Serializable {
      */
     private Set<String> recognizedLayouts(Set<String> androidIDs) {
         Set<String> recognizedLayouts = new TreeSet<>(new CollatorWrapper());
-        Set<LayoutIdentification> ambiguousLayouts = new CopyOnWriteArraySet<>();//new TreeSet<>(new CollatorWrapper());
         for (String id : androidIDs) {
             if (idLayoutMap.containsKey(id))
                 recognizedLayouts.add(idLayoutMap.get(id));
@@ -512,22 +505,6 @@ public final class AppDetectionData implements Serializable {
     /** Contains information about main activities */
     public AppMetaInformation getAppMetaInformation() {
         return appMetaInformation;
-    }
-
-    public boolean isCollectUsageData() {
-        return collectUsageData;
-    }
-
-    public void setCollectUsageData(boolean collectUsageData) {
-        this.collectUsageData = collectUsageData;
-    }
-
-    public boolean getNotifyListeners() {
-        return notifyListeners;
-    }
-
-    public void setNotifyListeners(boolean notifyListeners) {
-        this.notifyListeners = notifyListeners;
     }
 
     public void setPerformLayoutChecks(boolean performLayoutChecks) {
