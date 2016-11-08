@@ -143,14 +143,13 @@ public class CoastDoveService extends AccessibilityService {
 
             checkActivity(event);
 
-            // Changed app? Write gathered data to file
+            // Changed app?
             checkPackageChanged();
 
-            // Handle layout detection
+            // Handle event detection
             AppDetectionData detectionData = multiLoader.get(packageName);
             if (detectionData != null)
                 detectionData.performChecks(event, getRootInActiveWindow(), currentActivity);
-
         }
     }
 
@@ -186,6 +185,10 @@ public class CoastDoveService extends AccessibilityService {
         }
     }
 
+    /**
+     * Check whether the package of the active app has changed. If so, send AppClosed
+     * and AppOpened events for the according apps
+     */
     private void checkPackageChanged() {
         int slashPos = currentActivity.indexOf('/');
         String activityPackageName = currentActivity.substring(0, slashPos < 0 ? 0 : slashPos);
@@ -211,11 +214,14 @@ public class CoastDoveService extends AccessibilityService {
     protected void onServiceConnected() {
         super.onServiceConnected();
 
+        // Needed to receive screen off/on events
         this.screenStateReceiver = new ScreenStateReceiver();
         IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
         filter.addAction(Intent.ACTION_SCREEN_ON);
         registerReceiver(this.screenStateReceiver, filter);
 
+        // Register all modules that have been enabled prior to activation of the
+        // Accessibility Service
         for (ListenerConnection listener : listeners.values()) {
             Intent listenerIntent = listener.getListenerIntent();
             getApplicationContext().bindService(listenerIntent, listener, Context.BIND_AUTO_CREATE);
@@ -229,7 +235,9 @@ public class CoastDoveService extends AccessibilityService {
 
     @Override
     public void onDestroy() {
+        // Remove screen on/off listener
         unregisterReceiver(this.screenStateReceiver);
+        // Unregister all modules
         for (ListenerConnection listener : listeners.values())
             getApplicationContext().unbindService(listener);
 
